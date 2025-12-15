@@ -1,21 +1,32 @@
-.circular-progress-container {
+/* page */
+.dashboard-page ion-content {
+  --padding-bottom: 45px;
+}
+
+/* circular progress */
+.dashboard-page .circular-progress-container {
   display: grid;
   place-items: center;
   width: 100%;
   height: 290px;
 }
 
-.circular-background-md {
+.dashboard-page .circular-background-md {
   background-color: #121212;
   box-shadow: none !important;
 }
 
-.circular-progress {
+.dashboard-page .circular-progress-container.circular-background-md {
+  background-color: #121212;
+  box-shadow: none !important;
+}
+
+.dashboard-page .circular-progress {
   width: 270px;
   height: 270px;
 }
 
-.progress-text {
+.dashboard-page .progress-text {
   position: absolute;
   bottom: 210px;
   left: 50%;
@@ -23,108 +34,80 @@
   z-index: 10;
 }
 
-.progress-chip {
+.dashboard-page .progress-chip {
   position: absolute;
-  bottom: 80px;
+  bottom: 75px;
   left: 49%;
   transform: translateX(-50%);
   z-index: 10;
 }
 
-/* Card container */
-.sensor-card {
-  margin: 0 8px 0 8px;
+/* card */
+.dashboard-page .sensor-card {
+  margin: 0 8px 0;
   border-radius: 18px;
 }
 
-/* Card content layout */
-.sensor-card-content {
+/* card content */
+.dashboard-page .sensor-card-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px;
+  padding: 16px;
 }
 
-/* Left side: name and value */
-.sensor-info {
+/* sensor info */
+.dashboard-page .sensor-info {
   flex: 1;
 }
 
-.sensor-name {
+.dashboard-page .sensor-name {
   margin: 0;
   font-size: 0.9rem;
-  color: #f7f9fc;
+  color: #f6f8fc;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.sensor-value {
-  margin: 8px 0 0 0;
+.dashboard-page .sensor-value {
+  margin: 8px 0 0;
   padding-right: 8px;
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
 }
 
-/* Right side: unit */
-.sensor-unit {
+/* sensor unit */
+.dashboard-page .sensor-unit {
   font-size: 1.3rem;
-  color: #f7f9fc;
+  color: #f6f8fc;
   font-weight: 500;
 }
 
-/* Success - Green */
-.sensor-card-success {
-  border-left: 6px solid #48bb78; /* green */
+/* success */
+.dashboard-page .sensor-card-success {
+  border-left: 6px solid #42d96b;
 }
 
-.sensor-card-success .sensor-value {
-  color: #2f855a;
+.dashboard-page .sensor-card-success .sensor-value {
+  color: #42d96b;
 }
 
-/* Warning - Orange */
-.sensor-card-warning {
-  border-left: 6px solid #ed8936; /* orange */
+/* warning */
+.dashboard-page .sensor-card-warning {
+  border-left: 6px solid #ffca22;
 }
 
-.sensor-card-warning .sensor-value {
-  color: #dd6b20;
+.dashboard-page .sensor-card-warning .sensor-value {
+  color: #ffca22;
 }
 
-/* Danger - Red */
-.sensor-card-danger {
-  border-left: 6px solid #f56565; /* red */
+/* danger */
+.dashboard-page .sensor-card-danger {
+  border-left: 6px solid #cb1a27;
 }
 
-.sensor-card-danger .sensor-value {
-  color: #c53030;
-}
-
-/* Stage selector fixed at bottom */
-.stage-selector-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-/* Stage button styling */
-.stage-button-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stage-label {
-  font-size: 10px;
-  font-weight: 500;
-}
-
-ion-content {
-  --padding-bottom: 45px;
+.dashboard-page .sensor-card-danger .sensor-value {
+  color: #cb1a27;
 }

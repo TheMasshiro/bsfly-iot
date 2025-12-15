@@ -1,11 +1,12 @@
-import { IonButtons, IonCard, IonCardContent, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonMenuButton, IonPage, IonRow, IonSegment, IonSegmentButton, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonMenuButton, IonPage, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { Stage, useLifeCycle } from '../../context/LifeCycleContext';
+import { useLifeCycle } from '../../context/LifeCycleContext';
 import { sensorsData } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
-import { calculateStability } from '../../utils/calculateStability';
+import { calculateQuality } from '../../utils/calculateQuality';
+import Segments from '../../components/Segments/Segments';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -23,14 +24,14 @@ export const statusColor = (sensorType: string, value: number, thresholds: any) 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage];
-    const stability = calculateStability(sensorsData, thresholds);
+    const quality = calculateQuality(sensorsData, thresholds);
 
     const status = (name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
     }
 
     return (
-        <IonPage>
+        <IonPage className="dashboard-page">
             <IonHeader>
                 <IonToolbar>
                     <IonButtons slot="start">
@@ -42,6 +43,7 @@ const Dashboard: React.FC = () => {
                     </IonChip>
                 </IonToolbar>
             </IonHeader>
+
             <IonContent fullscreen>
                 <IonHeader collapse="condense">
                     <IonToolbar>
@@ -49,28 +51,31 @@ const Dashboard: React.FC = () => {
                     </IonToolbar>
                 </IonHeader>
 
-                <IonGrid className="dashboard-grid">
+                <IonGrid>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>
                             <IonCard className="circular-background-md">
+                                <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
+                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
+                                </IonCardHeader>
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
                                         <div className="circular-progress-wrapper">
                                             <CircularProgressbar
                                                 className="circular-progress"
-                                                value={stability}
+                                                value={quality}
                                                 maxValue={1}
-                                                text={`${Math.round(stability * 100)}%`}
+                                                text={`${Math.round(quality * 100)}%`}
                                                 styles={buildStyles({
-                                                    pathColor: stability >= 0.8 ? '#48bb78' : stability >= 0.5 ? '#ed8936' : '#f56565',
-                                                    textColor: stability >= 0.8 ? '#48bb78' : stability >= 0.5 ? '#ed8936' : '#f56565',
-                                                    trailColor: '#e5e7eb',
+                                                    pathColor: quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27',
+                                                    textColor: quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27',
+                                                    trailColor: '#f6f8fc',
                                                     pathTransitionDuration: 0.9,
                                                 })}
                                             />
-                                            <IonText className="progress-text">Environment Stability</IonText>
-                                            <IonChip className="progress-chip" color={stability >= 0.8 ? 'success' : stability >= 0.5 ? 'warning' : 'danger'}>
-                                                {stability >= 0.8 ? 'Good' : stability >= 0.5 ? 'Moderate' : 'Poor'}
+                                            <IonText className="progress-text">Environment Quality</IonText>
+                                            <IonChip className="progress-chip" color={quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'}>
+                                                {quality >= 0.8 ? 'Good' : quality >= 0.5 ? 'Moderate' : 'Poor'}
                                             </IonChip>
                                         </div>
                                     </div>
@@ -96,36 +101,10 @@ const Dashboard: React.FC = () => {
                     </IonRow>
                 </IonGrid>
 
-                <div className="stage-selector-container">
-                    <IonSegment
-                        value={stage}
-                        onIonChange={(e) => setStage(e.detail.value as Stage)}
-                    >
-                        <IonSegmentButton value="Egg">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Egg</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Larva">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Larva</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Pupa">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Pupa</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Adult">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Adult</span>
-                            </div>
-                        </IonSegmentButton>
-                    </IonSegment>
-                </div>
+                <Segments
+                    stage={stage}
+                    setStage={setStage}
+                />
             </IonContent>
         </IonPage >
     );
