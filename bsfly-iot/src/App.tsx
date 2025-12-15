@@ -36,6 +36,8 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import { LifeCycleProvider } from './context/LifeCycleContext';
 import Timer from './pages/Timer/Timer';
 import Analytics from './pages/Analytics/Analytics';
+import Settings from './pages/Settings/Settings';
+import About from './pages/About/About';
 
 setupIonicReact();
 
@@ -53,6 +55,8 @@ const App: React.FC = () => {
                             <Route path="/dashboard" exact={true} component={Dashboard} />
                             <Route path="/photoperiod" exact={true} component={Timer} />
                             <Route path="/analytics" exact={true} component={Analytics} />
+                            <Route path="/settings" exact={true} component={Settings} />
+                            <Route path="/about" exact={true} component={About} />
                         </IonRouterOutlet>
                     </IonSplitPane>
                 </IonReactRouter>
