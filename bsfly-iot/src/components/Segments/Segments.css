@@ -1,0 +1,23 @@
+/* Stage selector fixed at bottom */
+.stage-selector-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* Stage button styling */
+.stage-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stage-label {
+  font-size: 10px;
+  font-weight: 500;
+}
