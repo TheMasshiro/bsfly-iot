@@ -1,0 +1,146 @@
+import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonMenuButton, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { lifecycleThresholds } from '../../config/thresholds';
+import { FC } from 'react';
+import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
+import { useLifeCycle } from '../../context/LifeCycleContext';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
+import Graph from '../../components/Graph/Graph';
+import Segments from '../../components/Segments/Segments';
+import "./Analytics.css"
+
+const Analytics: FC = () => {
+    const { stage, setStage } = useLifeCycle()
+    const thresholds = lifecycleThresholds[stage]
+
+    const sensorGraphs = [
+        {
+            id: "1",
+            sensor: "Temperature",
+            max: thresholds.temperature.max,
+            min: thresholds.temperature.min,
+            warn: thresholds.temperature.optimal[1],
+            unit: "°C"
+        },
+        {
+            id: "2",
+            sensor: "Humidity",
+            max: thresholds.humidity.max,
+            min: thresholds.humidity.min,
+            warn: thresholds.humidity.optimal[1],
+            unit: "%"
+        },
+        {
+            id: "3",
+            sensor: "Substrate Moisture",
+            max: thresholds.moisture.max,
+            min: thresholds.moisture.min,
+            warn: thresholds.moisture.optimal[1],
+            unit: "%"
+        }
+    ]
+
+    return (
+        <IonPage className="analytics-page">
+            <IonHeader>
+                <IonToolbar>
+                    <IonButtons slot="start">
+                        <IonMenuButton />
+                    </IonButtons>
+                    <IonTitle>Analytics</IonTitle>
+                    <IonChip slot='end' color="danger">
+                        Offline
+                    </IonChip>
+                </IonToolbar>
+            </IonHeader>
+
+            <IonContent fullscreen>
+                <IonHeader collapse="condense">
+                    <IonToolbar>
+                        <IonTitle size="large">Analytics</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonGrid>
+                    <IonRow className="ion-justify-content-center ion-align-items-center">
+                        <IonCol>
+                            <IonCard className="circular-background-md">
+                                <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
+                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
+                                </IonCardHeader>
+                                <IonCardContent>
+                                    <div className="circular-progress-container circular-background-md">
+                                        <div className="circular-progress-wrapper">
+                                            <CircularProgressbar
+                                                className="circular-progress"
+                                                value={0}
+                                                maxValue={1}
+                                                text={`${Math.round(0 * 100)}`}
+                                                styles={buildStyles({
+                                                    pathColor: '#1a65eb',
+                                                    textColor: '#1a65eb',
+                                                    trailColor: '#e5e7eb',
+                                                    pathTransitionDuration: 0.9,
+                                                })}
+                                            />
+                                            <IonText className="progress-text">Reading</IonText>
+                                        </div>
+                                    </div>
+                                </IonCardContent>
+                            </IonCard>
+                        </IonCol>
+                    </IonRow>
+                    <IonSegment>
+                        <IonSegmentButton value="Temperature" contentId='Temperature'>
+                            <IonIcon icon={thermometerOutline} />
+                        </IonSegmentButton>
+                        <IonSegmentButton value="Humidity" contentId='Humidity'>
+                            <IonIcon icon={cloudOutline} />
+                        </IonSegmentButton>
+                        <IonSegmentButton value="Substrate Moisture" contentId='Substrate Moisture'>
+                            <IonIcon icon={waterOutline} />
+                        </IonSegmentButton>
+                    </IonSegment>
+                    <IonRow>
+                        <IonCol>
+                            <IonSegmentView>
+                                {sensorGraphs.map((graph, index) => (
+                                    <IonSegmentContent key={index} id={graph.sensor} >
+                                        <Graph
+                                            key={index}
+                                            sensorType={graph.sensor}
+                                            upperLimit={graph.max}
+                                            lowerLimit={graph.min}
+                                            warningLimit={graph.warn}
+                                            unit={graph.unit} />
+
+                                        <IonRow class="ion-justify-content-center ion-align-items-center legends-row">
+                                            <IonChip color="primary">{graph.sensor} {graph.unit}</IonChip>
+                                            <IonChip color="danger">
+                                                <IonLabel>Upper Limit: {graph.max} {graph.unit}</IonLabel>
+                                            </IonChip>
+                                            <IonChip color="warning">
+                                                <IonLabel>Warning Limit: {graph.warn} {graph.unit}</IonLabel>
+                                            </IonChip>
+                                            <IonChip color="secondary">
+                                                <IonLabel>Lower Limit: {graph.min} {graph.unit}</IonLabel>
+                                            </IonChip>
+                                        </IonRow >
+                                    </IonSegmentContent>
+                                ))}
+                            </IonSegmentView>
+                        </IonCol>
+                    </IonRow>
+                </IonGrid>
+
+                <Segments
+                    stage={stage}
+                    setStage={setStage}
+                />
+            </IonContent>
+        </IonPage >
+    );
+};
+
+export default Analytics;
+
