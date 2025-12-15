@@ -1,4 +1,4 @@
-import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonMenuButton, IonPage, IonRow, IonSegment, IonSegmentButton, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButtons, IonCard, IonCardContent, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonMenuButton, IonPage, IonRow, IonSegment, IonSegmentButton, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -23,13 +23,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: any) 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage];
-
-
     const stability = calculateStability(sensorsData, thresholds);
-
-    console.log(sensorsData)
-    console.log(stability)
-
 
     const status = (name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
@@ -59,10 +53,6 @@ const Dashboard: React.FC = () => {
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>
                             <IonCard className="circular-background-md">
-                                <IonCardHeader>
-                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
-                                    <IonCardSubtitle>Lifecycle Monitoring</IonCardSubtitle>
-                                </IonCardHeader>
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
                                         <div className="circular-progress-wrapper">
@@ -90,7 +80,7 @@ const Dashboard: React.FC = () => {
                     </IonRow>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         {sensorsData.map((sensor, index) => (
-                            <IonCol size="12" sizeMd="6" sizeLg='4' key={index}>
+                            <IonCol size="12" sizeMd="6" key={index}>
                                 <IonCard className={`sensor-card sensor-card-${status(sensor.name, sensor.value)}`}>
                                     <IonCardContent className="sensor-card-content">
                                         <div className="sensor-info">
