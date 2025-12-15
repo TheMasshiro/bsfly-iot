@@ -1,4 +1,4 @@
-import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonMenuButton, IonPage, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -7,6 +7,7 @@ import { sensorsData } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
+import Toolbar from '../../components/Toolbar/Toolbar';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -33,15 +34,9 @@ const Dashboard: React.FC = () => {
     return (
         <IonPage className="dashboard-page">
             <IonHeader>
-                <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonMenuButton />
-                    </IonButtons>
-                    <IonTitle>Dashboard</IonTitle>
-                    <IonChip slot='end' color="danger">
-                        Offline
-                    </IonChip>
-                </IonToolbar>
+                <Toolbar
+                    header={"Dashboard"}
+                />
             </IonHeader>
 
             <IonContent fullscreen>

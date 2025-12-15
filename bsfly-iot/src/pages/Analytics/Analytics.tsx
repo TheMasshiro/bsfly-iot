@@ -1,6 +1,6 @@
-import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonMenuButton, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonText, IonTitle, IonToolbar, SegmentValue } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
@@ -8,10 +8,12 @@ import 'react-circular-progressbar/dist/styles.css';
 import Graph from '../../components/Graph/Graph';
 import Segments from '../../components/Segments/Segments';
 import "./Analytics.css"
+import Toolbar from '../../components/Toolbar/Toolbar';
 
 const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage]
+    const [selectedSegment, setSelectedSegment] = useState<SegmentValue>("Temperature")
 
     const sensorGraphs = [
         {
@@ -43,15 +45,9 @@ const Analytics: FC = () => {
     return (
         <IonPage className="analytics-page">
             <IonHeader>
-                <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonMenuButton />
-                    </IonButtons>
-                    <IonTitle>Analytics</IonTitle>
-                    <IonChip slot='end' color="danger">
-                        Offline
-                    </IonChip>
-                </IonToolbar>
+                <Toolbar
+                    header={"Analytics"}
+                />
             </IonHeader>
 
             <IonContent fullscreen>
@@ -83,14 +79,16 @@ const Analytics: FC = () => {
                                                     pathTransitionDuration: 0.9,
                                                 })}
                                             />
-                                            <IonText className="progress-text">Reading</IonText>
+                                            <IonText className="progress-text">{selectedSegment}</IonText>
                                         </div>
                                     </div>
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>
                     </IonRow>
-                    <IonSegment>
+                    <IonSegment
+                        onIonChange={e => setSelectedSegment(e.detail.value!)}
+                    >
                         <IonSegmentButton value="Temperature" contentId='Temperature'>
                             <IonIcon icon={thermometerOutline} />
                         </IonSegmentButton>

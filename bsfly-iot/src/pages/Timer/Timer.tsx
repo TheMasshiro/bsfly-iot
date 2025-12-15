@@ -1,4 +1,4 @@
-import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import './Timer.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -7,6 +7,7 @@ import { timers } from '../../assets/assets';
 import { getStatus, Threshold } from '../../config/thresholds';
 import { useState } from 'react';
 import Segments from '../../components/Segments/Segments';
+import Toolbar from '../../components/Toolbar/Toolbar';
 
 export const statusColor = (sensorType: string, value: number, thresholds: any) => {
     return sensorType
@@ -21,15 +22,9 @@ const Timer: React.FC = () => {
     return (
         <IonPage className="timer-page">
             <IonHeader>
-                <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonMenuButton />
-                    </IonButtons>
-                    <IonTitle>Timer</IonTitle>
-                    <IonChip slot='end' color="danger">
-                        Offline
-                    </IonChip>
-                </IonToolbar>
+                <Toolbar
+                    header={"Timer"}
+                />
             </IonHeader>
             <IonContent fullscreen>
                 <IonHeader collapse="condense">
