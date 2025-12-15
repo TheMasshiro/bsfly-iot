@@ -11,7 +11,7 @@ import {
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import { analyticsOutline, analyticsSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
+import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
 import './Menu.css';
 
 interface AppPage {
@@ -91,7 +91,6 @@ const Menu: React.FC = () => {
                 </IonList>
 
                 <IonList id="labels-list">
-                    <IonListHeader></IonListHeader>
                     {morePage.map((appPage, index) => {
                         return (
                             <IonMenuToggle key={index} autoHide={true}>
@@ -102,6 +101,15 @@ const Menu: React.FC = () => {
                             </IonMenuToggle>
                         );
                     })}
+                </IonList>
+
+                <IonList id="account-list">
+                    <IonMenuToggle autoHide={true}>
+                        <IonItem lines='none' detail={false} button>
+                            <IonIcon color="danger" aria-hidden="true" slot="start" ios={exitSharp} md={exitOutline} />
+                            <IonLabel color="danger">Sign Out</IonLabel>
+                        </IonItem>
+                    </IonMenuToggle>
                 </IonList>
             </IonContent>
         </IonMenu>
