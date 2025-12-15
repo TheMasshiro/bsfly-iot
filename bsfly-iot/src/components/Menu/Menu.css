@@ -17,21 +17,22 @@ ion-menu.md ion-note {
   margin-bottom: 30px;
 }
 
-ion-menu.md ion-list-header, ion-menu.md ion-note {
+ion-menu.md ion-list-header,
+ion-menu.md ion-note {
   padding-left: 10px;
 }
 
-ion-menu.md ion-list#inbox-list {
+ion-menu.md ion-list#main-list {
   border-bottom: 1px solid var(--ion-background-color-step-150, #d7d8da);
 }
 
-ion-menu.md ion-list#inbox-list ion-list-header {
+ion-menu.md ion-list#main-list ion-list-header {
   font-size: 22px;
   font-weight: 600;
   min-height: 20px;
 }
 
-ion-menu.md ion-list#labels-list ion-list-header {
+ion-menu.md ion-list#more-list ion-list-header {
   font-size: 16px;
   margin-bottom: 18px;
   color: #757575;
@@ -110,4 +111,5 @@ ion-note {
 
 ion-item.selected {
   --color: var(--ion-color-primary);
-} 
+}
+

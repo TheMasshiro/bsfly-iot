@@ -11,7 +11,7 @@ import {
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import { archiveOutline, archiveSharp, heartOutline, heartSharp, mailOutline, mailSharp, paperPlaneOutline, paperPlaneSharp, trashOutline, trashSharp, warningOutline, warningSharp } from 'ionicons/icons';
+import { analyticsOutline, analyticsSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
 import './Menu.css';
 
 interface AppPage {
@@ -25,46 +25,49 @@ const appPages: AppPage[] = [
     {
         title: 'Dashboard',
         url: '/dashboard',
-        iosIcon: mailOutline,
-        mdIcon: mailSharp
+        iosIcon: gridOutline,
+        mdIcon: gridSharp
     },
     {
         title: 'Timer',
         url: '/photoperiod',
-        iosIcon: mailOutline,
-        mdIcon: mailSharp
+        iosIcon: timeOutline,
+        mdIcon: timeSharp
     },
     {
         title: 'Analytics',
         url: '/analytics',
-        iosIcon: paperPlaneOutline,
-        mdIcon: paperPlaneSharp
+        iosIcon: analyticsOutline,
+        mdIcon: analyticsSharp
     },
+];
+
+const morePage: AppPage[] = [
     {
         title: 'Settings',
         url: '/settings',
-        iosIcon: heartOutline,
-        mdIcon: heartSharp
+        iosIcon: settingsOutline,
+        mdIcon: settingsSharp
     },
     {
         title: 'View Data',
         url: '/data/view',
-        iosIcon: archiveOutline,
-        mdIcon: archiveSharp
+        iosIcon: eyeOutline,
+        mdIcon: eyeSharp
     },
     {
         title: 'Backup Data',
         url: '/data/backup',
-        iosIcon: trashOutline,
-        mdIcon: trashSharp
+        iosIcon: saveOutline,
+        mdIcon: saveSharp
     },
     {
         title: 'About',
         url: '/about',
-        iosIcon: warningOutline,
-        mdIcon: warningSharp
+        iosIcon: informationCircleOutline,
+        mdIcon: informationCircleSharp
     }
-];
+]
 
 const Menu: React.FC = () => {
     const location = useLocation();
@@ -72,9 +75,9 @@ const Menu: React.FC = () => {
     return (
         <IonMenu contentId="main" type="overlay">
             <IonContent>
-                <IonList id="inbox-list">
-                    <IonListHeader>Inbox</IonListHeader>
-                    <IonNote>hi@ionicframework.com</IonNote>
+                <IonList id="main-list">
+                    <IonListHeader>Farmer's Name</IonListHeader>
+                    <IonNote>Good Afternoon dear farmer</IonNote>
                     {appPages.map((appPage, index) => {
                         return (
                             <IonMenuToggle key={index} autoHide={true}>
@@ -87,9 +90,19 @@ const Menu: React.FC = () => {
                     })}
                 </IonList>
 
-                {/* <IonList id="labels-list"> */}
-                {/*     <IonListHeader>Labels</IonListHeader> */}
-                {/* </IonList> */}
+                <IonList id="labels-list">
+                    <IonListHeader></IonListHeader>
+                    {morePage.map((appPage, index) => {
+                        return (
+                            <IonMenuToggle key={index} autoHide={true}>
+                                <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
+                                    <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
+                                    <IonLabel>{appPage.title}</IonLabel>
+                                </IonItem>
+                            </IonMenuToggle>
+                        );
+                    })}
+                </IonList>
             </IonContent>
         </IonMenu>
     );
