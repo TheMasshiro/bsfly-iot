@@ -34,6 +34,7 @@ import '@ionic/react/css/palettes/dark.always.css';
 import './theme/variables.css';
 import Dashboard from './pages/Dashboard/Dashboard';
 import { LifeCycleProvider } from './context/LifeCycleContext';
+import Timer from './pages/Timer/Timer';
 
 setupIonicReact();
 
@@ -48,9 +49,8 @@ const App: React.FC = () => {
                             <Route path="/" exact={true}>
                                 <Redirect to="/dashboard" />
                             </Route>
-                            <Route path="/dashboard" exact={true}>
-                                <Dashboard></Dashboard>
-                            </Route>
+                            <Route path="/dashboard" exact={true} component={Dashboard} />
+                            <Route path="/photoperiod" exact={true} component={Timer} />
                         </IonRouterOutlet>
                     </IonSplitPane>
                 </IonReactRouter>
