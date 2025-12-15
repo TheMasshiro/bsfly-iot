@@ -1,4 +1,4 @@
-export const calculateStability = (
+export const calculateQuality = (
   sensorsData: Array<{ name: string; value: number }>,
   thresholds: any
 ): number => {
