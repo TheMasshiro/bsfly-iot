@@ -1,21 +1,32 @@
-.circular-progress-container {
+/* page */
+.timer-page ion-content {
+  --padding-bottom: 45px;
+}
+
+/* circular progress */
+.timer-page .circular-progress-container {
   display: grid;
   place-items: center;
   width: 100%;
   height: 290px;
 }
 
-.circular-background-md {
+.timer-page .circular-background-md {
   background-color: #121212;
   box-shadow: none !important;
 }
 
-.circular-progress {
+.timer-page .circular-progress-container.circular-background-md {
+  background-color: #121212;
+  box-shadow: none !important;
+}
+
+.timer-page .circular-progress {
   width: 270px;
   height: 270px;
 }
 
-.progress-text {
+.timer-page .progress-text {
   position: absolute;
   bottom: 210px;
   left: 50%;
@@ -23,7 +34,7 @@
   z-index: 10;
 }
 
-.progress-chip {
+.timer-page .progress-chip {
   position: absolute;
   bottom: 80px;
   left: 49%;
@@ -31,124 +42,86 @@
   z-index: 10;
 }
 
-/* Card container */
-.timer-card {
-  margin: 0 8px 5px 8px;
+/* card */
+.timer-page .timer-card {
+  margin: 0 8px 5px;
   border-radius: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-/* Hover effect */
-.timer-card:hover {
+/* hover */
+.timer-page .timer-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Active/Press effect */
-.timer-card:active {
+/* active */
+.timer-page .timer-card:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Card content layout */
-.timer-card-content {
+/* card content */
+.timer-page .timer-card-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px;
 }
 
-/* Left side: name and value */
-.timer-info {
+/* card states */
+.timer-page .timer-card-primary .timer-value {
+  color: #f6f8fc;
+}
+
+.timer-page .timer-card-selected {
+  outline: 6px solid #1a65eb;
+  outline-offset: -6px;
+  box-shadow: 0 0 0 2px rgba(0, 84, 233, 0.2);
+}
+
+.timer-page .timer-card-selected:hover {
+  box-shadow: 0 4px 12px rgba(0, 84, 233, 0.4);
+}
+
+.timer-page .timer-card-selected .timer-value {
+  color: #1a65eb;
+}
+
+/* text */
+.timer-page .timer-info {
   flex: 1;
 }
 
-.timer-name {
+.timer-page .timer-name {
   margin: 0;
   font-size: 0.9rem;
-  color: #f7f9fc;
+  color: #f6f8fc;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.timer-value {
-  margin: 8px 0 0 0;
+.timer-page .timer-value {
+  margin: 8px 0 0;
   padding-right: 8px;
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
 }
 
-/* Right side: unit */
-.timer-unit {
-  font-size: 1.3rem;
-  color: #f7f9fc;
-  font-weight: 500;
-}
-
-.timer-card-primary .timer-value {
-  color: #f7f9fc;
-}
-
-.timer-card-selected {
-  outline: 6px solid #0054e9;
-  outline-offset: -6px;
-  box-shadow: 0 0 0 2px rgba(0, 84, 233, 0.2);
-}
-
-.timer-card-selected:hover {
-  box-shadow: 0 4px 12px rgba(0, 84, 233, 0.4);
-}
-
-.timer-card-selected .timer-value {
-  color: #0054e9;
-}
-
-/* Stage selector fixed at bottom */
-.stage-selector-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-/* Stage button styling */
-.stage-button-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stage-label {
-  font-size: 10px;
-  font-weight: 500;
-}
-
-ion-radio::part(container) {
+/* radio */
+.timer-page ion-radio::part(container),
+.timer-page ion-radio.radio-checked::part(container) {
   border-color: transparent;
 }
 
-ion-radio::part(mark) {
+.timer-page ion-radio::part(mark),
+.timer-page ion-radio.radio-checked::part(mark) {
   background: none;
   transition: none;
   transform: none;
   border-radius: 0;
-}
-
-ion-radio.radio-checked::part(container) {
   border-color: transparent;
-}
-
-ion-radio.radio-checked::part(mark) {
-  border-color: transparent;
-}
-
-ion-content {
-  --padding-bottom: 45px;
 }

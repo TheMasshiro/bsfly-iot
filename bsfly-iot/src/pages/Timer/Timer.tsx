@@ -1,11 +1,12 @@
-import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonItem, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonRow, IonSegment, IonSegmentButton, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
 import './Timer.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { Stage, useLifeCycle } from '../../context/LifeCycleContext';
+import { useLifeCycle } from '../../context/LifeCycleContext';
 import { timers } from '../../assets/assets';
 import { getStatus, Threshold } from '../../config/thresholds';
 import { useState } from 'react';
+import Segments from '../../components/Segments/Segments';
 
 export const statusColor = (sensorType: string, value: number, thresholds: any) => {
     return sensorType
@@ -18,7 +19,7 @@ const Timer: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
 
     return (
-        <IonPage>
+        <IonPage className="timer-page">
             <IonHeader>
                 <IonToolbar>
                     <IonButtons slot="start">
@@ -37,11 +38,11 @@ const Timer: React.FC = () => {
                     </IonToolbar>
                 </IonHeader>
 
-                <IonGrid className="dashboard-grid">
+                <IonGrid>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>
                             <IonCard className="circular-background-md">
-                                <IonCardHeader>
+                                <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
                                     <IonCardTitle>Current Stage: {stage}</IonCardTitle>
                                 </IonCardHeader>
                                 <IonCardContent>
@@ -53,8 +54,8 @@ const Timer: React.FC = () => {
                                                 maxValue={1}
                                                 text={`${Math.round(0 * 100)}`}
                                                 styles={buildStyles({
-                                                    pathColor: '#0054e9',
-                                                    textColor: '#0054e9',
+                                                    pathColor: '#1a65eb',
+                                                    textColor: '#1a65eb',
                                                     trailColor: '#e5e7eb',
                                                     pathTransitionDuration: 0.9,
                                                 })}
@@ -91,36 +92,10 @@ const Timer: React.FC = () => {
                     </IonRadioGroup>
                 </IonGrid>
 
-                <div className="stage-selector-container">
-                    <IonSegment
-                        value={stage}
-                        onIonChange={(e) => setStage(e.detail.value as Stage)}
-                    >
-                        <IonSegmentButton value="Egg">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Egg</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Larva">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Larva</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Pupa">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Pupa</span>
-                            </div>
-                        </IonSegmentButton>
-
-                        <IonSegmentButton value="Adult">
-                            <div className="stage-button-content">
-                                <span className="stage-label">Adult</span>
-                            </div>
-                        </IonSegmentButton>
-                    </IonSegment>
-                </div>
+                <Segments
+                    stage={stage}
+                    setStage={setStage}
+                />
             </IonContent>
         </IonPage >
     );
