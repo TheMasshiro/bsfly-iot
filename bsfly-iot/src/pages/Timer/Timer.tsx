@@ -1,4 +1,4 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Timer.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -8,6 +8,7 @@ import { getStatus, Threshold } from '../../config/thresholds';
 import { useState } from 'react';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
+import Countdown from 'react-countdown';
 
 export const statusColor = (sensorType: string, value: number, thresholds: any) => {
     return sensorType
@@ -18,6 +19,28 @@ export const statusColor = (sensorType: string, value: number, thresholds: any) 
 const Timer: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const [time, setTime] = useState<number>(timers[0].seconds);
+
+    const [present] = useIonToast()
+    const presentToast = (message: string, duration: number) => {
+        present({
+            message: message,
+            duration: duration,
+            position: "top",
+            mode: "ios",
+            layout: "stacked",
+            swipeGesture: "vertical",
+        })
+    }
+
+    const renderer = ({ hours, minutes, seconds, completed }: any) => {
+        if (completed) {
+            return "0";
+        } else {
+            return hours > 0
+                ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+                : `${minutes}:${String(seconds).padStart(2, '0')}`;
+        }
+    };
 
     return (
         <IonPage className="timer-page">
@@ -47,7 +70,12 @@ const Timer: React.FC = () => {
                                                 className="circular-progress"
                                                 value={0}
                                                 maxValue={1}
-                                                text={`${Math.round(0 * 100)}`}
+                                                text={time ? (
+                                                    <Countdown
+                                                        date={Date.now() + (time * 1000)}
+                                                        renderer={renderer}
+                                                    />
+                                                ) : "0:00:00"}
                                                 styles={buildStyles({
                                                     pathColor: '#1a65eb',
                                                     textColor: '#1a65eb',
@@ -55,7 +83,8 @@ const Timer: React.FC = () => {
                                                     pathTransitionDuration: 0.9,
                                                 })}
                                             />
-                                            <IonText className="progress-text">{time ? "Light is set to" : "Disabled"}</IonText>
+                                            <IonText className="progress-text">
+                                            </IonText>
                                         </div>
                                     </div>
                                 </IonCardContent>
@@ -73,7 +102,11 @@ const Timer: React.FC = () => {
                                     <IonCard
                                         className={`timer-card ${time === timer.seconds ? 'timer-card-selected' : 'timer-card-primary'}`}
                                         button
-                                        onClick={() => setTime(timer.seconds)}
+                                        onClick={() => {
+                                            setTime(timer.seconds)
+                                            presentToast(`Light is set to ${timer.name}`, 1500)
+                                        }
+                                        }
                                     >
                                         <IonCardContent className="timer-card-content">
                                             <IonRadio value={timer.seconds} justify='space-between'>
