@@ -26,9 +26,12 @@
   height: 270px;
 }
 
-.timer-page .progress-text {
+.timer-page .timer-text {
   position: absolute;
-  bottom: 210px;
+  font-weight: 700;
+  font-size: 50px;
+  color: #1a65eb;
+  bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;

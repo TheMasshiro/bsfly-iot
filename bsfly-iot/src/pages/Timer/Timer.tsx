@@ -70,12 +70,6 @@ const Timer: React.FC = () => {
                                                 className="circular-progress"
                                                 value={0}
                                                 maxValue={1}
-                                                text={time ? (
-                                                    <Countdown
-                                                        date={Date.now() + (time * 1000)}
-                                                        renderer={renderer}
-                                                    />
-                                                ) : "0:00:00"}
                                                 styles={buildStyles({
                                                     pathColor: '#1a65eb',
                                                     textColor: '#1a65eb',
@@ -83,7 +77,13 @@ const Timer: React.FC = () => {
                                                     pathTransitionDuration: 0.9,
                                                 })}
                                             />
-                                            <IonText className="progress-text">
+                                            <IonText className="timer-text">
+                                                {time ? (
+                                                    <Countdown
+                                                        date={Date.now() + (time * 1000)}
+                                                        renderer={renderer}
+                                                    />
+                                                ) : "0:00:00"}
                                             </IonText>
                                         </div>
                                     </div>
@@ -104,7 +104,7 @@ const Timer: React.FC = () => {
                                         button
                                         onClick={() => {
                                             setTime(timer.seconds)
-                                            presentToast(`Light is set to ${timer.name}`, 1500)
+                                            presentToast(timer.name, 1500)
                                         }
                                         }
                                     >
