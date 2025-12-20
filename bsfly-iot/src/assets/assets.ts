@@ -59,3 +59,26 @@ export const timers: TimeProps[] = [
     seconds: 43200,
   },
 ];
+
+export const controlsData = [
+  {
+    name: "Fan",
+    description: "Reduces Temperature",
+  },
+  {
+    name: "Heater",
+    description: "Increases Temperature",
+  },
+  {
+    name: "Humidifier",
+    description: "Increases Humidity",
+  },
+  {
+    name: "Dehumidifier",
+    description: "Decreases Humidity",
+  },
+  {
+    name: "Misting Device",
+    description: "Increases Moisture",
+  },
+];

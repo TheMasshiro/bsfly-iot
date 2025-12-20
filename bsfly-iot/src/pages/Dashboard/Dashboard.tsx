@@ -36,6 +36,7 @@ const Dashboard: React.FC = () => {
             <IonHeader>
                 <Toolbar
                     header={"Dashboard"}
+                    isDashboard={true}
                 />
             </IonHeader>
 
