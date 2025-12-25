@@ -62,23 +62,40 @@ export const timers: TimeProps[] = [
 
 export const controlsData = [
   {
+    sensor: "Temperature",
     name: "Fan",
     description: "Reduces Temperature",
+    available: true,
   },
   {
+    sensor: "Temperature",
     name: "Heater",
     description: "Increases Temperature",
+    available: true,
   },
   {
+    sensor: "Humidity",
     name: "Humidifier",
     description: "Increases Humidity",
+    available: true,
   },
   {
+    sensor: "Humidity",
     name: "Dehumidifier",
     description: "Decreases Humidity",
+    available: true,
   },
   {
+    sensor: "Substrate Moisture",
     name: "Misting Device",
     description: "Increases Moisture",
+    available: true,
+  },
+  {
+    sensor: "Ammonia",
+    name: "Ammonia Sensor",
+    description:
+      "Monitors ammonia levels continuously with no manual controls. System responses appear in the dashboard, and notifications are sent based on sensor data.",
+    available: false,
   },
 ];
