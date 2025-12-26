@@ -12,12 +12,12 @@
 }
 
 .timer-page .circular-background-md {
-  background-color: #121212;
+  background-color: transparent;
   box-shadow: none !important;
 }
 
 .timer-page .circular-progress-container.circular-background-md {
-  background-color: #121212;
+  background-color: transparent;
   box-shadow: none !important;
 }
 
