@@ -77,10 +77,10 @@ const Menu: React.FC = () => {
             <IonContent>
                 <IonList id="main-list">
                     <IonListHeader>Farmer's Name</IonListHeader>
-                    <IonNote>Good Afternoon dear farmer</IonNote>
+                    <IonNote>Good Evening</IonNote>
                     {appPages.map((appPage, index) => {
                         return (
-                            <IonMenuToggle key={index} autoHide={true}>
+                            <IonMenuToggle key={index}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>
@@ -93,7 +93,7 @@ const Menu: React.FC = () => {
                 <IonList id="labels-list">
                     {morePage.map((appPage, index) => {
                         return (
-                            <IonMenuToggle key={index} autoHide={true}>
+                            <IonMenuToggle key={index}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>
@@ -104,7 +104,7 @@ const Menu: React.FC = () => {
                 </IonList>
 
                 <IonList id="account-list">
-                    <IonMenuToggle autoHide={true}>
+                    <IonMenuToggle>
                         <IonItem lines='none' detail={false} button>
                             <IonIcon color="danger" aria-hidden="true" slot="start" ios={exitSharp} md={exitOutline} />
                             <IonLabel color="danger">Sign Out</IonLabel>
