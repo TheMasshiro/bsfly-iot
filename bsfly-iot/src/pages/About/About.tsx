@@ -20,7 +20,7 @@ const About: FC = () => {
                     </IonItem>
                     <IonItem>
                         <IonLabel>App Name</IonLabel>
-                        <IonLabel slot="end" color="medium">BSFly - Monitoring System</IonLabel>
+                        <IonLabel slot="end" color="medium">BSFly IoT - Monitoring System</IonLabel>
                     </IonItem>
                     <IonItem>
                         <IonLabel>Version</IonLabel>
@@ -86,7 +86,7 @@ const About: FC = () => {
                 </IonList>
                 <div className="ion-align-items-center ion-justify-content-center ion-text-center">
                     <IonLabel color="medium">
-                        © 2025 BSFly. All rights reserved.
+                        © 2025 BSFly IoT. All rights reserved.
                     </IonLabel>
                 </div>
             </IonContent>
