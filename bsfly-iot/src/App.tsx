@@ -38,6 +38,8 @@ import Timer from './pages/Timer/Timer';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
 import About from './pages/About/About';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import Welcome from './pages/Welcome/Welcome';
 
 setupIonicReact();
 
@@ -46,21 +48,37 @@ const App: React.FC = () => {
         <IonApp>
             <LifeCycleProvider>
                 <IonReactRouter>
-                    <IonSplitPane contentId="main">
-                        <Menu />
-                        <IonRouterOutlet id="main">
-                            <Route path="/" exact={true}>
-                                <Redirect to="/dashboard" />
-                            </Route>
-                            <Route path="/dashboard" exact={true} component={Dashboard} />
-                            <Route path="/photoperiod" exact={true} component={Timer} />
-                            <Route path="/analytics" exact={true} component={Analytics} />
-                            <Route path="/settings" exact={true} component={Settings} />
-                            <Route path="/about" exact={true} component={About} />
-                        </IonRouterOutlet>
-                    </IonSplitPane>
+                    <SignedIn>
+                        <IonSplitPane contentId="main">
+                            <Menu />
+                            <IonRouterOutlet id="main">
+                                <Route path="/" exact={true}>
+                                    <Redirect to="/dashboard" />
+                                </Route>
+                                <Route exact path="/welcome">
+                                    <Redirect to="/dashboard" />
+                                </Route>
+                                <Route path="/dashboard" exact={true} component={Dashboard} />
+                                <Route path="/photoperiod" exact={true} component={Timer} />
+                                <Route path="/analytics" exact={true} component={Analytics} />
+                                <Route path="/settings" exact={true} component={Settings} />
+                                <Route path="/about" exact={true} component={About} />
+                            </IonRouterOutlet>
+                        </IonSplitPane>
+                    </SignedIn>
+
+                    <SignedOut>
+                        <Route exact path="/welcome" component={Welcome} />
+                        <Route path="/(dashboard|photoperiod|analytics|settings|about)">
+                            <Redirect to="/welcome" />
+                        </Route>
+                        <Route exact path="/">
+                            <Redirect to="/welcome" />
+                        </Route>
+                    </SignedOut>
                 </IonReactRouter>
             </LifeCycleProvider>
+
         </IonApp>
     );
 };
