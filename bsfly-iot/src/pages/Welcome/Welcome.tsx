@@ -37,9 +37,6 @@ const Welcome: FC = () => {
         setIsValid(event.detail.checked);
     };
 
-    console.log(isValid)
-
-
     return (
         <IonPage className="welcome-page">
             <IonContent className="ion-padding" fullscreen>
