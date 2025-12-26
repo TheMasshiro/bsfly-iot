@@ -8,6 +8,8 @@ import { getStatus, lifecycleThresholds, Threshold } from '../../config/threshol
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
+import ControlModal from '../../components/Modal/Modal';
+import { useState } from 'react';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -27,6 +29,8 @@ const Dashboard: React.FC = () => {
     const thresholds = lifecycleThresholds[stage];
     const quality = calculateQuality(sensorsData, thresholds);
 
+    const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+
     const status = (name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
     }
@@ -36,7 +40,6 @@ const Dashboard: React.FC = () => {
             <IonHeader>
                 <Toolbar
                     header={"Dashboard"}
-                    isDashboard={true}
                 />
             </IonHeader>
 
@@ -82,7 +85,7 @@ const Dashboard: React.FC = () => {
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         {sensorsData.map((sensor, index) => (
                             <IonCol size="12" sizeMd="6" key={index}>
-                                <IonCard className={`sensor-card sensor-card-${status(sensor.name, sensor.value)}`}>
+                                <IonCard className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} button onClick={() => setSelectedSensor(sensor.name)}>
                                     <IonCardContent className="sensor-card-content">
                                         <div className="sensor-info">
                                             <IonIcon size="large" icon={sensor.icon}></IonIcon>
@@ -91,6 +94,7 @@ const Dashboard: React.FC = () => {
                                         <span className="sensor-value">{sensor.value}</span>
                                         <span className="sensor-unit">{sensor.unit}</span>
                                     </IonCardContent>
+
                                 </IonCard>
                             </IonCol>
                         ))}
@@ -101,6 +105,13 @@ const Dashboard: React.FC = () => {
                     stage={stage}
                     setStage={setStage}
                 />
+
+                {selectedSensor && (
+                    <ControlModal
+                        sensor={selectedSensor}
+                        onClose={() => setSelectedSensor(null)}
+                    />
+                )}
             </IonContent>
         </IonPage >
     );
