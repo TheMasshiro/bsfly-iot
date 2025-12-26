@@ -1,15 +1,33 @@
-/* Stage selector fixed at bottom */
 .stage-selector-container {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 1px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   z-index: 10;
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* Stage button styling */
+.stage-selector-container ion-segment {
+  --background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
+.stage-selector-container ion-segment-button {
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-dark);
+  --indicator-color: var(--ion-color-primary);
+  --background-checked: rgba(var(--ion-color-primary-rgb), 0.2);
+}
+
+.stage-selector-container ion-segment-button::part(indicator-background) {
+  background: var(--ion-color-primary);
+}
+
 .stage-button-content {
   display: flex;
   flex-direction: column;

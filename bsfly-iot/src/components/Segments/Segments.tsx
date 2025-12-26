@@ -10,7 +10,6 @@ interface SegmentsProps {
 
 const Segments: FC<SegmentsProps> = ({ stage, setStage }) => {
     return (
-
         <div className="stage-selector-container">
             <IonSegment
                 value={stage}
