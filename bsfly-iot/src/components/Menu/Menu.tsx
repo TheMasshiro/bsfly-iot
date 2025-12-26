@@ -1,4 +1,5 @@
 import {
+    IonAvatar,
     IonContent,
     IonIcon,
     IonItem,
@@ -13,6 +14,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
 import './Menu.css';
+import { SignOutButton, UserButton, useUser } from '@clerk/clerk-react';
 
 interface AppPage {
     url: string;
@@ -71,13 +73,30 @@ const morePage: AppPage[] = [
 
 const Menu: React.FC = () => {
     const location = useLocation();
+    const { user } = useUser();
 
     return (
         <IonMenu contentId="main" type="overlay">
             <IonContent>
                 <IonList id="main-list">
-                    <IonListHeader>Farmer's Name</IonListHeader>
-                    <IonNote>Good Evening</IonNote>
+                    <IonList>
+                        <IonItem lines="none" button={false}>
+                            <IonLabel>
+                                <h1>Black Soldier Fly</h1>
+                            </IonLabel>
+                        </IonItem>
+
+                        <IonItem lines="none">
+                            <IonAvatar slot="start">
+                                <img src={user?.imageUrl} />
+                            </IonAvatar>
+
+                            <IonLabel>
+                                <h2>{user?.fullName}</h2>
+                                <p>{user?.primaryEmailAddress?.emailAddress}</p>
+                            </IonLabel>
+                        </IonItem>
+                    </IonList>
                     {appPages.map((appPage, index) => {
                         return (
                             <IonMenuToggle key={index}>
@@ -107,7 +126,9 @@ const Menu: React.FC = () => {
                     <IonMenuToggle>
                         <IonItem lines='none' detail={false} button>
                             <IonIcon color="danger" aria-hidden="true" slot="start" ios={exitSharp} md={exitOutline} />
-                            <IonLabel color="danger">Sign Out</IonLabel>
+                            <SignOutButton>
+                                <IonLabel color="danger">Sign Out</IonLabel>
+                            </SignOutButton>
                         </IonItem>
                     </IonMenuToggle>
                 </IonList>
