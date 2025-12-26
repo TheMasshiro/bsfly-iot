@@ -37,6 +37,8 @@ const Welcome: FC = () => {
         setIsValid(event.detail.checked);
     };
 
+    console.log(isValid)
+
 
     return (
         <IonPage className="welcome-page">
@@ -123,7 +125,7 @@ const Welcome: FC = () => {
                             I agree to the terms and conditions
                         </IonCheckbox>
 
-                        {showTerms && (
+                        {(showTerms && isValid) && (
                             <Terms
                                 isOpen={showTerms}
                                 onClose={() => setShowTerms(false)}
