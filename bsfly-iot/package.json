@@ -26,10 +26,10 @@
     "chart.js": "^4.5.1",
     "chartjs-plugin-annotation": "^3.1.0",
     "ionicons": "^7.4.0",
-    "react": "19.0.0",
+    "react": "^19.2.3",
     "react-circular-progressbar": "^2.2.0",
     "react-countdown": "^2.3.6",
-    "react-dom": "19.0.0",
+    "react-dom": "^19.2.3",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
     "socket.io-client": "^4.8.1"
