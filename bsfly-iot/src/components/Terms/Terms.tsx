@@ -72,7 +72,7 @@ const Terms: FC<TermsProps> = ({ isOpen, onClose }) => {
             <IonContent className="ion-padding">
                 <h2>1. Agreement to Terms</h2>
                 <p>
-                    These Terms and Conditions (“Terms”) govern your use of the BSFLy IoT application and related services. By installing, accessing, or using the App, you agree to be bound by these Terms.
+                    These Terms and Conditions govern your use of the BSFLy IoT application and related services. By installing, accessing, or using the App, you agree to be bound by these Terms.
                 </p>
 
                 <h2>2. Purpose and Academic Use</h2>
