@@ -9,7 +9,7 @@ import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import ControlModal from '../../components/Modal/Modal';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -27,13 +27,25 @@ export const statusColor = (sensorType: string, value: number, thresholds: any) 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage];
-    const quality = calculateQuality(sensorsData, thresholds);
+    const quality = useMemo(() => calculateQuality(sensorsData, thresholds), [stage]);
 
     const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
 
-    const status = (name: string, value: number) => {
+    const status = useCallback((name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
-    }
+    }, [thresholds]);
+
+    const qualityColor = useMemo(() =>
+        quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27'
+        , [quality]);
+
+    const qualityChipColor = useMemo(() =>
+        quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'
+        , [quality]);
+
+    const qualityText = useMemo(() =>
+        quality >= 0.8 ? 'Good' : quality >= 0.5 ? 'Moderate' : 'Poor'
+        , [quality]);
 
     return (
         <IonPage className="dashboard-page">
@@ -66,15 +78,15 @@ const Dashboard: React.FC = () => {
                                                 maxValue={1}
                                                 text={`${Math.round(quality * 100)}%`}
                                                 styles={buildStyles({
-                                                    pathColor: quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27',
-                                                    textColor: quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27',
+                                                    pathColor: qualityColor,
+                                                    textColor: qualityColor,
                                                     trailColor: '#f6f8fc',
                                                     pathTransitionDuration: 0.9,
                                                 })}
                                             />
                                             <IonText className="progress-text">Environment Quality</IonText>
-                                            <IonChip className="progress-chip" color={quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'}>
-                                                {quality >= 0.8 ? 'Good' : quality >= 0.5 ? 'Moderate' : 'Poor'}
+                                            <IonChip className="progress-chip" color={qualityChipColor}>
+                                                {qualityText}
                                             </IonChip>
                                         </div>
                                     </div>

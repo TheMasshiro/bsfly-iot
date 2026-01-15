@@ -1,27 +1,31 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Timer.css';
-import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { timers } from '../../assets/assets';
-import { getStatus, Threshold } from '../../config/thresholds';
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
 
-export const statusColor = (sensorType: string, value: number, thresholds: any) => {
-    return sensorType
-        ? getStatus(value, thresholds[sensorType] as Threshold)
-        : "medium";
-}
+const renderer = ({ hours, minutes, seconds, completed }: any) => {
+    if (completed) {
+        return "0";
+    } else {
+        return hours > 0
+            ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+            : `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
+};
 
 const Timer: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const [time, setTime] = useState<number>(timers[0].seconds);
+    const [startTime, setStartTime] = useState<number>(Date.now());
 
     const [present] = useIonToast()
-    const presentToast = (message: string, duration: number) => {
+    
+    const presentToast = useCallback((message: string, duration: number) => {
         present({
             message: message,
             duration: duration,
@@ -30,17 +34,15 @@ const Timer: React.FC = () => {
             layout: "stacked",
             swipeGesture: "vertical",
         })
-    }
+    }, [present]);
 
-    const renderer = ({ hours, minutes, seconds, completed }: any) => {
-        if (completed) {
-            return "0";
-        } else {
-            return hours > 0
-                ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-                : `${minutes}:${String(seconds).padStart(2, '0')}`;
-        }
-    };
+    const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
+
+    const handleTimeChange = useCallback((newTime: number, timerName: string) => {
+        setTime(newTime);
+        setStartTime(Date.now());
+        presentToast(timerName, 1500);
+    }, [presentToast]);
 
     return (
         <IonPage className="timer-page">
@@ -66,21 +68,11 @@ const Timer: React.FC = () => {
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
                                         <div className="circular-progress-wrapper">
-                                            <CircularProgressbar
-                                                className="circular-progress"
-                                                value={0}
-                                                maxValue={1}
-                                                styles={buildStyles({
-                                                    pathColor: '#1a65eb',
-                                                    textColor: '#1a65eb',
-                                                    trailColor: '#e5e7eb',
-                                                    pathTransitionDuration: 0.9,
-                                                })}
-                                            />
                                             <IonText className="timer-text">
                                                 {time ? (
                                                     <Countdown
-                                                        date={Date.now() + (time * 1000)}
+                                                        key={startTime}
+                                                        date={countdownDate}
                                                         renderer={renderer}
                                                     />
                                                 ) : "0:00:00"}
@@ -91,22 +83,14 @@ const Timer: React.FC = () => {
                             </IonCard>
                         </IonCol>
                     </IonRow>
-                    <IonRadioGroup
-                        value={time}
-                        onIonChange={(e) => {
-                            setTime(e.detail.value)
-                        }}>
+                    <IonRadioGroup value={time}>
                         <IonRow className="ion-justify-content-center ion-align-items-center">
                             {timers.map((timer) => (
                                 <IonCol size="12" key={timer.id}>
                                     <IonCard
                                         className={`timer-card ${time === timer.seconds ? 'timer-card-selected' : 'timer-card-primary'}`}
                                         button
-                                        onClick={() => {
-                                            setTime(timer.seconds)
-                                            presentToast(timer.name, 1500)
-                                        }
-                                        }
+                                        onClick={() => handleTimeChange(timer.seconds, timer.name)}
                                     >
                                         <IonCardContent className="timer-card-content">
                                             <IonRadio value={timer.seconds} justify='space-between'>

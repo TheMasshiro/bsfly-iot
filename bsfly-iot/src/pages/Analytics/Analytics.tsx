@@ -1,11 +1,11 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonText, IonTitle, IonToolbar, SegmentValue } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC, useState } from 'react';
+import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import Graph from '../../components/Graph/Graph';
+import Graph, { getData } from '../../components/Graph/Graph';
 import Segments from '../../components/Segments/Segments';
 import "./Analytics.css"
 import Toolbar from '../../components/Toolbar/Toolbar';
@@ -14,8 +14,10 @@ const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage]
     const [selectedSegment, setSelectedSegment] = useState<SegmentValue>("Temperature")
+    const [currentReading, setCurrentReading] = useState<number>()
+    const [maxValue, setMaxValue] = useState<number>()
 
-    const sensorGraphs = [
+    const sensorGraphs = useMemo(() => [
         {
             id: "1",
             sensor: "Temperature",
@@ -40,7 +42,31 @@ const Analytics: FC = () => {
             warn: thresholds.moisture.optimal[1],
             unit: "%"
         }
-    ]
+    ], [thresholds]);
+
+    useEffect(() => {
+        const data = getData(selectedSegment as string);
+        const currentGraph = sensorGraphs.find(graph => graph.sensor === selectedSegment);
+
+        if (data.length > 0) {
+            setCurrentReading(data[data.length - 1].value);
+        }
+
+        if (currentGraph) {
+            setMaxValue(currentGraph.max);
+        }
+    }, [selectedSegment, sensorGraphs]);
+
+    const progressStyles = useMemo(() => buildStyles({
+        pathColor: '#6030ff',
+        textColor: '#f6f8fc',
+        trailColor: '#f6f8fc',
+        pathTransitionDuration: 0.9,
+    }), []);
+
+    const handleSegmentChange = useCallback((value: SegmentValue) => {
+        setSelectedSegment(value);
+    }, []);
 
     return (
         <IonPage className="analytics-page">
@@ -69,15 +95,10 @@ const Analytics: FC = () => {
                                         <div className="circular-progress-wrapper">
                                             <CircularProgressbar
                                                 className="circular-progress"
-                                                value={0}
-                                                maxValue={1}
-                                                text={`${Math.round(0 * 100)}`}
-                                                styles={buildStyles({
-                                                    pathColor: '#1a65eb',
-                                                    textColor: '#1a65eb',
-                                                    trailColor: '#e5e7eb',
-                                                    pathTransitionDuration: 0.9,
-                                                })}
+                                                value={currentReading ?? 0}
+                                                text={`${currentReading ?? 0}`}
+                                                maxValue={maxValue ?? 100}
+                                                styles={progressStyles}
                                             />
                                             <IonText className="progress-text">{selectedSegment}</IonText>
                                         </div>
@@ -86,9 +107,7 @@ const Analytics: FC = () => {
                             </IonCard>
                         </IonCol>
                     </IonRow>
-                    <IonSegment
-                        onIonChange={e => setSelectedSegment(e.detail.value!)}
-                    >
+                    <IonSegment onIonChange={e => handleSegmentChange(e.detail.value!)}>
                         <IonSegmentButton value="Temperature" contentId='Temperature'>
                             <IonIcon icon={thermometerOutline} />
                         </IonSegmentButton>
@@ -102,30 +121,32 @@ const Analytics: FC = () => {
                     <IonRow>
                         <IonCol>
                             <IonSegmentView>
-                                {sensorGraphs.map((graph, index) => (
-                                    <IonSegmentContent key={index} id={graph.sensor} >
-                                        <Graph
-                                            key={index}
-                                            sensorType={graph.sensor}
-                                            upperLimit={graph.max}
-                                            lowerLimit={graph.min}
-                                            warningLimit={graph.warn}
-                                            unit={graph.unit} />
+                                {sensorGraphs.map((graph, index) => {
+                                    return (
+                                        <IonSegmentContent key={index} id={graph.sensor} >
+                                            <Graph
+                                                key={index}
+                                                sensorType={graph.sensor}
+                                                upperLimit={graph.max}
+                                                lowerLimit={graph.min}
+                                                warningLimit={graph.warn}
+                                                unit={graph.unit} />
 
-                                        <IonRow class="ion-justify-content-center ion-align-items-center legends-row">
-                                            <IonChip color="primary">{graph.sensor} {graph.unit}</IonChip>
-                                            <IonChip color="danger">
-                                                <IonLabel>Upper Limit: {graph.max} {graph.unit}</IonLabel>
-                                            </IonChip>
-                                            <IonChip color="warning">
-                                                <IonLabel>Warning Limit: {graph.warn} {graph.unit}</IonLabel>
-                                            </IonChip>
-                                            <IonChip color="secondary">
-                                                <IonLabel>Lower Limit: {graph.min} {graph.unit}</IonLabel>
-                                            </IonChip>
-                                        </IonRow >
-                                    </IonSegmentContent>
-                                ))}
+                                            <IonRow class="ion-justify-content-center ion-align-items-center legends-row">
+                                                <IonChip color="primary">{graph.sensor} {graph.unit}</IonChip>
+                                                <IonChip color="danger">
+                                                    <IonLabel>Upper Limit: {graph.max} {graph.unit}</IonLabel>
+                                                </IonChip>
+                                                <IonChip color="warning">
+                                                    <IonLabel>Warning Limit: {graph.warn} {graph.unit}</IonLabel>
+                                                </IonChip>
+                                                <IonChip color="secondary">
+                                                    <IonLabel>Lower Limit: {graph.min} {graph.unit}</IonLabel>
+                                                </IonChip>
+                                            </IonRow >
+                                        </IonSegmentContent>
+                                    )
+                                })}
                             </IonSegmentView>
                         </IonCol>
                     </IonRow>

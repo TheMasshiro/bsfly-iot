@@ -12,25 +12,26 @@ interface GraphProps {
     unit: string,
 }
 
+export const getData = (sensorType: string) => {
+    switch (sensorType.toLowerCase()) {
+        case "temperature":
+            return temperatureData;
+        case "humidity":
+            return humidityData;
+        case "substrate moisture":
+            return moistureData;
+        default:
+            return temperatureData;
+    }
+};
+
 Chart.register(annotationPlugin);
 const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimit, unit }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<Chart | null>(null);
 
-    const getData = () => {
-        switch (sensorType.toLowerCase()) {
-            case "temperature":
-                return temperatureData;
-            case "humidity":
-                return humidityData;
-            case "substrate moisture":
-                return moistureData;
-            default:
-                return temperatureData;
-        }
-    };
 
-    const chartData = getData();
+    const chartData = getData(sensorType);
 
     useEffect(() => {
         if (canvasRef.current) {

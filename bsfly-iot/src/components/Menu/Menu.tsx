@@ -5,16 +5,14 @@ import {
     IonItem,
     IonLabel,
     IonList,
-    IonListHeader,
     IonMenu,
     IonMenuToggle,
-    IonNote,
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
+import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, notificationsOutline, notificationsSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
 import './Menu.css';
-import { SignOutButton, UserButton, useUser } from '@clerk/clerk-react';
+import { SignOutButton, useUser } from '@clerk/clerk-react';
 
 interface AppPage {
     url: string;
@@ -41,6 +39,12 @@ const appPages: AppPage[] = [
         url: '/analytics',
         iosIcon: analyticsOutline,
         mdIcon: analyticsSharp
+    },
+    {
+        title: 'Notifications',
+        url: '/notifications',
+        iosIcon: notificationsOutline,
+        mdIcon: notificationsSharp
     },
 ];
 
@@ -99,7 +103,7 @@ const Menu: React.FC = () => {
                     </IonList>
                     {appPages.map((appPage, index) => {
                         return (
-                            <IonMenuToggle key={index}>
+                            <IonMenuToggle key={index} autoHide={false}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>
@@ -112,7 +116,7 @@ const Menu: React.FC = () => {
                 <IonList id="labels-list">
                     {morePage.map((appPage, index) => {
                         return (
-                            <IonMenuToggle key={index}>
+                            <IonMenuToggle key={index} autoHide={false}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>
@@ -123,7 +127,7 @@ const Menu: React.FC = () => {
                 </IonList>
 
                 <IonList id="account-list">
-                    <IonMenuToggle>
+                    <IonMenuToggle autoHide={false}>
                         <IonItem lines='none' detail={false} button>
                             <IonIcon color="danger" aria-hidden="true" slot="start" ios={exitSharp} md={exitOutline} />
                             <SignOutButton>
