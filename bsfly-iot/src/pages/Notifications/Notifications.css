@@ -1,0 +1,86 @@
+/* page */
+.notifications-page ion-content {
+  --padding-bottom: 45px;
+}
+
+/* header card */
+.notifications-page .notification-header-card {
+  background-color: transparent;
+  box-shadow: none !important;
+}
+
+.notifications-page .notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.notifications-page .notification-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.notifications-page .unread-badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+/* notification items */
+.notifications-page .notification-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 8px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.notifications-page .notification-item:hover {
+  transform: translateX(4px);
+}
+
+.notifications-page .notification-unread {
+  background: rgba(96, 48, 255, 0.05);
+  border-left: 4px solid var(--ion-color-primary);
+}
+
+.notifications-page .notification-icon {
+  font-size: 28px;
+  margin-right: 12px;
+}
+
+.notifications-page .notification-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 4px 0;
+  color: var(--ion-text-color);
+}
+
+.notifications-page .notification-message {
+  font-size: 0.9rem;
+  margin: 0 0 4px 0;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}
+
+.notifications-page .notification-timestamp {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--ion-color-medium);
+  opacity: 0.7;
+}
+
+.notifications-page .unread-dot {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}

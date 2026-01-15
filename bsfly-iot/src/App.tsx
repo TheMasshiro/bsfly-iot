@@ -40,6 +40,7 @@ import Settings from './pages/Settings/Settings';
 import About from './pages/About/About';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import Welcome from './pages/Welcome/Welcome';
+import Notifications from './pages/Notifications/Notifications';
 
 setupIonicReact();
 
@@ -61,6 +62,7 @@ const App: React.FC = () => {
                                 <Route path="/dashboard" exact={true} component={Dashboard} />
                                 <Route path="/photoperiod" exact={true} component={Timer} />
                                 <Route path="/analytics" exact={true} component={Analytics} />
+                                <Route path="/notifications" exact={true} component={Notifications} />
                                 <Route path="/settings" exact={true} component={Settings} />
                                 <Route path="/about" exact={true} component={About} />
                             </IonRouterOutlet>
