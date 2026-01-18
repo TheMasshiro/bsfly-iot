@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
         , [quality]);
 
     const qualityText = useMemo(() =>
-        quality >= 0.8 ? 'Good' : quality >= 0.5 ? 'Moderate' : 'Poor'
+        quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
         , [quality]);
 
     return (
