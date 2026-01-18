@@ -37,7 +37,7 @@
 .dashboard-page .progress-chip {
   position: absolute;
   bottom: 75px;
-  left: 49%;
+  left: 50%;
   transform: translateX(-50%);
   z-index: 10;
 }
