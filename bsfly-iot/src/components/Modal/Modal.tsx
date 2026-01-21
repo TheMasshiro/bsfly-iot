@@ -39,7 +39,7 @@ const ControlModal: FC<ControlModalProps> = ({ sensor, onClose }) => {
         >
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle size='small'>{sensor}: {stage} Enclosure</IonTitle>
+                    <IonTitle size='small'>{sensor}: {stage}</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={() => modal.current?.dismiss()}>Close</IonButton>
                     </IonButtons>

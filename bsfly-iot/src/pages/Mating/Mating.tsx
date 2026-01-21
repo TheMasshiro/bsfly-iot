@@ -1,10 +1,8 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
-import './Timer.css';
+import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
+import './Mating.css';
 import 'react-circular-progressbar/dist/styles.css';
-import { useLifeCycle } from '../../context/LifeCycleContext';
 import { timers } from '../../assets/assets';
 import { useState, useCallback, useMemo } from 'react';
-import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
 
@@ -18,13 +16,12 @@ const renderer = ({ hours, minutes, seconds, completed }: any) => {
     }
 };
 
-const Timer: React.FC = () => {
-    const { stage, setStage } = useLifeCycle()
+const Mating: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
 
     const [present] = useIonToast()
-    
+
     const presentToast = useCallback((message: string, duration: number) => {
         present({
             message: message,
@@ -48,7 +45,7 @@ const Timer: React.FC = () => {
         <IonPage className="timer-page">
             <IonHeader>
                 <Toolbar
-                    header={"Timer"}
+                    header={"Mating"}
                 />
             </IonHeader>
             <IonContent fullscreen>
@@ -62,9 +59,6 @@ const Timer: React.FC = () => {
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>
                             <IonCard className="circular-background-md">
-                                <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
-                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
-                                </IonCardHeader>
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
                                         <div className="circular-progress-wrapper">
@@ -103,14 +97,9 @@ const Timer: React.FC = () => {
                         </IonRow>
                     </IonRadioGroup>
                 </IonGrid>
-
-                <Segments
-                    stage={stage}
-                    setStage={setStage}
-                />
             </IonContent>
         </IonPage >
     );
 };
 
-export default Timer;
+export default Mating;

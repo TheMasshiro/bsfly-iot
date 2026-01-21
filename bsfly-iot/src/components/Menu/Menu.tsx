@@ -29,8 +29,8 @@ const appPages: AppPage[] = [
         mdIcon: gridSharp
     },
     {
-        title: 'Timer',
-        url: '/photoperiod',
+        title: 'Mating',
+        url: '/mate',
         iosIcon: timeOutline,
         mdIcon: timeSharp
     },

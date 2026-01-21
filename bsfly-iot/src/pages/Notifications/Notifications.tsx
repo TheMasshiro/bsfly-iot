@@ -119,7 +119,7 @@ const Notifications: FC = () => {
                                 <IonCardContent>
                                     <div className="notification-header">
                                         <IonText>
-                                            <h2>Current Stage: {stage}</h2>
+                                            <h2>Current {stage}</h2>
                                         </IonText>
                                         {unreadCount > 0 && (
                                             <IonBadge color="danger" className="unread-badge">

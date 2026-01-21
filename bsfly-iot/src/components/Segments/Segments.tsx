@@ -15,27 +15,21 @@ const Segments: FC<SegmentsProps> = ({ stage, setStage }) => {
                 value={stage}
                 onIonChange={(e) => setStage(e.detail.value as Stage)}
             >
-                <IonSegmentButton value="Egg">
+                <IonSegmentButton value="Drawer 1">
                     <div className="stage-button-content">
-                        <span className="stage-label">Egg</span>
+                        <span className="stage-label">Drawer 1</span>
                     </div>
                 </IonSegmentButton>
 
-                <IonSegmentButton value="Larva">
+                <IonSegmentButton value="Drawer 2">
                     <div className="stage-button-content">
-                        <span className="stage-label">Larva</span>
+                        <span className="stage-label">Drawer 2</span>
                     </div>
                 </IonSegmentButton>
 
-                <IonSegmentButton value="Pupa">
+                <IonSegmentButton value="Drawer 3">
                     <div className="stage-button-content">
-                        <span className="stage-label">Pupa</span>
-                    </div>
-                </IonSegmentButton>
-
-                <IonSegmentButton value="Adult">
-                    <div className="stage-button-content">
-                        <span className="stage-label">Adult</span>
+                        <span className="stage-label">Drawer 3</span>
                     </div>
                 </IonSegmentButton>
             </IonSegment>

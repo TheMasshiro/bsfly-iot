@@ -88,7 +88,7 @@ const Analytics: FC = () => {
                         <IonCol>
                             <IonCard className="circular-background-md">
                                 <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
-                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
+                                    <IonCardTitle>Current {stage}</IonCardTitle>
                                 </IonCardHeader>
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">

@@ -14,7 +14,8 @@ import { useState, useMemo, useCallback } from 'react';
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
     "humidity": "humidity",
-    "substrate moisture": "moisture",
+    "substrate moisture 1": "moisture",
+    "substrate moisture 2": "moisture",
     "ammonia": "ammonia",
 };
 
@@ -67,7 +68,7 @@ const Dashboard: React.FC = () => {
                         <IonCol>
                             <IonCard className="circular-background-md">
                                 <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
-                                    <IonCardTitle>Current Stage: {stage}</IonCardTitle>
+                                    <IonCardTitle>Current {stage}</IonCardTitle>
                                 </IonCardHeader>
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
@@ -95,21 +96,28 @@ const Dashboard: React.FC = () => {
                         </IonCol>
                     </IonRow>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
-                        {sensorsData.map((sensor, index) => (
-                            <IonCol size="12" sizeMd="6" key={index}>
-                                <IonCard className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} button onClick={() => setSelectedSensor(sensor.name)}>
-                                    <IonCardContent className="sensor-card-content">
-                                        <div className="sensor-info">
-                                            <IonIcon size="large" icon={sensor.icon}></IonIcon>
-                                            <p className="sensor-name">{sensor.name}</p>
-                                        </div>
-                                        <span className="sensor-value">{sensor.value}</span>
-                                        <span className="sensor-unit">{sensor.unit}</span>
-                                    </IonCardContent>
+                        {sensorsData
+                            .filter(sensor => {
+                                if (stage.toLocaleLowerCase() === 'drawer 3' && sensor.name.toLowerCase() === 'substrate moisture 2') {
+                                    return false;
+                                }
+                                return true;
+                            })
+                            .map((sensor, index) => (
+                                <IonCol size="12" sizeMd="6" key={index}>
+                                    <IonCard className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} button onClick={() => setSelectedSensor(sensor.name)}>
+                                        <IonCardContent className="sensor-card-content">
+                                            <div className="sensor-info">
+                                                <IonIcon size="large" icon={sensor.icon}></IonIcon>
+                                                <p className="sensor-name">{sensor.name}</p>
+                                            </div>
+                                            <span className="sensor-value">{sensor.value}</span>
+                                            <span className="sensor-unit">{sensor.unit}</span>
+                                        </IonCardContent>
 
-                                </IonCard>
-                            </IonCol>
-                        ))}
+                                    </IonCard>
+                                </IonCol>
+                            ))}
                     </IonRow>
                 </IonGrid>
 

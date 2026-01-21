@@ -21,7 +21,14 @@ export const sensorsData = [
     type: "humidity",
   },
   {
-    name: "Substrate Moisture",
+    name: "Substrate Moisture 1",
+    value: 40,
+    unit: "%",
+    icon: waterOutline,
+    type: "moisture",
+  },
+  {
+    name: "Substrate Moisture 2",
     value: 60,
     unit: "%",
     icon: waterOutline,
@@ -45,18 +52,13 @@ interface TimeProps {
 export const timers: TimeProps[] = [
   {
     id: 1,
-    name: "Disabled",
+    name: "Off",
     seconds: 0,
   },
   {
     id: 2,
-    name: "8 Hours",
+    name: "On",
     seconds: 28800,
-  },
-  {
-    id: 3,
-    name: "12 Hours",
-    seconds: 43200,
   },
 ];
 
@@ -86,8 +88,14 @@ export const controlsData = [
     available: true,
   },
   {
-    sensor: "Substrate Moisture",
-    name: "Misting Device",
+    sensor: "Substrate Moisture 1",
+    name: "Misting Device 1",
+    description: "Increases Moisture",
+    available: true,
+  },
+  {
+    sensor: "Substrate Moisture 2",
+    name: "Misting Device 2",
     description: "Increases Moisture",
     available: true,
   },

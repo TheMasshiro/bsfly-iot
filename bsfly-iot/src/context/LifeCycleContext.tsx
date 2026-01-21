@@ -1,6 +1,6 @@
 import { createContext, FC, ReactNode, useContext, useState } from "react";
 
-export type Stage = "Egg" | "Larva" | "Pupa" | "Adult"
+export type Stage = "Drawer 1" | "Drawer 2" | "Drawer 3"
 
 interface LifeCycleContextProps {
     stage: Stage,
@@ -11,19 +11,17 @@ interface LifeCycleContextProps {
 const LifeCycleContext = createContext<LifeCycleContextProps | null>(null);
 
 export const LifeCycleProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const [stage, setStage] = useState<Stage>("Egg")
+    const [stage, setStage] = useState<Stage>("Drawer 1")
 
     const nextStage = () => {
         setStage((prev) => {
             switch (prev) {
-                case "Egg":
-                    return "Larva";
-                case "Larva":
-                    return "Pupa";
-                case "Pupa":
-                    return "Adult";
+                case "Drawer 1":
+                    return "Drawer 2";
+                case "Drawer 2":
+                    return "Drawer 3";
                 default:
-                    return "Adult";
+                    return "Drawer 3";
             }
         })
     }
