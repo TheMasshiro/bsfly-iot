@@ -5,7 +5,7 @@ import "./Segments.css"
 
 interface SegmentsProps {
     stage: Stage,
-    setStage: any
+    setStage: (value: Stage) => void
 }
 
 const Segments: FC<SegmentsProps> = ({ stage, setStage }) => {

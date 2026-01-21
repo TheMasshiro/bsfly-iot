@@ -92,7 +92,7 @@ const Menu: React.FC = () => {
 
                         <IonItem lines="none">
                             <IonAvatar slot="start">
-                                <img src={user?.imageUrl} />
+                                <img src={user?.imageUrl} alt={user?.fullName ?? 'User avatar'} />
                             </IonAvatar>
 
                             <IonLabel>
@@ -101,9 +101,9 @@ const Menu: React.FC = () => {
                             </IonLabel>
                         </IonItem>
                     </IonList>
-                    {appPages.map((appPage, index) => {
+                    {appPages.map((appPage) => {
                         return (
-                            <IonMenuToggle key={index} autoHide={false}>
+                            <IonMenuToggle key={appPage.url} autoHide={false}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>
@@ -114,9 +114,9 @@ const Menu: React.FC = () => {
                 </IonList>
 
                 <IonList id="labels-list">
-                    {morePage.map((appPage, index) => {
+                    {morePage.map((appPage) => {
                         return (
-                            <IonMenuToggle key={index} autoHide={false}>
+                            <IonMenuToggle key={appPage.url} autoHide={false}>
                                 <IonItem className={location.pathname === appPage.url ? 'selected' : ''} routerLink={appPage.url} routerDirection="none" lines="none" detail={false}>
                                     <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                                     <IonLabel>{appPage.title}</IonLabel>

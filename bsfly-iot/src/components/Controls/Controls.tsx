@@ -1,5 +1,5 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonToggle, ToggleCustomEvent, useIonToast } from "@ionic/react";
-import { FC, useState } from "react";
+import { FC, useState, useCallback } from "react";
 import "./Controls.css"
 
 interface ControlProps {
@@ -14,7 +14,7 @@ const Controls: FC<ControlProps> = ({ title, description }) => {
     const [isChecked, setIsChecked] = useState<boolean>();
 
     const [present] = useIonToast()
-    const presentToast = (message: string, duration: number) => {
+    const presentToast = useCallback((message: string, duration: number) => {
         present({
             message: message,
             duration: duration,
@@ -23,15 +23,15 @@ const Controls: FC<ControlProps> = ({ title, description }) => {
             layout: "stacked",
             swipeGesture: "vertical",
         })
-    }
+    }, [present]);
 
-    const validateToggle = (event: ToggleCustomEvent<{ checked: boolean }>) => {
+    const validateToggle = useCallback((event: ToggleCustomEvent<{ checked: boolean }>) => {
         setIsTouched(true);
         setIsChecked(event.detail.checked);
         setIsValid(event.detail.checked);
         const message = event.detail.checked ? `${title} turned on` : `${title} turned off`;
         presentToast(message, 700);
-    };
+    }, [title, presentToast]);
 
 
     return (
@@ -40,15 +40,13 @@ const Controls: FC<ControlProps> = ({ title, description }) => {
                 <IonCardTitle>{title}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
-                <IonToggle enableOnOffLabels={true}
-                    className={`${isValid ? 'ion-valid' : ''} ${isValid === false ? 'ion-invalid' : ''} ${isTouched ? 'ion-touched' : ''
-                        }`}
+                <IonToggle 
+                    enableOnOffLabels={true}
+                    className={`${isValid ? 'ion-valid' : ''} ${isValid === false ? 'ion-invalid' : ''} ${isTouched ? 'ion-touched' : ''}`}
                     justify="space-between"
                     checked={isChecked}
-                    onIonChange={(event) => {
-                        validateToggle(event)
-                        console.log(event.detail.checked)
-                    }}
+                    onIonChange={validateToggle}
+                    aria-label={`Toggle ${title}`}
                 >
                     {description}
                 </IonToggle>

@@ -19,16 +19,16 @@ const sensorTypeMap: Record<string, string> = {
     "ammonia": "ammonia",
 };
 
-export const statusColor = (sensorType: string, value: number, thresholds: any) => {
-    return sensorType
-        ? getStatus(value, thresholds[sensorType] as Threshold)
-        : "medium";
+export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
+    const threshold = sensorType && thresholds[sensorType];
+    if (!threshold) return "medium";
+    return getStatus(value, threshold as Threshold);
 }
 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage];
-    const quality = useMemo(() => calculateQuality(sensorsData, thresholds), [stage]);
+    const quality = useMemo(() => calculateQuality(sensorsData, thresholds), [stage, thresholds]);
 
     const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
 
@@ -47,6 +47,22 @@ const Dashboard: React.FC = () => {
     const qualityText = useMemo(() =>
         quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
         , [quality]);
+
+    const filteredSensors = useMemo(() => 
+        sensorsData.filter(sensor => {
+            if (stage.toLowerCase() === 'drawer 3' && sensor.name.toLowerCase() === 'substrate moisture 2') {
+                return false;
+            }
+            return true;
+        }), [stage]);
+
+    const handleSensorClick = useCallback((sensorName: string) => {
+        setSelectedSensor(sensorName);
+    }, []);
+
+    const handleModalClose = useCallback(() => {
+        setSelectedSensor(null);
+    }, []);
 
     return (
         <IonPage className="dashboard-page">
@@ -96,19 +112,17 @@ const Dashboard: React.FC = () => {
                         </IonCol>
                     </IonRow>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
-                        {sensorsData
-                            .filter(sensor => {
-                                if (stage.toLocaleLowerCase() === 'drawer 3' && sensor.name.toLowerCase() === 'substrate moisture 2') {
-                                    return false;
-                                }
-                                return true;
-                            })
-                            .map((sensor, index) => (
-                                <IonCol size="12" sizeMd="6" key={index}>
-                                    <IonCard className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} button onClick={() => setSelectedSensor(sensor.name)}>
+                        {filteredSensors.map((sensor) => (
+                                <IonCol size="12" sizeMd="6" key={sensor.name}>
+                                    <IonCard 
+                                        className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} 
+                                        button 
+                                        onClick={() => handleSensorClick(sensor.name)}
+                                        aria-label={`${sensor.name}: ${sensor.value} ${sensor.unit}`}
+                                    >
                                         <IonCardContent className="sensor-card-content">
                                             <div className="sensor-info">
-                                                <IonIcon size="large" icon={sensor.icon}></IonIcon>
+                                                <IonIcon size="large" icon={sensor.icon} aria-hidden="true"></IonIcon>
                                                 <p className="sensor-name">{sensor.name}</p>
                                             </div>
                                             <span className="sensor-value">{sensor.value}</span>
@@ -129,7 +143,7 @@ const Dashboard: React.FC = () => {
                 {selectedSensor && (
                     <ControlModal
                         sensor={selectedSensor}
-                        onClose={() => setSelectedSensor(null)}
+                        onClose={handleModalClose}
                     />
                 )}
             </IonContent>

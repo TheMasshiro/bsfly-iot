@@ -17,32 +17,49 @@ const Analytics: FC = () => {
     const [currentReading, setCurrentReading] = useState<number>()
     const [maxValue, setMaxValue] = useState<number>()
 
-    const sensorGraphs = useMemo(() => [
-        {
-            id: "1",
-            sensor: "Temperature",
-            max: thresholds.temperature.max,
-            min: thresholds.temperature.min,
-            warn: thresholds.temperature.optimal[1],
-            unit: "°C"
-        },
-        {
-            id: "2",
-            sensor: "Humidity",
-            max: thresholds.humidity.max,
-            min: thresholds.humidity.min,
-            warn: thresholds.humidity.optimal[1],
-            unit: "%"
-        },
-        {
-            id: "3",
-            sensor: "Substrate Moisture",
-            max: thresholds.moisture.max,
-            min: thresholds.moisture.min,
-            warn: thresholds.moisture.optimal[1],
-            unit: "%"
-        }
-    ], [thresholds]);
+    const sensorGraphs = useMemo(() => {
+        const graphs = [
+            {
+                id: "1",
+                sensor: "Temperature",
+                max: thresholds.temperature.max,
+                min: thresholds.temperature.min,
+                warn: thresholds.temperature.optimal[1],
+                unit: "°C"
+            },
+            {
+                id: "2",
+                sensor: "Humidity",
+                max: thresholds.humidity.max,
+                min: thresholds.humidity.min,
+                warn: thresholds.humidity.optimal[1],
+                unit: "%"
+            },
+            {
+                id: "3",
+                sensor: "Substrate Moisture 1",
+                max: thresholds.moisture.max,
+                min: thresholds.moisture.min,
+                warn: thresholds.moisture.optimal[1],
+                unit: "%"
+            },
+            {
+                id: "4",
+                sensor: "Substrate Moisture 2",
+                max: thresholds.moisture.max,
+                min: thresholds.moisture.min,
+                warn: thresholds.moisture.optimal[1],
+                unit: "%"
+            }
+        ];
+
+        return graphs.filter(graph => {
+            if (stage.toLowerCase() === 'drawer 3' && graph.sensor.toLowerCase() === 'substrate moisture 2') {
+                return false;
+            }
+            return true;
+        });
+    }, [thresholds, stage]);
 
     useEffect(() => {
         const data = getData(selectedSegment as string);
@@ -107,25 +124,29 @@ const Analytics: FC = () => {
                             </IonCard>
                         </IonCol>
                     </IonRow>
-                    <IonSegment onIonChange={e => handleSegmentChange(e.detail.value!)}>
-                        <IonSegmentButton value="Temperature" contentId='Temperature'>
-                            <IonIcon icon={thermometerOutline} />
+                    <IonSegment onIonChange={e => handleSegmentChange(e.detail.value!)} aria-label="Sensor selection">
+                        <IonSegmentButton value="Temperature" contentId='Temperature' aria-label="Temperature">
+                            <IonIcon icon={thermometerOutline} aria-hidden="true" />
                         </IonSegmentButton>
-                        <IonSegmentButton value="Humidity" contentId='Humidity'>
-                            <IonIcon icon={cloudOutline} />
+                        <IonSegmentButton value="Humidity" contentId='Humidity' aria-label="Humidity">
+                            <IonIcon icon={cloudOutline} aria-hidden="true" />
                         </IonSegmentButton>
-                        <IonSegmentButton value="Substrate Moisture" contentId='Substrate Moisture'>
-                            <IonIcon icon={waterOutline} />
+                        <IonSegmentButton value="Substrate Moisture 1" contentId='Substrate Moisture 1' aria-label="Substrate Moisture 1">
+                            <IonIcon icon={waterOutline} aria-hidden="true" />
                         </IonSegmentButton>
+                        {stage.toLowerCase() !== 'drawer 3' && (
+                            <IonSegmentButton value="Substrate Moisture 2" contentId='Substrate Moisture 2' aria-label="Substrate Moisture 2">
+                                <IonIcon icon={waterOutline} aria-hidden="true" />
+                            </IonSegmentButton>
+                        )}
                     </IonSegment>
                     <IonRow>
                         <IonCol>
                             <IonSegmentView>
-                                {sensorGraphs.map((graph, index) => {
+                                {sensorGraphs.map((graph) => {
                                     return (
-                                        <IonSegmentContent key={index} id={graph.sensor} >
+                                        <IonSegmentContent key={graph.id} id={graph.sensor} >
                                             <Graph
-                                                key={index}
                                                 sensorType={graph.sensor}
                                                 upperLimit={graph.max}
                                                 lowerLimit={graph.min}

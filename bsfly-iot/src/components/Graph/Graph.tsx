@@ -108,7 +108,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 chartRef.current.destroy();
             }
         };
-    }, [sensorType, upperLimit, lowerLimit, warningLimit]);
+    }, [sensorType, upperLimit, lowerLimit, warningLimit, unit]);
 
     return (
         <IonCard mode="ios">
@@ -118,7 +118,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
 
             <IonCardContent>
                 <div style={{ height: '250px' }}>
-                    <canvas ref={canvasRef} id="acquisitions"></canvas>
+                    <canvas ref={canvasRef} id="acquisitions" role="img" aria-label={`${sensorType} data chart`}></canvas>
                 </div>
             </IonCardContent>
         </IonCard>

@@ -1,4 +1,4 @@
-import { FC, useRef } from 'react';
+import { FC, useRef, useMemo } from 'react';
 import {
     IonModal,
     IonContent,
@@ -28,6 +28,10 @@ const ControlModal: FC<ControlModalProps> = ({ sensor, onClose }) => {
     const { stage } = useLifeCycle()
     const modal = useRef<HTMLIonModalElement>(null);
 
+    const filteredControls = useMemo(() => 
+        controlsData.filter(control => control.sensor === sensor),
+        [sensor]
+    );
 
     return (
         <IonModal
@@ -48,20 +52,19 @@ const ControlModal: FC<ControlModalProps> = ({ sensor, onClose }) => {
             <IonContent fullscreen>
                 <IonGrid>
                     <IonRow class="ion-justify-content-center ion-align-items-center">
-                        {controlsData.map((control, index) => {
-                            if (control.sensor === sensor && control.available) {
+                        {filteredControls.map((control) => {
+                            if (control.available) {
                                 return (
-                                    <IonCol key={index} size="12" sizeMd="6">
+                                    <IonCol key={control.name} size="12" sizeMd="6">
                                         <Controls
-                                            key={index}
                                             title={control.name}
                                             description={control.description}
                                         />
                                     </IonCol>
                                 )
-                            } else if (control.sensor === sensor && !control.available) {
+                            } else {
                                 return (
-                                    <IonCard key={index} mode="ios">
+                                    <IonCard key={control.name} mode="ios">
                                         <IonCardHeader>
                                             <IonCardTitle>{control.name}</IonCardTitle>
                                         </IonCardHeader>

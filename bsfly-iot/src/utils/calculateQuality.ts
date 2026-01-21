@@ -1,7 +1,20 @@
+import { Threshold } from "../config/thresholds";
+
+interface SensorData {
+  name: string;
+  value: number;
+}
+
+type ThresholdsMap = Record<string, Threshold | { min: number; max: number; optimal: number[] }>;
+
 export const calculateQuality = (
-  sensorsData: Array<{ name: string; value: number }>,
-  thresholds: any
+  sensorsData: SensorData[],
+  thresholds: ThresholdsMap
 ): number => {
+  if (!sensorsData || !thresholds) {
+    return 0;
+  }
+
   const sensorTypeMap: Record<string, string> = {
     temperature: "temperature",
     humidity: "humidity",
@@ -23,18 +36,12 @@ export const calculateQuality = (
       let score = 0;
 
       if (value >= optimalMin && value <= optimalMax) {
-        // Perfect - in optimal range
         score = 1.0;
       } else if (value >= min && value < optimalMin) {
-        // Below optimal but within acceptable range
-        // Linear scale from min (0.5) to optimalMin (1.0)
         score = 0.5 + 0.5 * ((value - min) / (optimalMin - min));
       } else if (value > optimalMax && value <= max) {
-        // Above optimal but within acceptable range
-        // Linear scale from optimalMax (1.0) to max (0.5)
         score = 1.0 - 0.5 * ((value - optimalMax) / (max - optimalMax));
       } else {
-        // Outside acceptable range - critical
         score = 0;
       }
 
