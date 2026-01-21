@@ -1,7 +1,7 @@
-import { FC, useEffect, useRef } from 'react';
+import { FC, useEffect, useRef, useMemo } from 'react';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText } from '@ionic/react';
 import { humidityData, moistureData, temperatureData } from '../../assets/data';
 
 interface GraphProps {
@@ -32,6 +32,21 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
 
 
     const chartData = getData(sensorType);
+    
+    const latestValue = chartData[chartData.length - 1]?.value ?? 0;
+    
+    const { color, chipColor, statusText } = useMemo(() => {
+        if (latestValue >= upperLimit) {
+            return { color: '#cb1a27', chipColor: 'danger', statusText: 'High' };
+        }
+        if (latestValue >= warningLimit) {
+            return { color: '#ffca22', chipColor: 'warning', statusText: 'Warning' };
+        }
+        if (latestValue <= lowerLimit) {
+            return { color: '#3dc2ff', chipColor: 'primary', statusText: 'Low' };
+        }
+        return { color: '#42d96b', chipColor: 'success', statusText: 'Optimal' };
+    }, [latestValue, upperLimit, warningLimit, lowerLimit]);
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -113,7 +128,17 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     return (
         <IonCard mode="ios">
             <IonCardHeader>
-                <IonCardSubtitle>{sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase()}</IonCardSubtitle>
+                <IonCardSubtitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase()}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <IonText style={{ color, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                            {latestValue}{unit}
+                        </IonText>
+                        <IonChip color={chipColor} style={{ margin: 0 }}>
+                            {statusText}
+                        </IonChip>
+                    </div>
+                </IonCardSubtitle>
             </IonCardHeader>
 
             <IonCardContent>

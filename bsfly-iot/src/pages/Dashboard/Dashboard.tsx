@@ -1,15 +1,15 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRow, IonText, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useLifeCycle } from '../../context/LifeCycleContext';
-import { sensorsData } from '../../assets/assets';
+import { sensorsData, controlsData } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
-import ControlModal from '../../components/Modal/Modal';
 import { useState, useMemo, useCallback } from 'react';
+import { snow, flame, water, rainy } from 'ionicons/icons';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -17,6 +17,15 @@ const sensorTypeMap: Record<string, string> = {
     "substrate moisture 1": "moisture",
     "substrate moisture 2": "moisture",
     "ammonia": "ammonia",
+};
+
+const quickActionIcons: Record<string, string> = {
+    "Fan": snow,
+    "Heater": flame,
+    "Humidifier": water,
+    "Dehumidifier": rainy,
+    "Misting Device 1": water,
+    "Misting Device 2": water,
 };
 
 export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
@@ -28,9 +37,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage];
-    const quality = useMemo(() => calculateQuality(sensorsData, thresholds), [stage, thresholds]);
-
-    const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+    const quality = useMemo(() => calculateQuality(sensorsData, thresholds, stage), [stage, thresholds]);
 
     const status = useCallback((name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
@@ -48,21 +55,43 @@ const Dashboard: React.FC = () => {
         quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
         , [quality]);
 
-    const filteredSensors = useMemo(() => 
+    const filteredSensors = useMemo(() =>
         sensorsData.filter(sensor => {
-            if (stage.toLowerCase() === 'drawer 3' && sensor.name.toLowerCase() === 'substrate moisture 2') {
-                return false;
+            if (stage.toLowerCase() === 'drawer 3') {
+                const name = sensor.name.toLowerCase();
+                if (name.includes('substrate moisture') || name === 'ammonia') {
+                    return false;
+                }
             }
             return true;
         }), [stage]);
 
-    const handleSensorClick = useCallback((sensorName: string) => {
-        setSelectedSensor(sensorName);
+    const [present] = useIonToast();
+
+    const [actuatorStates, setActuatorStates] = useState<Record<string, boolean>>(() => {
+        const initial: Record<string, boolean> = {};
+        controlsData.forEach(c => {
+            if (c.available) initial[c.name] = false;
+        });
+        return initial;
+    });
+
+    const getQuickActions = useCallback((sensorName: string) => {
+        return controlsData.filter(c => c.sensor === sensorName && c.available);
     }, []);
 
-    const handleModalClose = useCallback(() => {
-        setSelectedSensor(null);
-    }, []);
+    const handleQuickAction = useCallback((actionName: string) => {
+        setActuatorStates(prev => {
+            const newState = !prev[actionName];
+            present({
+                message: `${actionName} ${newState ? 'enabled' : 'disabled'}`,
+                duration: 1500,
+                position: "top",
+                color: newState ? "success" : "medium",
+            });
+            return { ...prev, [actionName]: newState };
+        });
+    }, [present]);
 
     return (
         <IonPage className="dashboard-page">
@@ -113,25 +142,43 @@ const Dashboard: React.FC = () => {
                     </IonRow>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         {filteredSensors.map((sensor) => (
-                                <IonCol size="12" sizeMd="6" key={sensor.name}>
-                                    <IonCard 
-                                        className={`sensor-card-touch sensor-card sensor-card-${status(sensor.name, sensor.value)}`} 
-                                        button 
-                                        onClick={() => handleSensorClick(sensor.name)}
-                                        aria-label={`${sensor.name}: ${sensor.value} ${sensor.unit}`}
-                                    >
-                                        <IonCardContent className="sensor-card-content">
+                            <IonCol size="12" sizeMd="6" key={sensor.name}>
+                                <IonCard
+                                    className={`sensor-card sensor-card-${status(sensor.name, sensor.value)}`}
+                                    aria-label={`${sensor.name}: ${sensor.value} ${sensor.unit}`}
+                                >
+                                    <IonCardContent className="sensor-card-content">
+                                        <div className="sensor-main">
                                             <div className="sensor-info">
                                                 <IonIcon size="large" icon={sensor.icon} aria-hidden="true"></IonIcon>
                                                 <p className="sensor-name">{sensor.name}</p>
                                             </div>
-                                            <span className="sensor-value">{sensor.value}</span>
-                                            <span className="sensor-unit">{sensor.unit}</span>
-                                        </IonCardContent>
+                                            <div className="sensor-data">
+                                                <span className="sensor-value">{sensor.value}</span>
+                                                <span className="sensor-unit">{sensor.unit}</span>
+                                            </div>
+                                        </div>
+                                        {getQuickActions(sensor.name).length > 0 && (
+                                            <div className="quick-actions">
+                                                {getQuickActions(sensor.name).map((action) => (
+                                                    <button
+                                                        key={action.name}
+                                                        className={`quick-action-btn ${actuatorStates[action.name] ? 'active' : ''}`}
+                                                        onClick={() => handleQuickAction(action.name)}
+                                                        aria-label={action.name}
+                                                        title={action.description}
+                                                    >
+                                                        <IonIcon icon={quickActionIcons[action.name]} />
+                                                        <span>{action.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </IonCardContent>
 
-                                    </IonCard>
-                                </IonCol>
-                            ))}
+                                </IonCard>
+                            </IonCol>
+                        ))}
                     </IonRow>
                 </IonGrid>
 
@@ -139,13 +186,6 @@ const Dashboard: React.FC = () => {
                     stage={stage}
                     setStage={setStage}
                 />
-
-                {selectedSensor && (
-                    <ControlModal
-                        sensor={selectedSensor}
-                        onClose={handleModalClose}
-                    />
-                )}
             </IonContent>
         </IonPage >
     );

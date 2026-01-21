@@ -44,7 +44,23 @@
 
 .notifications-page .notification-unread {
   background: rgba(96, 48, 255, 0.05);
-  border-left: 4px solid var(--ion-color-primary);
+}
+
+/* color-coded borders by type */
+.notifications-page .notification-success {
+  border-left: 4px solid #42d96b;
+}
+
+.notifications-page .notification-warning {
+  border-left: 4px solid #ffca22;
+}
+
+.notifications-page .notification-danger {
+  border-left: 4px solid #cb1a27;
+}
+
+.notifications-page .notification-info {
+  border-left: 4px solid #3dc2ff;
 }
 
 .notifications-page .notification-icon {

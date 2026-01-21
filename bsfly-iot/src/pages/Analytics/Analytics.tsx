@@ -1,10 +1,8 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonText, IonTitle, IonToolbar, SegmentValue } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC, useState, useEffect, useMemo, useCallback } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 import Graph, { getData } from '../../components/Graph/Graph';
 import Segments from '../../components/Segments/Segments';
 import "./Analytics.css"
@@ -13,11 +11,10 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
     const thresholds = lifecycleThresholds[stage]
-    const [selectedSegment, setSelectedSegment] = useState<SegmentValue>("Temperature")
-    const [currentReading, setCurrentReading] = useState<number>()
-    const [maxValue, setMaxValue] = useState<number>()
+    const [selectedSegment, setSelectedSegment] = useState("Temperature")
 
     const sensorGraphs = useMemo(() => {
+        const isDrawer3 = stage.toLowerCase() === 'drawer 3';
         const graphs = [
             {
                 id: "1",
@@ -25,7 +22,8 @@ const Analytics: FC = () => {
                 max: thresholds.temperature.max,
                 min: thresholds.temperature.min,
                 warn: thresholds.temperature.optimal[1],
-                unit: "°C"
+                unit: "°C",
+                icon: thermometerOutline
             },
             {
                 id: "2",
@@ -33,57 +31,48 @@ const Analytics: FC = () => {
                 max: thresholds.humidity.max,
                 min: thresholds.humidity.min,
                 warn: thresholds.humidity.optimal[1],
-                unit: "%"
+                unit: "%",
+                icon: cloudOutline
             },
-            {
-                id: "3",
-                sensor: "Substrate Moisture 1",
-                max: thresholds.moisture.max,
-                min: thresholds.moisture.min,
-                warn: thresholds.moisture.optimal[1],
-                unit: "%"
-            },
-            {
-                id: "4",
-                sensor: "Substrate Moisture 2",
-                max: thresholds.moisture.max,
-                min: thresholds.moisture.min,
-                warn: thresholds.moisture.optimal[1],
-                unit: "%"
-            }
+            ...(!isDrawer3 && thresholds.moisture ? [
+                {
+                    id: "3",
+                    sensor: "Substrate Moisture 1",
+                    max: thresholds.moisture.max,
+                    min: thresholds.moisture.min,
+                    warn: thresholds.moisture.optimal[1],
+                    unit: "%",
+                    icon: waterOutline
+                },
+                {
+                    id: "4",
+                    sensor: "Substrate Moisture 2",
+                    max: thresholds.moisture.max,
+                    min: thresholds.moisture.min,
+                    warn: thresholds.moisture.optimal[1],
+                    unit: "%",
+                    icon: waterOutline
+                }
+            ] : [])
         ];
 
-        return graphs.filter(graph => {
-            if (stage.toLowerCase() === 'drawer 3' && graph.sensor.toLowerCase() === 'substrate moisture 2') {
-                return false;
-            }
-            return true;
-        });
+        return graphs;
     }, [thresholds, stage]);
 
-    useEffect(() => {
-        const data = getData(selectedSegment as string);
-        const currentGraph = sensorGraphs.find(graph => graph.sensor === selectedSegment);
+    const sensorCurrentValues = useMemo(() => {
+        return sensorGraphs.map(graph => {
+            const data = getData(graph.sensor);
+            const latestValue = data[data.length - 1]?.value ?? 0;
+            let status: 'danger' | 'warning' | 'primary' | 'success';
 
-        if (data.length > 0) {
-            setCurrentReading(data[data.length - 1].value);
-        }
+            if (latestValue >= graph.max) status = 'danger';
+            else if (latestValue >= graph.warn) status = 'warning';
+            else if (latestValue <= graph.min) status = 'primary';
+            else status = 'success';
 
-        if (currentGraph) {
-            setMaxValue(currentGraph.max);
-        }
-    }, [selectedSegment, sensorGraphs]);
-
-    const progressStyles = useMemo(() => buildStyles({
-        pathColor: '#6030ff',
-        textColor: '#f6f8fc',
-        trailColor: '#f6f8fc',
-        pathTransitionDuration: 0.9,
-    }), []);
-
-    const handleSegmentChange = useCallback((value: SegmentValue) => {
-        setSelectedSegment(value);
-    }, []);
+            return { ...graph, latestValue, status };
+        });
+    }, [sensorGraphs]);
 
     return (
         <IonPage className="analytics-page">
@@ -103,71 +92,59 @@ const Analytics: FC = () => {
                 <IonGrid>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>
-                            <IonCard className="circular-background-md">
-                                <IonCardHeader className="ion-justify-content-center ion-align-items-center ion-no-padding">
+                            <IonCard className="sensor-quick-switch-card">
+                                <IonCardHeader className="ion-no-padding">
                                     <IonCardTitle>Current {stage}</IonCardTitle>
                                 </IonCardHeader>
-                                <IonCardContent>
-                                    <div className="circular-progress-container circular-background-md">
-                                        <div className="circular-progress-wrapper">
-                                            <CircularProgressbar
-                                                className="circular-progress"
-                                                value={currentReading ?? 0}
-                                                text={`${currentReading ?? 0}`}
-                                                maxValue={maxValue ?? 100}
-                                                styles={progressStyles}
-                                            />
-                                            <IonText className="progress-text">{selectedSegment}</IonText>
+                                <IonCardContent className="sensor-buttons-container">
+                                    {sensorCurrentValues.map((sensor) => (
+                                        <div
+                                            key={sensor.id}
+                                            className="sensor-quick-btn"
+                                            aria-label={`${sensor.sensor}: ${sensor.latestValue}${sensor.unit}`}
+                                        >
+                                            <IonIcon icon={sensor.icon} className="sensor-quick-icon" />
+                                            <IonChip className={`sensor-quick-value status-${sensor.status}`}>
+                                                {sensor.latestValue}{sensor.unit}
+                                            </IonChip>
                                         </div>
-                                    </div>
+                                    ))}
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>
                     </IonRow>
-                    <IonSegment onIonChange={e => handleSegmentChange(e.detail.value!)} aria-label="Sensor selection">
-                        <IonSegmentButton value="Temperature" contentId='Temperature' aria-label="Temperature">
-                            <IonIcon icon={thermometerOutline} aria-hidden="true" />
-                        </IonSegmentButton>
-                        <IonSegmentButton value="Humidity" contentId='Humidity' aria-label="Humidity">
-                            <IonIcon icon={cloudOutline} aria-hidden="true" />
-                        </IonSegmentButton>
-                        <IonSegmentButton value="Substrate Moisture 1" contentId='Substrate Moisture 1' aria-label="Substrate Moisture 1">
-                            <IonIcon icon={waterOutline} aria-hidden="true" />
-                        </IonSegmentButton>
-                        {stage.toLowerCase() !== 'drawer 3' && (
-                            <IonSegmentButton value="Substrate Moisture 2" contentId='Substrate Moisture 2' aria-label="Substrate Moisture 2">
-                                <IonIcon icon={waterOutline} aria-hidden="true" />
-                            </IonSegmentButton>
-                        )}
-                    </IonSegment>
                     <IonRow>
                         <IonCol>
+                            <IonSegment value={selectedSegment} onIonChange={e => setSelectedSegment(e.detail.value as string)}>
+                                {sensorGraphs.map((graph) => (
+                                    <IonSegmentButton key={graph.id} value={graph.sensor} contentId={graph.sensor}>
+                                        <IonIcon icon={graph.icon} />
+                                    </IonSegmentButton>
+                                ))}
+                            </IonSegment>
                             <IonSegmentView>
-                                {sensorGraphs.map((graph) => {
-                                    return (
-                                        <IonSegmentContent key={graph.id} id={graph.sensor} >
-                                            <Graph
-                                                sensorType={graph.sensor}
-                                                upperLimit={graph.max}
-                                                lowerLimit={graph.min}
-                                                warningLimit={graph.warn}
-                                                unit={graph.unit} />
+                                {sensorGraphs.map((graph) => (
+                                    <IonSegmentContent key={graph.id} id={graph.sensor}>
+                                        <Graph
+                                            sensorType={graph.sensor}
+                                            upperLimit={graph.max}
+                                            lowerLimit={graph.min}
+                                            warningLimit={graph.warn}
+                                            unit={graph.unit} />
 
-                                            <IonRow class="ion-justify-content-center ion-align-items-center legends-row">
-                                                <IonChip color="primary">{graph.sensor} {graph.unit}</IonChip>
-                                                <IonChip color="danger">
-                                                    <IonLabel>Upper Limit: {graph.max} {graph.unit}</IonLabel>
-                                                </IonChip>
-                                                <IonChip color="warning">
-                                                    <IonLabel>Warning Limit: {graph.warn} {graph.unit}</IonLabel>
-                                                </IonChip>
-                                                <IonChip color="secondary">
-                                                    <IonLabel>Lower Limit: {graph.min} {graph.unit}</IonLabel>
-                                                </IonChip>
-                                            </IonRow >
-                                        </IonSegmentContent>
-                                    )
-                                })}
+                                        <IonRow class="ion-justify-content-center ion-align-items-center legends-row">
+                                            <IonChip color="danger">
+                                                <IonLabel>Upper: {graph.max}{graph.unit}</IonLabel>
+                                            </IonChip>
+                                            <IonChip color="warning">
+                                                <IonLabel>Warning: {graph.warn}{graph.unit}</IonLabel>
+                                            </IonChip>
+                                            <IonChip color="secondary">
+                                                <IonLabel>Lower: {graph.min}{graph.unit}</IonLabel>
+                                            </IonChip>
+                                        </IonRow>
+                                    </IonSegmentContent>
+                                ))}
                             </IonSegmentView>
                         </IonCol>
                     </IonRow>

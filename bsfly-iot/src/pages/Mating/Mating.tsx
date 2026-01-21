@@ -1,10 +1,11 @@
-import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
+import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Mating.css';
 import 'react-circular-progressbar/dist/styles.css';
 import { timers } from '../../assets/assets';
 import { useState, useCallback, useMemo } from 'react';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
+import { heart, heartOutline } from 'ionicons/icons';
 
 const renderer = ({ hours, minutes, seconds, completed }: any) => {
     if (completed) {
@@ -34,6 +35,7 @@ const Mating: React.FC = () => {
     }, [present]);
 
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
+    const isLightOn = time > 0;
 
     const handleTimeChange = useCallback((newTime: number, timerName: string) => {
         setTime(newTime);
@@ -62,6 +64,12 @@ const Mating: React.FC = () => {
                                 <IonCardContent>
                                     <div className="circular-progress-container circular-background-md">
                                         <div className="circular-progress-wrapper">
+                                            <div className={`light-bulb-container ${isLightOn ? 'light-on' : 'light-off'}`}>
+                                                <IonIcon
+                                                    icon={isLightOn ? heart : heartOutline}
+                                                    className="light-bulb-icon"
+                                                />
+                                            </div>
                                             <IonText className="timer-text">
                                                 {time ? (
                                                     <Countdown
@@ -69,7 +77,10 @@ const Mating: React.FC = () => {
                                                         date={countdownDate}
                                                         renderer={renderer}
                                                     />
-                                                ) : "0:00:00"}
+                                                ) : "Off"}
+                                            </IonText>
+                                            <IonText className="light-status-text">
+                                                {isLightOn ? 'Light On' : 'Light Off'}
                                             </IonText>
                                         </div>
                                     </div>

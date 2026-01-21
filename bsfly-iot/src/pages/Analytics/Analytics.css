@@ -1,37 +1,86 @@
-.circular-progress-container {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 225px;
+/* page */
+.analytics-page ion-content {
+  --padding-bottom: 45px;
 }
 
-.circular-background-md {
+/* sensor summary card */
+.analytics-page .sensor-quick-switch-card {
   background-color: transparent;
   box-shadow: none !important;
 }
 
-.circular-progress {
-  margin-top: 11px;
-  width: 225px;
-  height: 225px;
+.analytics-page .sensor-buttons-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px;
 }
 
-.progress-text {
-  position: absolute;
-  bottom: 158px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+.analytics-page .sensor-quick-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 8px;
+  background: var(--ion-color-light);
 }
 
-.progress-chip {
-  position: absolute;
-  bottom: 80px;
-  left: 49%;
-  transform: translateX(-50%);
-  z-index: 10;
+.analytics-page .sensor-quick-icon {
+  font-size: 1rem;
+  color: var(--ion-color-medium);
 }
 
-ion-content {
-  --padding-bottom: 45px;
+.analytics-page .sensor-quick-value {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.8rem;
+  --background: transparent;
+  --color: var(--ion-color-medium);
+  padding: 0 4px;
+  height: auto;
+}
+
+/* status colors - subtle */
+.analytics-page .sensor-quick-value.status-success {
+  --color: #42d96b;
+  --background: rgba(66, 217, 107, 0.1);
+}
+
+.analytics-page .sensor-quick-value.status-warning {
+  --color: #ffca22;
+  --background: rgba(255, 202, 34, 0.1);
+}
+
+.analytics-page .sensor-quick-value.status-danger {
+  --color: #cb1a27;
+  --background: rgba(203, 26, 39, 0.1);
+}
+
+.analytics-page .sensor-quick-value.status-primary {
+  --color: #3dc2ff;
+  --background: rgba(61, 194, 255, 0.1);
+}
+
+/* segment */
+.analytics-page ion-segment {
+  margin: 8px 0;
+}
+
+.analytics-page ion-segment-button {
+  --indicator-color: var(--ion-color-primary);
+}
+
+/* legends */
+.analytics-page .legends-row {
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 8px;
+}
+
+.analytics-page .legends-row ion-chip {
+  margin: 0;
+  font-size: 0.75rem;
 }

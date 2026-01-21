@@ -138,7 +138,7 @@ const Notifications: FC = () => {
                                 {mockNotifications.map((notification) => (
                                     <IonItem
                                         key={notification.id}
-                                        className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
+                                        className={`notification-item notification-${notification.type} ${!notification.read ? 'notification-unread' : ''}`}
                                         button
                                         detail={false}
                                     >
