@@ -14,7 +14,7 @@ const Analytics: FC = () => {
     const [selectedSegment, setSelectedSegment] = useState("Temperature")
 
     const sensorGraphs = useMemo(() => {
-        const isDrawer3 = stage.toLowerCase() === 'drawer 3';
+        const moisture = 'moisture' in thresholds ? thresholds.moisture : null;
         const graphs = [
             {
                 id: "1",
@@ -34,22 +34,22 @@ const Analytics: FC = () => {
                 unit: "%",
                 icon: cloudOutline
             },
-            ...(!isDrawer3 && thresholds.moisture ? [
+            ...(moisture ? [
                 {
                     id: "3",
                     sensor: "Substrate Moisture 1",
-                    max: thresholds.moisture.max,
-                    min: thresholds.moisture.min,
-                    warn: thresholds.moisture.optimal[1],
+                    max: moisture.max,
+                    min: moisture.min,
+                    warn: moisture.optimal[1],
                     unit: "%",
                     icon: waterOutline
                 },
                 {
                     id: "4",
                     sensor: "Substrate Moisture 2",
-                    max: thresholds.moisture.max,
-                    min: thresholds.moisture.min,
-                    warn: thresholds.moisture.optimal[1],
+                    max: moisture.max,
+                    min: moisture.min,
+                    warn: moisture.optimal[1],
                     unit: "%",
                     icon: waterOutline
                 }
