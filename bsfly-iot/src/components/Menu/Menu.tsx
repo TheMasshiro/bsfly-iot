@@ -29,7 +29,7 @@ const appPages: AppPage[] = [
         mdIcon: gridSharp
     },
     {
-        title: 'Mating',
+        title: 'Light',
         url: '/mate',
         iosIcon: timeOutline,
         mdIcon: timeSharp

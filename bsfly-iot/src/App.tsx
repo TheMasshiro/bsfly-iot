@@ -34,7 +34,7 @@ import '@ionic/react/css/palettes/dark.always.css';
 import './theme/variables.css';
 import Dashboard from './pages/Dashboard/Dashboard';
 import { LifeCycleProvider } from './context/LifeCycleContext';
-import Mating from './pages/Mating/Mating';
+import Light from './pages/Light/Light';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
 import About from './pages/About/About';
@@ -60,7 +60,7 @@ const App: React.FC = () => {
                                     <Redirect to="/dashboard" />
                                 </Route>
                                 <Route path="/dashboard" exact={true} component={Dashboard} />
-                                <Route path="/mate" exact={true} component={Mating} />
+                                <Route path="/light" exact={true} component={Light} />
                                 <Route path="/analytics" exact={true} component={Analytics} />
                                 <Route path="/notifications" exact={true} component={Notifications} />
                                 <Route path="/settings" exact={true} component={Settings} />

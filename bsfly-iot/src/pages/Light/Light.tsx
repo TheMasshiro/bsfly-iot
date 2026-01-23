@@ -1,5 +1,5 @@
 import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
-import './Mating.css';
+import './Light.css';
 import 'react-circular-progressbar/dist/styles.css';
 import { timers } from '../../assets/assets';
 import { useState, useCallback, useMemo } from 'react';
@@ -17,7 +17,7 @@ const renderer = ({ hours, minutes, seconds, completed }: any) => {
     }
 };
 
-const Mating: React.FC = () => {
+const Light: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
 
@@ -47,7 +47,7 @@ const Mating: React.FC = () => {
         <IonPage className="timer-page">
             <IonHeader>
                 <Toolbar
-                    header={"Mating"}
+                    header={"Light"}
                 />
             </IonHeader>
             <IonContent fullscreen>
@@ -113,4 +113,4 @@ const Mating: React.FC = () => {
     );
 };
 
-export default Mating;
+export default Light;
