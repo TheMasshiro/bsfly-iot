@@ -7,10 +7,14 @@ import {
     IonList,
     IonMenu,
     IonMenuToggle,
+    IonSegment,
+    IonSegmentButton,
 } from '@ionic/react';
 import './Notifications.css';
-import { FC, useMemo } from 'react';
-import { alertCircleOutline, checkmarkCircleOutline, informationCircleOutline, warningOutline } from 'ionicons/icons';
+import { FC, useMemo, useState } from 'react';
+import { alertCircleOutline, checkmarkCircleOutline, fileTrayOutline, informationCircleOutline, listOutline, warningOutline } from 'ionicons/icons';
+
+type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 
 interface Notification {
     id: string;
@@ -19,6 +23,7 @@ interface Notification {
     message: string;
     timestamp: Date;
     read: boolean;
+    drawer: 'drawer1' | 'drawer2' | 'drawer3';
 }
 
 const mockNotifications: Notification[] = [
@@ -28,7 +33,8 @@ const mockNotifications: Notification[] = [
         title: 'Temperature Alert',
         message: 'Temperature exceeded maximum threshold (32°C)',
         timestamp: new Date(Date.now() - 1000 * 60 * 5),
-        read: false
+        read: false,
+        drawer: 'drawer1'
     },
     {
         id: '2',
@@ -36,7 +42,8 @@ const mockNotifications: Notification[] = [
         title: 'Humidity Warning',
         message: 'Humidity levels approaching warning limit (85%)',
         timestamp: new Date(Date.now() - 1000 * 60 * 15),
-        read: false
+        read: false,
+        drawer: 'drawer2'
     },
     {
         id: '3',
@@ -44,7 +51,8 @@ const mockNotifications: Notification[] = [
         title: 'Environment Stable',
         message: 'All sensors within optimal range',
         timestamp: new Date(Date.now() - 1000 * 60 * 60),
-        read: true
+        read: true,
+        drawer: 'drawer1'
     },
     {
         id: '4',
@@ -52,11 +60,14 @@ const mockNotifications: Notification[] = [
         title: 'Stage Changed',
         message: 'Growth stage updated to Pinning',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        read: true
+        read: true,
+        drawer: 'drawer3'
     }
 ];
 
 const Notifications: FC = () => {
+    const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
+
     const getNotificationIcon = (type: string) => {
         switch (type) {
             case 'success':
@@ -98,9 +109,16 @@ const Notifications: FC = () => {
         return 'Just now';
     };
 
+    const filteredNotifications = useMemo(
+        () => selectedDrawer === 'all'
+            ? mockNotifications
+            : mockNotifications.filter(n => n.drawer === selectedDrawer),
+        [selectedDrawer]
+    );
+
     const unreadCount = useMemo(
-        () => mockNotifications.filter(n => !n.read).length,
-        []
+        () => filteredNotifications.filter(n => !n.read).length,
+        [filteredNotifications]
     );
 
     return (
@@ -117,38 +135,70 @@ const Notifications: FC = () => {
                             </IonBadge>
                         )}
                     </IonItem>
+
+                    <IonItem lines="none">
+                        <IonSegment
+                            value={selectedDrawer}
+                            onIonChange={(e) => setSelectedDrawer(e.detail.value as Drawer)}
+                            style={{ minWidth: "auto" }}
+                        >
+                            <IonSegmentButton value="all" style={{ minWidth: 40 }}>
+                                <IonIcon icon={listOutline} size="small" />
+                            </IonSegmentButton>
+                            <IonSegmentButton value="drawer1" style={{ minWidth: 50 }}>
+                                <IonIcon icon={fileTrayOutline} size="small" />
+                                <IonLabel style={{ fontSize: 12 }}>1</IonLabel>
+                            </IonSegmentButton>
+                            <IonSegmentButton value="drawer2" style={{ minWidth: 50 }}>
+                                <IonIcon icon={fileTrayOutline} size="small" />
+                                <IonLabel style={{ fontSize: 12 }}>2</IonLabel>
+                            </IonSegmentButton>
+                            <IonSegmentButton value="drawer3" style={{ minWidth: 50 }}>
+                                <IonIcon icon={fileTrayOutline} size="small" />
+                                <IonLabel style={{ fontSize: 12 }}>3</IonLabel>
+                            </IonSegmentButton>
+                        </IonSegment>
+                    </IonItem>
                 </IonList>
 
                 <IonList id="notification-list">
-                    {mockNotifications.map((notification) => (
-                        <IonMenuToggle key={notification.id} autoHide={false}>
-                            <IonItem
-                                className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
-                                lines="none"
-                                detail={false}
-                                button
-                            >
-                                <IonIcon
-                                    aria-hidden="true"
-                                    slot="start"
-                                    icon={getNotificationIcon(notification.type)}
-                                    color={getNotificationColor(notification.type)}
-                                />
-                                <IonLabel>
-                                    <h2>{notification.title}</h2>
-                                    <p>{notification.message}</p>
-                                    <p className="notification-timestamp">
-                                        {formatTimestamp(notification.timestamp)}
-                                    </p>
-                                </IonLabel>
-                                {!notification.read && (
-                                    <IonBadge color="primary" slot="end">
-                                        •
-                                    </IonBadge>
-                                )}
-                            </IonItem>
-                        </IonMenuToggle>
-                    ))}
+                    {filteredNotifications.length === 0 ? (
+                        <IonItem lines="none">
+                            <IonLabel className="ion-text-center" color="medium">
+                                <p>No notifications</p>
+                            </IonLabel>
+                        </IonItem>
+                    ) : (
+                        filteredNotifications.map((notification) => (
+                            <IonMenuToggle key={notification.id} autoHide={false}>
+                                <IonItem
+                                    className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
+                                    lines="none"
+                                    detail={false}
+                                    button
+                                >
+                                    <IonIcon
+                                        aria-hidden="true"
+                                        slot="start"
+                                        icon={getNotificationIcon(notification.type)}
+                                        color={getNotificationColor(notification.type)}
+                                    />
+                                    <IonLabel>
+                                        <h2>{notification.title}</h2>
+                                        <p>{notification.message}</p>
+                                        <p className="notification-timestamp">
+                                            {formatTimestamp(notification.timestamp)}
+                                        </p>
+                                    </IonLabel>
+                                    {!notification.read && (
+                                        <IonBadge color="primary" slot="end">
+                                            •
+                                        </IonBadge>
+                                    )}
+                                </IonItem>
+                            </IonMenuToggle>
+                        ))
+                    )}
                 </IonList>
             </IonContent>
         </IonMenu>
