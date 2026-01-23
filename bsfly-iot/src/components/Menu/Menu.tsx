@@ -50,13 +50,7 @@ const morePage: AppPage[] = [
         mdIcon: settingsSharp
     },
     {
-        title: 'View Data',
-        url: '/data/view',
-        iosIcon: eyeOutline,
-        mdIcon: eyeSharp
-    },
-    {
-        title: 'Backup Data',
+        title: 'Backup',
         url: '/data/backup',
         iosIcon: saveOutline,
         mdIcon: saveSharp

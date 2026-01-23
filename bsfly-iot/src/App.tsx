@@ -39,6 +39,7 @@ import Light from './pages/Light/Light';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
 import About from './pages/About/About';
+import Backup from './pages/Backup/Backup';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import Welcome from './pages/Welcome/Welcome';
 
@@ -65,13 +66,14 @@ const App: React.FC = () => {
                                 <Route path="/analytics" exact={true} component={Analytics} />
                                 <Route path="/settings" exact={true} component={Settings} />
                                 <Route path="/about" exact={true} component={About} />
+                                <Route path="/data/backup" exact={true} component={Backup} />
                             </IonRouterOutlet>
                         </IonSplitPane>
                     </SignedIn>
 
                     <SignedOut>
                         <Route exact path="/welcome" component={Welcome} />
-                        <Route path="/(dashboard|photoperiod|analytics|settings|about)">
+                        <Route path="/(dashboard|photoperiod|analytics|settings|about|data/backup)">
                             <Redirect to="/welcome" />
                         </Route>
                         <Route exact path="/">
