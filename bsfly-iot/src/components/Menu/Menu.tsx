@@ -30,7 +30,7 @@ const appPages: AppPage[] = [
     },
     {
         title: 'Light',
-        url: '/mate',
+        url: '/light',
         iosIcon: timeOutline,
         mdIcon: timeSharp
     },
