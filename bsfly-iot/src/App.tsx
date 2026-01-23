@@ -2,6 +2,7 @@ import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/r
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
 import Menu from './components/Menu/Menu';
+import Notifications from './components/Notification/Notifications';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -40,7 +41,6 @@ import Settings from './pages/Settings/Settings';
 import About from './pages/About/About';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import Welcome from './pages/Welcome/Welcome';
-import Notifications from './pages/Notifications/Notifications';
 
 setupIonicReact();
 
@@ -52,6 +52,7 @@ const App: React.FC = () => {
                     <SignedIn>
                         <IonSplitPane contentId="main">
                             <Menu />
+                            <Notifications />
                             <IonRouterOutlet id="main">
                                 <Route path="/" exact={true}>
                                     <Redirect to="/dashboard" />
@@ -62,7 +63,6 @@ const App: React.FC = () => {
                                 <Route path="/dashboard" exact={true} component={Dashboard} />
                                 <Route path="/light" exact={true} component={Light} />
                                 <Route path="/analytics" exact={true} component={Analytics} />
-                                <Route path="/notifications" exact={true} component={Notifications} />
                                 <Route path="/settings" exact={true} component={Settings} />
                                 <Route path="/about" exact={true} component={About} />
                             </IonRouterOutlet>

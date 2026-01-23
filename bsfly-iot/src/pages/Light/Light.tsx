@@ -21,27 +21,13 @@ const Light: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
 
-    const [present] = useIonToast()
-
-    const presentToast = useCallback((message: string, duration: number) => {
-        present({
-            message: message,
-            duration: duration,
-            position: "top",
-            mode: "ios",
-            layout: "stacked",
-            swipeGesture: "vertical",
-        })
-    }, [present]);
-
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
     const isLightOn = time > 0;
 
-    const handleTimeChange = useCallback((newTime: number, timerName: string) => {
+    const handleTimeChange = useCallback((newTime: number) => {
         setTime(newTime);
         setStartTime(Date.now());
-        presentToast(timerName, 1500);
-    }, [presentToast]);
+    }, []);
 
     return (
         <IonPage className="timer-page">
@@ -95,7 +81,7 @@ const Light: React.FC = () => {
                                     <IonCard
                                         className={`timer-card ${time === timer.seconds ? 'timer-card-selected' : 'timer-card-primary'}`}
                                         button
-                                        onClick={() => handleTimeChange(timer.seconds, timer.name)}
+                                        onClick={() => handleTimeChange(timer.seconds)}
                                     >
                                         <IonCardContent className="timer-card-content">
                                             <IonRadio value={timer.seconds} justify='space-between'>

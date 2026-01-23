@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
                 message: `${actionName} ${newState ? 'enabled' : 'disabled'}`,
                 duration: 1500,
                 position: "top",
-                color: newState ? "success" : "medium",
+                mode: "ios",
             });
             return { ...prev, [actionName]: newState };
         });

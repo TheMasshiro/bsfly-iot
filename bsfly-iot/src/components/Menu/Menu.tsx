@@ -10,7 +10,7 @@ import {
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, notificationsOutline, notificationsSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
+import { analyticsOutline, analyticsSharp, exitOutline, exitSharp, eyeOutline, eyeSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, timeOutline, timeSharp } from 'ionicons/icons';
 import './Menu.css';
 import { SignOutButton, useUser } from '@clerk/clerk-react';
 
@@ -39,12 +39,6 @@ const appPages: AppPage[] = [
         url: '/analytics',
         iosIcon: analyticsOutline,
         mdIcon: analyticsSharp
-    },
-    {
-        title: 'Notifications',
-        url: '/notifications',
-        iosIcon: notificationsOutline,
-        mdIcon: notificationsSharp
     },
 ];
 
@@ -80,7 +74,7 @@ const Menu: React.FC = () => {
     const { user } = useUser();
 
     return (
-        <IonMenu contentId="main" type="overlay">
+        <IonMenu menuId="open-menu" contentId="main" type="overlay">
             <IonContent>
                 <IonList id="main-list">
                     <IonList>
