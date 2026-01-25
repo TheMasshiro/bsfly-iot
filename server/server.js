@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
   registerActuatorHandlers(io, socket);
 });
 
+app.get("/", (_req, res) => res.send("API Working"));
 httpServer.listen(BACKEND_PORT, () => {
   console.log(`Server is running on port ${BACKEND_PORT}`);
 });
