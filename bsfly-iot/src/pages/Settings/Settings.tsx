@@ -29,17 +29,17 @@ interface Device {
 const Settings: FC = () => {
     const { user } = useUser();
     const [present] = useIonToast();
-    
+
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Register device form
     const [macAddress, setMacAddress] = useState("");
     const [deviceName, setDeviceName] = useState("");
-    
+
     // Join device form
     const [joinCode, setJoinCode] = useState("");
-    
+
     // Alerts
     const [showLeaveAlert, setShowLeaveAlert] = useState(false);
     const [deviceToLeave, setDeviceToLeave] = useState<Device | null>(null);
@@ -132,10 +132,10 @@ const Settings: FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
-            present({ 
-                message: device.ownerId === user.id ? "Device deleted" : "Left device", 
-                duration: 2000, 
-                color: "success" 
+            present({
+                message: device.ownerId === user.id ? "Device deleted" : "Left device",
+                duration: 2000,
+                color: "success"
             });
             fetchDevices();
         } catch (error: any) {
@@ -208,7 +208,7 @@ const Settings: FC = () => {
                             Register Device
                         </IonButton>
                     </IonItem>
-                    <IonItem button href="https://github.com/TheMasshiro/bsfly/blob/main/README.md" target="_blank">
+                    <IonItem button href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md" target="_blank">
                         <IonIcon icon={helpCircle} slot="start" />
                         <IonLabel color="medium">How to get ESP32 MAC Address?</IonLabel>
                     </IonItem>
