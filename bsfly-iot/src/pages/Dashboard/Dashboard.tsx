@@ -55,6 +55,13 @@ const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const { currentDevice } = useDevice();
     const deviceId = currentDevice?._id;
+    const [sensorData, setSensorData] = useState<Record<string, number | null>>({
+        temperature: null,
+        humidity: null,
+        moisture1: null,
+        moisture2: null,
+        ammonia: null,
+    });
     const thresholds = lifecycleThresholds[stage];
     const quality = useMemo(() => calculateQuality(sensorsData, thresholds, stage), [stage, thresholds]);
 
@@ -75,7 +82,25 @@ const Dashboard: React.FC = () => {
         , [quality]);
 
     const filteredSensors = useMemo(() =>
-        sensorsData.filter(sensor => {
+        sensorsData.map(sensor => {
+            // Replace mock data with real sensor data
+            if (sensor.name === "Temperature" && sensorData.temperature !== null) {
+                return { ...sensor, value: sensorData.temperature };
+            }
+            if (sensor.name === "Humidity" && sensorData.humidity !== null) {
+                return { ...sensor, value: sensorData.humidity };
+            }
+            if (sensor.name === "Substrate Moisture 1" && sensorData.moisture1 !== null) {
+                return { ...sensor, value: sensorData.moisture1 };
+            }
+            if (sensor.name === "Substrate Moisture 2" && sensorData.moisture2 !== null) {
+                return { ...sensor, value: sensorData.moisture2 };
+            }
+            if (sensor.name === "Ammonia" && sensorData.ammonia !== null) {
+                return { ...sensor, value: sensorData.ammonia };
+            }
+            return sensor;
+        }).filter(sensor => {
             if (stage.toLowerCase() === 'drawer 3') {
                 const name = sensor.name.toLowerCase();
                 if (name.includes('substrate moisture') || name === 'ammonia') {
@@ -83,7 +108,7 @@ const Dashboard: React.FC = () => {
                 }
             }
             return true;
-        }), [stage]);
+        }), [stage, sensorData]);
 
     const [present] = useIonToast();
 
@@ -98,6 +123,27 @@ const Dashboard: React.FC = () => {
         });
         return initial;
     });
+
+    // Fetch sensor data
+    useEffect(() => {
+        if (!deviceId) return;
+
+        const fetchSensorData = async () => {
+            try {
+                const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+                const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
+                const data = await response.json();
+                setSensorData(data);
+            } catch (error) {
+                console.error("Failed to fetch sensor data:", error);
+            }
+        };
+
+        fetchSensorData();
+        const interval = setInterval(fetchSensorData, 5000); // Fetch every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [deviceId]);
 
     useEffect(() => {
         if (!deviceId) return;

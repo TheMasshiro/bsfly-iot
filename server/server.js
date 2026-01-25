@@ -5,6 +5,7 @@ import "dotenv/config";
 import "./controllers/UserControllers.js";
 import actuatorRoutes from "./controllers/actuatorRoutes.js";
 import deviceRoutes from "./controllers/deviceRoutes.js";
+import sensorRoutes from "./controllers/sensorRoutes.js";
 
 // REST API Server for Vercel
 const app = express();
@@ -32,6 +33,9 @@ app.use("/api/actuators", actuatorRoutes);
 
 // Device routes
 app.use("/api/devices", deviceRoutes);
+
+// Sensor routes
+app.use("/api/sensors", sensorRoutes);
 
 if (process.env.VERCEL !== "1") {
   app.listen(BACKEND_PORT, () => {
