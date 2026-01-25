@@ -325,7 +325,9 @@ const Settings: FC = () => {
                         {
                             text: deviceToLeave?.ownerId === user?.id ? "Delete" : "Leave",
                             role: "destructive",
-                            handler: () => deviceToLeave && leaveDevice(deviceToLeave)
+                            handler: () => {
+                                if (deviceToLeave) leaveDevice(deviceToLeave);
+                            }
                         }
                     ]}
                 />
