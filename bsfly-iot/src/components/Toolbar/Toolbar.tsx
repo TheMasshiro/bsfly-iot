@@ -1,13 +1,29 @@
 import { IonButton, IonButtons, IonChip, IonIcon, IonTitle, IonToolbar } from "@ionic/react";
 import { menuOutline, notifications } from "ionicons/icons";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { menuController } from '@ionic/core/components';
+import { socket } from "../../services/socket/socket";
 
 interface ToolbarProps {
     header: string,
 }
 
 const Toolbar: FC<ToolbarProps> = ({ header }) => {
+    const [isOnline, setIsOnline] = useState(socket.connected);
+
+    useEffect(() => {
+        const onConnect = () => setIsOnline(true);
+        const onDisconnect = () => setIsOnline(false);
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+        };
+    }, []);
+
     async function openMainMenu() {
         await menuController.open('open-menu');
     }
@@ -24,8 +40,8 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
                 </IonButton>
             </IonButtons>
             <IonTitle>{header}</IonTitle>
-            <IonChip slot='end' color="danger">
-                Offline
+            <IonChip slot='end' color={isOnline ? "success" : "danger"}>
+                {isOnline ? "Online" : "Offline"}
             </IonChip>
             <IonButtons slot="end">
                 <IonButton expand="block" onClick={openNotifications}>

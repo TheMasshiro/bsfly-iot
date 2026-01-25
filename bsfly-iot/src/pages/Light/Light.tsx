@@ -2,10 +2,11 @@ import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonIco
 import './Light.css';
 import 'react-circular-progressbar/dist/styles.css';
 import { timers } from '../../assets/assets';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
 import { heart, heartOutline } from 'ionicons/icons';
+import { socket } from '../../services/socket/socket';
 
 const renderer = ({ hours, minutes, seconds, completed }: any) => {
     if (completed) {
@@ -20,14 +21,39 @@ const renderer = ({ hours, minutes, seconds, completed }: any) => {
 const Light: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
+    const [present] = useIonToast();
 
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
     const isLightOn = time > 0;
 
-    const handleTimeChange = useCallback((newTime: number) => {
-        setTime(newTime);
-        setStartTime(Date.now());
+    useEffect(() => {
+        const onLightResponse = (data: { time: number; startTime: number }) => {
+            setTime(data.time);
+            setStartTime(data.startTime);
+        };
+
+        socket.on('light:response', onLightResponse);
+
+        return () => {
+            socket.off('light:response', onLightResponse);
+        };
     }, []);
+
+    const handleTimeChange = useCallback((newTime: number) => {
+        const newStartTime = Date.now();
+        setTime(newTime);
+        setStartTime(newStartTime);
+
+        socket.emit('light', { time: newTime, startTime: newStartTime });
+
+        const timerName = timers.find(t => t.seconds === newTime)?.name || 'Off';
+        present({
+            message: `Light set to ${timerName}`,
+            duration: 1500,
+            position: 'top',
+            mode: 'ios',
+        });
+    }, [present]);
 
     return (
         <IonPage className="timer-page">

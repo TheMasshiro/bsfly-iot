@@ -68,10 +68,14 @@ const Dashboard: React.FC = () => {
 
     const [present] = useIonToast();
 
-    const [actuatorStates, setActuatorStates] = useState<Record<string, boolean>>(() => {
-        const initial: Record<string, boolean> = {};
-        controlsData.forEach(c => {
-            if (c.available) initial[c.name] = false;
+    const [actuatorStates, setActuatorStates] = useState<Record<string, Record<string, boolean>>>(() => {
+        const stages = ['Drawer 1', 'Drawer 2', 'Drawer 3'];
+        const initial: Record<string, Record<string, boolean>> = {};
+        stages.forEach(s => {
+            initial[s] = {};
+            controlsData.forEach(c => {
+                if (c.available) initial[s][c.name] = false;
+            });
         });
         return initial;
     });
@@ -82,16 +86,16 @@ const Dashboard: React.FC = () => {
 
     const handleQuickAction = useCallback((actionName: string) => {
         setActuatorStates(prev => {
-            const newState = !prev[actionName];
+            const newState = !prev[stage][actionName];
             present({
                 message: `${actionName} ${newState ? 'enabled' : 'disabled'}`,
                 duration: 1500,
                 position: "top",
                 mode: "ios",
             });
-            return { ...prev, [actionName]: newState };
+            return { ...prev, [stage]: { ...prev[stage], [actionName]: newState } };
         });
-    }, [present]);
+    }, [present, stage]);
 
     return (
         <IonPage className="dashboard-page">
@@ -163,7 +167,7 @@ const Dashboard: React.FC = () => {
                                                 {getQuickActions(sensor.name).map((action) => (
                                                     <button
                                                         key={action.name}
-                                                        className={`quick-action-btn ${actuatorStates[action.name] ? 'active' : ''}`}
+                                                        className={`quick-action-btn ${actuatorStates[stage]?.[action.name] ? 'active' : ''}`}
                                                         onClick={() => handleQuickAction(action.name)}
                                                         aria-label={action.name}
                                                         title={action.description}
