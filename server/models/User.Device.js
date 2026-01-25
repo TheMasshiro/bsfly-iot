@@ -20,12 +20,7 @@ const deviceSchema = new mongoose.Schema(
     pairingCode: { type: String },
     pairedAt: { type: Date },
 
-    sensors: {
-      egg: [{ type: mongoose.Schema.Types.ObjectId, ref: "Egg" }],
-      larva: [{ type: mongoose.Schema.Types.ObjectId, ref: "Larva" }],
-      pupa: [{ type: mongoose.Schema.Types.ObjectId, ref: "Pupa" }],
-      adult: [{ type: mongoose.Schema.Types.ObjectId, ref: "Adult" }],
-    },
+    drawers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Drawer" }],
   },
   { timestamps: true }
 );

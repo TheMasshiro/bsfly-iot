@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const adultReadingSchema = new mongoose.Schema(
+const drawerReadingSchema = new mongoose.Schema(
   {
-    adultId: {
+    drawerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Adult",
+      ref: "Drawer",
       required: true,
     },
 
@@ -16,7 +16,6 @@ const adultReadingSchema = new mongoose.Schema(
         temperature: Number,
         humidity: Number,
         moisture: Number,
-        light: Number,
         ammonia: Number,
       },
     ],
@@ -24,7 +23,7 @@ const adultReadingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-adultReadingSchema.index({ adultId: 1, date: 1 }, { unique: true });
+drawerReadingSchema.index({ drawerId: 1, date: 1 }, { unique: true });
 
-const AdultReading = mongoose.model("AdultReading", adultReadingSchema);
-export default AdultReading;
+const DrawerReading = mongoose.model("DrawerReading", drawerReadingSchema);
+export default DrawerReading;

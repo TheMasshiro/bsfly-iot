@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import connectDB from "./database/mongo.database.js";
 import "dotenv/config";
+import "./controllers/UserControllers.js";
 
 const app = express();
 app.use(cors());
