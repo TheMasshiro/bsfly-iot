@@ -37,6 +37,7 @@ app.use("/api/actuators", actuatorRoutes);
 app.use("/api/devices", deviceRoutes);
 
 // Sensor routes
+app.use("/api/sensor", sensorRoutes);
 app.use("/api/sensors", sensorRoutes);
 
 if (process.env.VERCEL !== "1") {

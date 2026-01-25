@@ -3,6 +3,40 @@ import DrawerReading from "../models/Sensor.DrawerReadings.js";
 
 const router = express.Router();
 
+// Store sensor readings from ESP32
+router.post("/", async (req, res) => {
+  try {
+    const { deviceId, temperature, humidity, timestamp } = req.body;
+
+    if (!deviceId) {
+      return res.status(400).json({ error: "deviceId is required" });
+    }
+
+    // For now, store with deviceId as drawerId
+    // In production, you'd map deviceId to actual drawer IDs
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const reading = await DrawerReading.findOneAndUpdate(
+      { drawerId: deviceId, date: today },
+      {
+        $push: {
+          readings: {
+            timestamp: new Date(timestamp) || new Date(),
+            temperature,
+            humidity,
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    res.status(201).json({ success: true, reading });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get latest sensor readings for a device (all drawers)
 router.get("/device/:deviceId", async (req, res) => {
   try {
