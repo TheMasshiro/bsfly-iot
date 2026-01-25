@@ -5,6 +5,7 @@ import cors from "cors";
 import connectDB from "./database/mongo.database.js";
 import "dotenv/config";
 import "./controllers/UserControllers.js";
+import { registerActuatorHandlers } from "./socket/actuatorHandlers.js";
 
 const app = express();
 app.use(cors());
@@ -22,11 +23,7 @@ const io = new Server(httpServer, {
 });
 
 io.on("connection", (socket) => {
-  console.log(`User Connected: ${socket.id}`);
-
-  socket.on("send_message", (data) => {
-    socket.broadcast.emit("received_message", data);
-  });
+  registerActuatorHandlers(io, socket);
 });
 
 httpServer.listen(BACKEND_PORT, () => {
