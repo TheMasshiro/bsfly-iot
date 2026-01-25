@@ -3,6 +3,7 @@ import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useLifeCycle } from '../../context/LifeCycleContext';
+import { useDevice } from '../../context/DeviceContext';
 import { sensorsData, controlsData } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
 import { calculateQuality } from '../../utils/calculateQuality';
@@ -29,7 +30,8 @@ const quickActionIcons: Record<string, string> = {
     "Misting Device 2": water,
 };
 
-const getActuatorId = (stage: string, actionName: string): string => {
+// Build actuator ID with device prefix: {deviceId}:{drawer}:{actuator}
+const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
     const drawerNum = stage.toLowerCase().replace('drawer ', '');
     const actionMap: Record<string, string> = {
         "Fan": "fan",
@@ -39,7 +41,8 @@ const getActuatorId = (stage: string, actionName: string): string => {
         "Misting Device 1": "misting1",
         "Misting Device 2": "misting2",
     };
-    return `drawer${drawerNum}:${actionMap[actionName] || actionName.toLowerCase()}`;
+    const actuator = actionMap[actionName] || actionName.toLowerCase();
+    return deviceId ? `${deviceId}:drawer${drawerNum}:${actuator}` : `drawer${drawerNum}:${actuator}`;
 };
 
 export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
@@ -50,6 +53,8 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
+    const { currentDevice } = useDevice();
+    const deviceId = currentDevice?._id;
     const thresholds = lifecycleThresholds[stage];
     const quality = useMemo(() => calculateQuality(sensorsData, thresholds, stage), [stage, thresholds]);
 
@@ -95,16 +100,22 @@ const Dashboard: React.FC = () => {
     });
 
     useEffect(() => {
+        if (!deviceId) return;
+
         const loadStates = async () => {
             const allStates = await actuatorService.getAllStates();
 
             setActuatorStates(prev => {
                 const updated = { ...prev };
                 Object.entries(allStates).forEach(([actuatorId, state]) => {
-                    const [drawer] = actuatorId.split(':');
-                    const drawerName = `Drawer ${drawer.replace('drawer', '')}`;
+                    // Parse device-scoped actuator ID: {deviceId}:{drawer}:{actuator}
+                    const parts = actuatorId.split(':');
+                    if (parts.length < 3 || parts[0] !== deviceId) return;
+                    
+                    const drawerPart = parts[1]; // drawer1, drawer2, drawer3
+                    const drawerName = `Drawer ${drawerPart.replace('drawer', '')}`;
                     const actionName = controlsData.find(c =>
-                        getActuatorId(drawerName, c.name) === actuatorId
+                        getActuatorId(deviceId, drawerName, c.name) === actuatorId
                     )?.name;
 
                     if (actionName && updated[drawerName]) {
@@ -123,7 +134,7 @@ const Dashboard: React.FC = () => {
         stages.forEach(s => {
             controlsData.forEach(c => {
                 if (c.available) {
-                    const actuatorId = getActuatorId(s, c.name);
+                    const actuatorId = getActuatorId(deviceId, s, c.name);
                     const cb = (state: boolean) => {
                         setActuatorStates(prev => ({
                             ...prev,
@@ -139,15 +150,26 @@ const Dashboard: React.FC = () => {
         return () => {
             listeners.forEach(({ id, cb }) => actuatorService.off(id, cb));
         };
-    }, []);
+    }, [deviceId]);
 
     const getQuickActions = useCallback((sensorName: string) => {
         return controlsData.filter(c => c.sensor === sensorName && c.available);
     }, []);
 
     const handleQuickAction = useCallback(async (actionName: string) => {
+        if (!deviceId) {
+            present({
+                message: "No device selected. Go to Settings to add a device.",
+                duration: 2000,
+                position: "top",
+                mode: "ios",
+                color: "warning",
+            });
+            return;
+        }
+
         const newState = !actuatorStates[stage][actionName];
-        const actuatorId = getActuatorId(stage, actionName);
+        const actuatorId = getActuatorId(deviceId, stage, actionName);
 
         setActuatorStates(prev => ({
             ...prev,
@@ -175,7 +197,7 @@ const Dashboard: React.FC = () => {
                 color: "danger",
             });
         }
-    }, [present, stage, actuatorStates]);
+    }, [present, stage, actuatorStates, deviceId]);
 
     return (
         <IonPage className="dashboard-page">

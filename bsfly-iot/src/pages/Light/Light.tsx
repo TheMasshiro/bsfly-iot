@@ -7,6 +7,7 @@ import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
 import { heart, heartOutline } from 'ionicons/icons';
 import { actuatorService } from '../../services/socket/socket';
+import { useDevice } from '../../context/DeviceContext';
 
 const renderer = ({ hours, minutes, seconds, completed }: any) => {
     if (completed) {
@@ -22,13 +23,20 @@ const Light: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
     const [present] = useIonToast();
+    const { currentDevice } = useDevice();
+    const deviceId = currentDevice?._id;
 
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
     const isLightOn = time > 0;
 
+    // Build device-scoped light actuator ID
+    const lightActuatorId = deviceId ? `${deviceId}:light` : 'light';
+
     useEffect(() => {
+        if (!deviceId) return;
+
         // Load initial state
-        actuatorService.getState('light').then((state) => {
+        actuatorService.getState(lightActuatorId).then((state) => {
             if (state) {
                 setTime(state.time);
                 setStartTime(state.startTime);
@@ -41,19 +49,30 @@ const Light: React.FC = () => {
             setStartTime(state.startTime);
         };
 
-        actuatorService.on('light', onLightResponse);
+        actuatorService.on(lightActuatorId, onLightResponse);
 
         return () => {
-            actuatorService.off('light', onLightResponse);
+            actuatorService.off(lightActuatorId, onLightResponse);
         };
-    }, []);
+    }, [deviceId, lightActuatorId]);
 
     const handleTimeChange = useCallback((newTime: number) => {
+        if (!deviceId) {
+            present({
+                message: "No device selected. Go to Settings to add a device.",
+                duration: 2000,
+                position: 'top',
+                mode: 'ios',
+                color: 'warning',
+            });
+            return;
+        }
+
         const newStartTime = Date.now();
         setTime(newTime);
         setStartTime(newStartTime);
 
-        actuatorService.emit('light', { time: newTime, startTime: newStartTime });
+        actuatorService.emit(lightActuatorId, { time: newTime, startTime: newStartTime });
 
         const timerName = timers.find(t => t.seconds === newTime)?.name || 'Off';
         present({
@@ -62,7 +81,7 @@ const Light: React.FC = () => {
             position: 'top',
             mode: 'ios',
         });
-    }, [present]);
+    }, [present, deviceId, lightActuatorId]);
 
     return (
         <IonPage className="timer-page">

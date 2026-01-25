@@ -35,6 +35,7 @@ import '@ionic/react/css/palettes/dark.always.css';
 import './theme/variables.css';
 import Dashboard from './pages/Dashboard/Dashboard';
 import { LifeCycleProvider } from './context/LifeCycleContext';
+import { DeviceProvider } from './context/DeviceContext';
 import Light from './pages/Light/Light';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
@@ -49,38 +50,40 @@ const App: React.FC = () => {
     return (
         <IonApp>
             <LifeCycleProvider>
-                <IonReactRouter>
-                    <SignedIn>
-                        <IonSplitPane contentId="main">
-                            <Menu />
-                            <Notifications />
-                            <IonRouterOutlet id="main">
-                                <Route path="/" exact={true}>
-                                    <Redirect to="/dashboard" />
-                                </Route>
-                                <Route exact path="/welcome">
-                                    <Redirect to="/dashboard" />
-                                </Route>
-                                <Route path="/dashboard" exact={true} component={Dashboard} />
-                                <Route path="/light" exact={true} component={Light} />
-                                <Route path="/analytics" exact={true} component={Analytics} />
-                                <Route path="/settings" exact={true} component={Settings} />
-                                <Route path="/about" exact={true} component={About} />
-                                <Route path="/data/backup" exact={true} component={Backup} />
-                            </IonRouterOutlet>
-                        </IonSplitPane>
-                    </SignedIn>
+                <DeviceProvider>
+                    <IonReactRouter>
+                        <SignedIn>
+                            <IonSplitPane contentId="main">
+                                <Menu />
+                                <Notifications />
+                                <IonRouterOutlet id="main">
+                                    <Route path="/" exact={true}>
+                                        <Redirect to="/dashboard" />
+                                    </Route>
+                                    <Route exact path="/welcome">
+                                        <Redirect to="/dashboard" />
+                                    </Route>
+                                    <Route path="/dashboard" exact={true} component={Dashboard} />
+                                    <Route path="/light" exact={true} component={Light} />
+                                    <Route path="/analytics" exact={true} component={Analytics} />
+                                    <Route path="/settings" exact={true} component={Settings} />
+                                    <Route path="/about" exact={true} component={About} />
+                                    <Route path="/data/backup" exact={true} component={Backup} />
+                                </IonRouterOutlet>
+                            </IonSplitPane>
+                        </SignedIn>
 
-                    <SignedOut>
-                        <Route exact path="/welcome" component={Welcome} />
-                        <Route path="/(dashboard|photoperiod|analytics|settings|about|data/backup)">
-                            <Redirect to="/welcome" />
-                        </Route>
-                        <Route exact path="/">
-                            <Redirect to="/welcome" />
-                        </Route>
-                    </SignedOut>
-                </IonReactRouter>
+                        <SignedOut>
+                            <Route exact path="/welcome" component={Welcome} />
+                            <Route path="/(dashboard|photoperiod|analytics|settings|about|data/backup)">
+                                <Redirect to="/welcome" />
+                            </Route>
+                            <Route exact path="/">
+                                <Redirect to="/welcome" />
+                            </Route>
+                        </SignedOut>
+                    </IonReactRouter>
+                </DeviceProvider>
             </LifeCycleProvider>
 
         </IonApp>
