@@ -11,25 +11,21 @@ const app = express();
 app.use(cors());
 
 const httpServer = createServer();
+await connectDB();
 
 const FRONTEND_PORT = 8100;
 const BACKEND_PORT = 5000;
+const io = new Server(httpServer, {
+  cors: {
+    origin: `http://localhost:${FRONTEND_PORT}`,
+    methods: ["GET", "POST"],
+  },
+});
 
-(async () => {
-  await connectDB();
+io.on("connection", (socket) => {
+  registerActuatorHandlers(io, socket);
+});
 
-  const io = new Server(httpServer, {
-    cors: {
-      origin: `http://localhost:${FRONTEND_PORT}`,
-      methods: ["GET", "POST"],
-    },
-  });
-
-  io.on("connection", (socket) => {
-    registerActuatorHandlers(io, socket);
-  });
-
-  httpServer.listen(BACKEND_PORT, () => {
-    console.log(`Server is running on port ${BACKEND_PORT}`);
-  });
-})();
+httpServer.listen(BACKEND_PORT, () => {
+  console.log(`Server is running on port ${BACKEND_PORT}`);
+});
