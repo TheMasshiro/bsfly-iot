@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_BACKEND_URL || "";
+const API_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
 type ActuatorCallback = (data: any) => void;
 type StateMap = Record<string, any>;

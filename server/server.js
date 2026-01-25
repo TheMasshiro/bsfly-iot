@@ -7,7 +7,14 @@ import actuatorRoutes from "./controllers/actuatorRoutes.js";
 
 // REST API Server for Vercel
 const app = express();
-app.use(cors());
+
+// CORS configuration - allow all origins for API
+app.use(cors({
+  origin: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+}));
+
 app.use(express.json());
 
 await connectDB();
