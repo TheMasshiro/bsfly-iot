@@ -1,5 +1,6 @@
 import express from "express";
 import ActuatorState from "../models/ActuatorState.js";
+import Device from "../models/User.Device.js";
 
 const router = express.Router();
 
@@ -36,6 +37,18 @@ router.post("/:actuatorId", async (req, res) => {
   try {
     const { actuatorId } = req.params;
     const { state } = req.body;
+
+    // Extract deviceId from actuatorId (format: "AABBCCDDEEFF:light")
+    const deviceId = actuatorId.split(":")[0];
+
+    // Check if device is online
+    const device = await Device.findById(deviceId);
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+    if (device.status === "offline") {
+      return res.status(503).json({ error: "Device is offline" });
+    }
 
     const updated = await ActuatorState.findOneAndUpdate(
       { actuatorId },
