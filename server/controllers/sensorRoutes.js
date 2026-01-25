@@ -43,7 +43,7 @@ router.get("/device/:deviceId", async (req, res) => {
     const { deviceId } = req.params;
 
     const readings = await DrawerReading.find({
-      drawerId: { $regex: deviceId } // Find drawers belonging to this device
+      drawerId: { $regex: deviceId, $options: "i" } // Find drawers belonging to this device
     })
       .sort({ "readings.timestamp": -1 })
       .limit(3); // Get latest 3 drawer readings
