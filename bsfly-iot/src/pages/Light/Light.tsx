@@ -6,7 +6,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import Countdown from 'react-countdown';
 import { heart, heartOutline } from 'ionicons/icons';
-import { socket } from '../../services/socket/socket';
+import { actuatorService } from '../../services/socket/socket';
 
 const renderer = ({ hours, minutes, seconds, completed }: any) => {
     if (completed) {
@@ -27,15 +27,24 @@ const Light: React.FC = () => {
     const isLightOn = time > 0;
 
     useEffect(() => {
-        const onLightResponse = (data: { time: number; startTime: number }) => {
-            setTime(data.time);
-            setStartTime(data.startTime);
+        // Load initial state
+        actuatorService.getState('light').then((state) => {
+            if (state) {
+                setTime(state.time);
+                setStartTime(state.startTime);
+            }
+        });
+
+        // Listen for updates from polling
+        const onLightResponse = (state: { time: number; startTime: number }) => {
+            setTime(state.time);
+            setStartTime(state.startTime);
         };
 
-        socket.on('light:response', onLightResponse);
+        actuatorService.on('light', onLightResponse);
 
         return () => {
-            socket.off('light:response', onLightResponse);
+            actuatorService.off('light', onLightResponse);
         };
     }, []);
 
@@ -44,7 +53,7 @@ const Light: React.FC = () => {
         setTime(newTime);
         setStartTime(newStartTime);
 
-        socket.emit('light', { time: newTime, startTime: newStartTime });
+        actuatorService.emit('light', { time: newTime, startTime: newStartTime });
 
         const timerName = timers.find(t => t.seconds === newTime)?.name || 'Off';
         present({

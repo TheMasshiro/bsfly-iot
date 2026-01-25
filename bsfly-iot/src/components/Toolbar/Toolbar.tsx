@@ -2,25 +2,31 @@ import { IonButton, IonButtons, IonChip, IonIcon, IonTitle, IonToolbar } from "@
 import { menuOutline, notifications } from "ionicons/icons";
 import { FC, useEffect, useState } from "react";
 import { menuController } from '@ionic/core/components';
-import { socket } from "../../services/socket/socket";
+import { actuatorService } from "../../services/socket/socket";
 
 interface ToolbarProps {
     header: string,
 }
 
 const Toolbar: FC<ToolbarProps> = ({ header }) => {
-    const [isOnline, setIsOnline] = useState(socket.connected);
+    const [isOnline, setIsOnline] = useState(false);
 
     useEffect(() => {
-        const onConnect = () => setIsOnline(true);
-        const onDisconnect = () => setIsOnline(false);
+        // Check connection status periodically
+        const checkStatus = async () => {
+            const online = await actuatorService.checkConnection();
+            setIsOnline(online);
+        };
 
-        socket.on('connect', onConnect);
-        socket.on('disconnect', onDisconnect);
+        checkStatus();
+        const interval = setInterval(checkStatus, 5000);
+
+        // Start polling for actuator updates
+        actuatorService.startPolling(2000);
 
         return () => {
-            socket.off('connect', onConnect);
-            socket.off('disconnect', onDisconnect);
+            clearInterval(interval);
+            actuatorService.stopPolling();
         };
     }, []);
 
