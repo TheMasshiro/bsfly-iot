@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
                     // Parse device-scoped actuator ID: {deviceId}:{drawer}:{actuator}
                     const parts = actuatorId.split(':');
                     if (parts.length < 3 || parts[0] !== deviceId) return;
-                    
+
                     const drawerPart = parts[1]; // drawer1, drawer2, drawer3
                     const drawerName = `Drawer ${drawerPart.replace('drawer', '')}`;
                     const actionName = controlsData.find(c =>

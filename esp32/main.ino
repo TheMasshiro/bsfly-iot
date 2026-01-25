@@ -18,7 +18,7 @@ String DEVICE_ID_CLEAN;
 #define DHT_TYPE DHT22
 
 // Timing intervals (milliseconds)
-#define POLL_INTERVAL 2000       // Poll actuators every 2 seconds
+#define POLL_INTERVAL 1000       // Poll actuators every 2 seconds
 #define SENSOR_INTERVAL 60000    // Send sensor data every 60 seconds
 #define HEARTBEAT_INTERVAL 30000 // Heartbeat every 30 seconds
 
@@ -43,16 +43,6 @@ void setup() {
   // Initialize DHT sensor
   dht.begin();
 
-  // Get MAC address as device ID
-  DEVICE_ID = WiFi.macAddress(); // With colons: "AA:BB:CC:DD:EE:FF"
-  DEVICE_ID_CLEAN = DEVICE_ID;
-  DEVICE_ID_CLEAN.replace(":", ""); // Without colons: "AABBCCDDEEFF"
-
-  Serial.print("Device ID: ");
-  Serial.println(DEVICE_ID);
-  Serial.print("Device ID (clean): ");
-  Serial.println(DEVICE_ID_CLEAN);
-
   // WiFi Manager setup
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
@@ -66,6 +56,16 @@ void setup() {
   } else {
     Serial.print("Connected! IP: ");
     Serial.println(WiFi.localIP());
+
+    // Get MAC address as device ID
+    DEVICE_ID = WiFi.macAddress(); // With colons: "AA:BB:CC:DD:EE:FF"
+    DEVICE_ID_CLEAN = DEVICE_ID;
+    DEVICE_ID_CLEAN.replace(":", ""); // Without colons: "AABBCCDDEEFF"
+
+    Serial.print("Device ID: ");
+    Serial.println(DEVICE_ID);
+    Serial.print("Device ID (clean): ");
+    Serial.println(DEVICE_ID_CLEAN);
   }
 
   // Send initial heartbeat
