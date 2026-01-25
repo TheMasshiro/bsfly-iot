@@ -37,6 +37,14 @@ router.post("/:actuatorId", async (req, res) => {
     const { actuatorId } = req.params;
     const { state } = req.body;
 
+    // Validate state input
+    if (state === undefined || state === null) {
+      return res.status(400).json({ error: "state is required" });
+    }
+    if (typeof state !== 'boolean' && typeof state !== 'object') {
+      return res.status(400).json({ error: "state must be a boolean or object" });
+    }
+
     const updated = await ActuatorState.findOneAndUpdate(
       { actuatorId },
       { actuatorId, state, updatedAt: new Date() },

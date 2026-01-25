@@ -171,7 +171,7 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
 });
 
 // Background job: Mark devices offline if they haven't sent heartbeat
-const HEARTBEAT_TIMEOUT = 60000; // 60 seconds
+const HEARTBEAT_TIMEOUT = 90000; // 90 seconds (allows ~3 missed heartbeats)
 setInterval(async () => {
   try {
     const cutoff = new Date(Date.now() - HEARTBEAT_TIMEOUT);

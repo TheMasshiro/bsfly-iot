@@ -12,7 +12,7 @@ const app = express();
 // CORS configuration - allow all origins for API
 app.use(
   cors({
-    origin: true,
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
