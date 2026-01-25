@@ -20,8 +20,8 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
         };
 
         checkStatus();
-        const interval = setInterval(checkStatus, 5000);
-        actuatorService.startPolling(1000);
+        const interval = setInterval(checkStatus, 8000); // Check every 8s
+        actuatorService.startPolling(2500); // Poll every 2.5s for responsiveness
 
         return () => {
             clearInterval(interval);

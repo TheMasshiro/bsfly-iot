@@ -168,6 +168,17 @@ const Dashboard: React.FC = () => {
             return;
         }
 
+        if (currentDevice?.status === "offline") {
+            present({
+                message: "Device is offline",
+                duration: 2000,
+                position: "top",
+                mode: "ios",
+                color: "danger",
+            });
+            return;
+        }
+
         const newState = !actuatorStates[stage][actionName];
         const actuatorId = getActuatorId(deviceId, stage, actionName);
 
@@ -197,7 +208,7 @@ const Dashboard: React.FC = () => {
                 color: "danger",
             });
         }
-    }, [present, stage, actuatorStates, deviceId]);
+    }, [present, stage, actuatorStates, deviceId, currentDevice]);
 
     return (
         <IonPage className="dashboard-page">
