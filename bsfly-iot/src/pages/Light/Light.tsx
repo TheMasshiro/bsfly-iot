@@ -68,6 +68,17 @@ const Light: React.FC = () => {
             return;
         }
 
+        if (currentDevice?.status === "offline") {
+            present({
+                message: "Device is offline",
+                duration: 2000,
+                position: 'top',
+                mode: 'ios',
+                color: 'danger',
+            });
+            return;
+        }
+
         const newStartTime = Date.now();
         setTime(newTime);
         setStartTime(newStartTime);
@@ -81,7 +92,7 @@ const Light: React.FC = () => {
             position: 'top',
             mode: 'ios',
         });
-    }, [present, deviceId, lightActuatorId]);
+    }, [present, deviceId, currentDevice, lightActuatorId]);
 
     return (
         <IonPage className="timer-page">
