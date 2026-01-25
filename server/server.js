@@ -10,11 +10,13 @@ import deviceRoutes from "./controllers/deviceRoutes.js";
 const app = express();
 
 // CORS configuration - allow all origins for API
-app.use(cors({
-  origin: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -31,7 +33,6 @@ app.use("/api/actuators", actuatorRoutes);
 // Device routes
 app.use("/api/devices", deviceRoutes);
 
-// Only start server if not running on Vercel
 if (process.env.VERCEL !== "1") {
   app.listen(BACKEND_PORT, () => {
     console.log(`REST API server running on port ${BACKEND_PORT}`);

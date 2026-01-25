@@ -7,9 +7,11 @@ const router = express.Router();
 router.post("/register", async (req, res) => {
   try {
     const { deviceId, name, userId } = req.body;
-    
+
     if (!deviceId || !name || !userId) {
-      return res.status(400).json({ error: "deviceId, name, and userId are required" });
+      return res
+        .status(400)
+        .json({ error: "deviceId, name, and userId are required" });
     }
 
     // Check if device already exists
@@ -22,7 +24,7 @@ router.post("/register", async (req, res) => {
       _id: deviceId,
       name,
       ownerId: userId,
-      members: [{ userId, role: "owner", joinedAt: new Date() }]
+      members: [{ userId, role: "owner", joinedAt: new Date() }],
     });
 
     await device.save();
@@ -36,9 +38,11 @@ router.post("/register", async (req, res) => {
 router.post("/join", async (req, res) => {
   try {
     const { joinCode, userId } = req.body;
-    
+
     if (!joinCode || !userId) {
-      return res.status(400).json({ error: "joinCode and userId are required" });
+      return res
+        .status(400)
+        .json({ error: "joinCode and userId are required" });
     }
 
     const device = await Device.findOne({ joinCode: joinCode.toUpperCase() });
@@ -47,7 +51,7 @@ router.post("/join", async (req, res) => {
     }
 
     // Check if user is already a member
-    const isMember = device.members.some(m => m.userId === userId);
+    const isMember = device.members.some((m) => m.userId === userId);
     if (isMember) {
       return res.status(409).json({ error: "Already a member of this device" });
     }
@@ -65,7 +69,7 @@ router.post("/join", async (req, res) => {
 router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const devices = await Device.find({ "members.userId": userId });
     res.json(devices);
   } catch (error) {
@@ -104,13 +108,15 @@ router.post("/:deviceId/regenerate-code", async (req, res) => {
   try {
     const { userId } = req.body;
     const device = await Device.findById(req.params.deviceId);
-    
+
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
-    
+
     if (device.ownerId !== userId) {
-      return res.status(403).json({ error: "Only the owner can regenerate the join code" });
+      return res
+        .status(403)
+        .json({ error: "Only the owner can regenerate the join code" });
     }
 
     await device.regenerateJoinCode();
@@ -125,7 +131,7 @@ router.delete("/:deviceId/leave", async (req, res) => {
   try {
     const { userId } = req.body;
     const device = await Device.findById(req.params.deviceId);
-    
+
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
@@ -137,7 +143,7 @@ router.delete("/:deviceId/leave", async (req, res) => {
     }
 
     // Otherwise, remove user from members
-    device.members = device.members.filter(m => m.userId !== userId);
+    device.members = device.members.filter((m) => m.userId !== userId);
     await device.save();
     res.json({ message: "Left device successfully" });
   } catch (error) {
@@ -153,15 +159,29 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
       { status: "online", lastSeen: new Date() },
       { new: true }
     );
-    
+
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
-    
+
     res.json({ status: "online", lastSeen: device.lastSeen });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Background job: Mark devices offline if they haven't sent heartbeat
+const HEARTBEAT_TIMEOUT = 60000; // 60 seconds
+setInterval(async () => {
+  try {
+    const cutoff = new Date(Date.now() - HEARTBEAT_TIMEOUT);
+    await Device.updateMany(
+      { lastSeen: { $lt: cutoff }, status: "online" },
+      { status: "offline" }
+    );
+  } catch (error) {
+    console.error("Error updating offline devices:", error);
+  }
+}, 30000); // Run every 30 seconds
 
 export default router;
