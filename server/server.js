@@ -7,7 +7,6 @@ import "dotenv/config";
 import "./controllers/UserControllers.js";
 import { registerActuatorHandlers } from "./socket/actuatorHandlers.js";
 
-dotenv.config();
 const app = express();
 app.use(cors());
 
