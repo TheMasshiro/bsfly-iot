@@ -4,6 +4,7 @@ import connectDB from "./database/mongo.database.js";
 import "dotenv/config";
 import "./controllers/UserControllers.js";
 import actuatorRoutes from "./controllers/actuatorRoutes.js";
+import deviceRoutes from "./controllers/deviceRoutes.js";
 
 // REST API Server for Vercel
 const app = express();
@@ -26,6 +27,9 @@ app.get("/", (_req, res) => res.send("REST API Working"));
 
 // Actuator routes
 app.use("/api/actuators", actuatorRoutes);
+
+// Device routes
+app.use("/api/devices", deviceRoutes);
 
 // Only start server if not running on Vercel
 if (process.env.VERCEL !== "1") {
