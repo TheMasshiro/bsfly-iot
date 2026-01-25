@@ -105,6 +105,7 @@ void pollActuators() {
   }
 
   HTTPClient http;
+  http.setTimeout(5000); // 5 second timeout
 
   // Poll for light state
   // Format: {deviceId}:light (e.g., "AA:BB:CC:DD:EE:FF:light")
@@ -159,6 +160,7 @@ void pollActuators() {
 
 void pollDrawerActuator(const char* drawer, const char* actuator) {
   HTTPClient http;
+  http.setTimeout(5000); // 5 second timeout
 
   // Format: {deviceId}:{drawer}:{actuator}
   String url = String(BACKEND_URL) + "/api/actuators/" + DEVICE_ID + ":" + drawer + ":" + actuator;
@@ -194,13 +196,23 @@ void sendSensorData() {
     return;
   }
 
-  // Read DHT22 sensor
-  float humidity = dht.readHumidity();
-  float temperature = dht.readTemperature(); // Celsius
+  // Read DHT22 sensor with retry
+  float humidity = NAN;
+  float temperature = NAN;
+  
+  for (int attempt = 0; attempt < 3; attempt++) {
+    humidity = dht.readHumidity();
+    temperature = dht.readTemperature();
+    
+    if (!isnan(humidity) && !isnan(temperature)) {
+      break;
+    }
+    delay(500);
+  }
 
-  // Check if reading failed
+  // Check if reading failed after retries
   if (isnan(humidity) || isnan(temperature)) {
-    Serial.println("DHT22 read failed");
+    Serial.println("DHT22 read failed after 3 attempts");
     return;
   }
 
@@ -212,6 +224,7 @@ void sendSensorData() {
 
   // Send to backend
   HTTPClient http;
+  http.setTimeout(5000); // 5 second timeout
   String sensorUrl = String(BACKEND_URL) + "/api/sensor";
 
   http.begin(sensorUrl);
@@ -247,6 +260,7 @@ void sendHeartbeat() {
   }
 
   HTTPClient http;
+  http.setTimeout(5000); // 5 second timeout
 
   // Use MAC address with colons for device registration
   String heartbeatUrl = String(BACKEND_URL) + "/api/devices/" + DEVICE_ID + "/heartbeat";
@@ -274,6 +288,7 @@ void setActuatorState(const char* actuatorType, bool state) {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
+  http.setTimeout(5000); // 5 second timeout
   // Format: {deviceId}:{actuatorType}
   String url = String(BACKEND_URL) + "/api/actuators/" + DEVICE_ID + ":" + actuatorType;
 
