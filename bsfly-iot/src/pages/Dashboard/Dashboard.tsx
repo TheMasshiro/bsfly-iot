@@ -8,8 +8,9 @@ import { getStatus, lifecycleThresholds, Threshold } from '../../config/threshol
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { snow, flame, water, rainy } from 'ionicons/icons';
+import { actuatorService } from '../../services/socket/socket';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -26,6 +27,19 @@ const quickActionIcons: Record<string, string> = {
     "Dehumidifier": rainy,
     "Misting Device 1": water,
     "Misting Device 2": water,
+};
+
+const getActuatorId = (stage: string, actionName: string): string => {
+    const drawerNum = stage.toLowerCase().replace('drawer ', '');
+    const actionMap: Record<string, string> = {
+        "Fan": "fan",
+        "Heater": "heater",
+        "Humidifier": "humidifier",
+        "Dehumidifier": "dehumidifier",
+        "Misting Device 1": "misting1",
+        "Misting Device 2": "misting2",
+    };
+    return `drawer${drawerNum}:${actionMap[actionName] || actionName.toLowerCase()}`;
 };
 
 export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
@@ -80,22 +94,88 @@ const Dashboard: React.FC = () => {
         return initial;
     });
 
+    useEffect(() => {
+        const loadStates = async () => {
+            const allStates = await actuatorService.getAllStates();
+
+            setActuatorStates(prev => {
+                const updated = { ...prev };
+                Object.entries(allStates).forEach(([actuatorId, state]) => {
+                    const [drawer] = actuatorId.split(':');
+                    const drawerName = `Drawer ${drawer.replace('drawer', '')}`;
+                    const actionName = controlsData.find(c =>
+                        getActuatorId(drawerName, c.name) === actuatorId
+                    )?.name;
+
+                    if (actionName && updated[drawerName]) {
+                        updated[drawerName][actionName] = Boolean(state);
+                    }
+                });
+                return updated;
+            });
+        };
+
+        loadStates();
+
+        const stages = ['Drawer 1', 'Drawer 2', 'Drawer 3'];
+        const listeners: Array<{ id: string; cb: (state: any) => void }> = [];
+
+        stages.forEach(s => {
+            controlsData.forEach(c => {
+                if (c.available) {
+                    const actuatorId = getActuatorId(s, c.name);
+                    const cb = (state: boolean) => {
+                        setActuatorStates(prev => ({
+                            ...prev,
+                            [s]: { ...prev[s], [c.name]: state }
+                        }));
+                    };
+                    actuatorService.on(actuatorId, cb);
+                    listeners.push({ id: actuatorId, cb });
+                }
+            });
+        });
+
+        return () => {
+            listeners.forEach(({ id, cb }) => actuatorService.off(id, cb));
+        };
+    }, []);
+
     const getQuickActions = useCallback((sensorName: string) => {
         return controlsData.filter(c => c.sensor === sensorName && c.available);
     }, []);
 
-    const handleQuickAction = useCallback((actionName: string) => {
-        setActuatorStates(prev => {
-            const newState = !prev[stage][actionName];
+    const handleQuickAction = useCallback(async (actionName: string) => {
+        const newState = !actuatorStates[stage][actionName];
+        const actuatorId = getActuatorId(stage, actionName);
+
+        setActuatorStates(prev => ({
+            ...prev,
+            [stage]: { ...prev[stage], [actionName]: newState }
+        }));
+
+        try {
+            await actuatorService.emit(actuatorId, newState);
             present({
                 message: `${actionName} ${newState ? 'enabled' : 'disabled'}`,
                 duration: 1500,
                 position: "top",
                 mode: "ios",
             });
-            return { ...prev, [stage]: { ...prev[stage], [actionName]: newState } };
-        });
-    }, [present, stage]);
+        } catch {
+            setActuatorStates(prev => ({
+                ...prev,
+                [stage]: { ...prev[stage], [actionName]: !newState }
+            }));
+            present({
+                message: `Failed to update ${actionName}`,
+                duration: 1500,
+                position: "top",
+                mode: "ios",
+                color: "danger",
+            });
+        }
+    }, [present, stage, actuatorStates]);
 
     return (
         <IonPage className="dashboard-page">

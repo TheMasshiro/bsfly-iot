@@ -9,7 +9,6 @@ class ActuatorService {
   private lastPollTime: number = 0;
   private isPolling: boolean = false;
 
-  // Start polling for actuator state changes
   startPolling(intervalMs: number = 2000) {
     if (this.pollInterval) return;
 
@@ -25,7 +24,7 @@ class ActuatorService {
         );
         const data = await response.json();
 
-        if (data.states) {
+        if (data.states && Object.keys(data.states).length > 0) {
           Object.entries(data.states).forEach(([actuatorId, state]) => {
             this.notifyListeners(actuatorId, state);
           });
@@ -33,7 +32,7 @@ class ActuatorService {
 
         this.lastPollTime = data.serverTime || Date.now();
       } catch (error) {
-        console.error("Polling error:", error);
+        // Polling error - silently ignore
       }
     }, intervalMs);
   }
@@ -46,7 +45,6 @@ class ActuatorService {
     this.isPolling = false;
   }
 
-  // Subscribe to actuator state changes
   on(actuatorId: string, callback: ActuatorCallback) {
     if (!this.listeners.has(actuatorId)) {
       this.listeners.set(actuatorId, new Set());
@@ -54,7 +52,6 @@ class ActuatorService {
     this.listeners.get(actuatorId)!.add(callback);
   }
 
-  // Unsubscribe from actuator state changes
   off(actuatorId: string, callback: ActuatorCallback) {
     const callbacks = this.listeners.get(actuatorId);
     if (callbacks) {
@@ -69,44 +66,33 @@ class ActuatorService {
     }
   }
 
-  // Send actuator command
   async emit(actuatorId: string, state: any): Promise<void> {
-    try {
-      await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
-      });
-    } catch (error) {
-      console.error(`Error sending ${actuatorId} command:`, error);
-      throw error;
-    }
+    await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state }),
+    });
   }
 
-  // Get current state of an actuator
   async getState(actuatorId: string): Promise<any> {
     try {
       const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`);
       const data = await response.json();
       return data.state;
-    } catch (error) {
-      console.error(`Error getting ${actuatorId} state:`, error);
+    } catch {
       return null;
     }
   }
 
-  // Get all actuator states
   async getAllStates(): Promise<StateMap> {
     try {
       const response = await fetch(`${API_URL}/api/actuators`);
       return await response.json();
-    } catch (error) {
-      console.error("Error getting all states:", error);
+    } catch {
       return {};
     }
   }
 
-  // Check if API is reachable
   async checkConnection(): Promise<boolean> {
     try {
       const response = await fetch(`${API_URL}/`, { method: "GET" });

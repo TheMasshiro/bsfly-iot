@@ -17,7 +17,7 @@ const BACKEND_PORT = process.env.PORT || 5000;
 // Health check
 app.get("/", (_req, res) => res.send("REST API Working"));
 
-// Actuator routes (replaces Socket.IO)
+// Actuator routes
 app.use("/api/actuators", actuatorRoutes);
 
 // Only start server if not running on Vercel

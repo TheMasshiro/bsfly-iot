@@ -12,7 +12,6 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
     const [isOnline, setIsOnline] = useState(false);
 
     useEffect(() => {
-        // Check connection status periodically
         const checkStatus = async () => {
             const online = await actuatorService.checkConnection();
             setIsOnline(online);
@@ -20,9 +19,7 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
 
         checkStatus();
         const interval = setInterval(checkStatus, 5000);
-
-        // Start polling for actuator updates
-        actuatorService.startPolling(2000);
+        actuatorService.startPolling(1000);
 
         return () => {
             clearInterval(interval);
