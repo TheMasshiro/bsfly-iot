@@ -18,7 +18,7 @@ String DEVICE_ID_CLEAN;
 #define DHT_TYPE DHT22
 
 // Timing intervals (milliseconds)
-#define POLL_INTERVAL 1000       // Poll actuators every 2 seconds
+#define POLL_INTERVAL 2000       // Poll actuators every 2 seconds
 #define SENSOR_INTERVAL 60000    // Send sensor data every 60 seconds
 #define HEARTBEAT_INTERVAL 30000 // Heartbeat every 30 seconds
 
