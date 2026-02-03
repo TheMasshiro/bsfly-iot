@@ -60,9 +60,7 @@ const About: FC = () => {
                             <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Black Soldier Fly IoT</h1>
                         </IonCardTitle>
                         <IonCardSubtitle>Smart Monitoring System</IonCardSubtitle>
-                        <IonChip color="light" style={{ marginTop: 12 }}>
-                            <IonLabel style={{ color: "rgba(255,255,255,0.8)", fontSize: 12 }}>v{APP_VERSION}</IonLabel>
-                        </IonChip>
+                        <p style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>v{APP_VERSION}</p>
                     </IonCardHeader>
                     <IonCardContent className="ion-text-center">
                         <IonText color="medium">
