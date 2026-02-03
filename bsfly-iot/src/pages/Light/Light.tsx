@@ -29,13 +29,11 @@ const Light: React.FC = () => {
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
     const isLightOn = time > 0;
 
-    // Build device-scoped light actuator ID
     const lightActuatorId = deviceId ? `${deviceId}:light` : 'light';
 
     useEffect(() => {
         if (!deviceId) return;
 
-        // Load initial state
         actuatorService.getState(lightActuatorId).then((state) => {
             if (state) {
                 setTime(state.time);
@@ -43,7 +41,6 @@ const Light: React.FC = () => {
             }
         });
 
-        // Listen for updates from polling
         const onLightResponse = (state: { time: number; startTime: number }) => {
             setTime(state.time);
             setStartTime(state.startTime);
