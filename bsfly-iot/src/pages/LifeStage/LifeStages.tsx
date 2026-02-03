@@ -280,24 +280,19 @@ const LifeStages: FC = () => {
                                 </IonCardHeader>
                                 <IonCardContent className="ion-text-center">
                                     <IonText color="medium">
-                                        <p style={{ margin: "0 0 12px" }}>
+                                        <p style={{ margin: "0 0 16px" }}>
                                             Track lifecycle stages from eggs through larvae to prepupa.
                                             Total cycle: approximately <strong>{totalDays} days</strong>.
                                         </p>
                                     </IonText>
-                                    <div className="lifecycle-summary">
-                                        <IonChip color="warning" outline>
-                                            <IonIcon icon={eggOutline} />
-                                            <IonLabel>Eggs: 4 days</IonLabel>
-                                        </IonChip>
-                                        <IonChip color="success" outline>
-                                            <IonIcon icon={bugOutline} />
-                                            <IonLabel>Larvae: 13-18 days</IonLabel>
-                                        </IonChip>
-                                        <IonChip color="tertiary" outline>
-                                            <IonIcon icon={leafOutline} />
-                                            <IonLabel>Prepupa/Pupa: 14 days</IonLabel>
-                                        </IonChip>
+                                    <div className="lifecycle-cards">
+                                        {Object.entries(lifeStages).map(([key, stage]) => (
+                                            <div key={key} className={`lifecycle-card lifecycle-card-${stage.color}`}>
+                                                <IonIcon icon={stage.icon} className="lifecycle-card-icon" color={stage.color} />
+                                                <span className="lifecycle-card-name">{stage.name}</span>
+                                                <span className="lifecycle-card-days">{stage.days} days</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </IonCardContent>
                             </IonCard>
