@@ -4,6 +4,7 @@ import { Redirect, Route } from 'react-router-dom';
 import Menu from './components/Menu/Menu';
 import DeviceMenu from './components/DeviceMenu/DeviceMenu';
 import Notifications from './components/Notification/Notifications';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 
 import '@ionic/react/css/core.css';
 
@@ -39,6 +40,7 @@ setupIonicReact();
 const App: React.FC = () => {
     return (
         <IonApp>
+            <ErrorBoundary>
             <LifeCycleProvider>
                 <DeviceProvider>
                     <NotificationProvider>
@@ -79,7 +81,7 @@ const App: React.FC = () => {
                     </NotificationProvider>
                 </DeviceProvider>
             </LifeCycleProvider>
-
+            </ErrorBoundary>
         </IonApp>
     );
 };
