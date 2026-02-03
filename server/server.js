@@ -6,9 +6,12 @@ import userRoutes from "./controllers/UserControllers.js";
 import actuatorRoutes from "./controllers/actuatorRoutes.js";
 import deviceRoutes from "./controllers/deviceRoutes.js";
 import sensorRoutes from "./controllers/sensorRoutes.js";
+import webhookRoutes from "./controllers/webhookRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
+
+app.use("/api/webhooks", webhookRoutes);
 
 app.use(
   cors({
