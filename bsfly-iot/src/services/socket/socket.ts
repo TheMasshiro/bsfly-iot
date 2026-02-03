@@ -1,19 +1,25 @@
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
 type ActuatorCallback = (data: any) => void;
+type ErrorCallback = (error: Error) => void;
 type StateMap = Record<string, any>;
 
 class ActuatorService {
   private listeners: Map<string, Set<ActuatorCallback>> = new Map();
+  private errorListeners: Set<ErrorCallback> = new Set();
   private pollInterval: number | null = null;
   private lastPollTime: number = 0;
   private isPolling: boolean = false;
+  private retryCount: number = 0;
+  private maxRetries: number = 3;
+  private retryDelay: number = 2000;
 
   startPolling(intervalMs: number = 2000) {
     if (this.pollInterval) return;
 
     this.lastPollTime = Date.now();
     this.isPolling = true;
+    this.retryCount = 0;
 
     this.pollInterval = window.setInterval(async () => {
       if (!this.isPolling) return;
@@ -22,6 +28,11 @@ class ActuatorService {
         const response = await fetch(
           `${API_URL}/api/actuators/poll/since/${this.lastPollTime}`
         );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
 
         if (data.states && Object.keys(data.states).length > 0) {
@@ -31,8 +42,12 @@ class ActuatorService {
         }
 
         this.lastPollTime = data.serverTime || Date.now();
+        this.retryCount = 0; // Reset on success
       } catch (error) {
-        // Polling error - silently ignore
+        this.retryCount++;
+        if (this.retryCount >= this.maxRetries) {
+          this.notifyError(new Error("Connection lost. Retrying..."));
+        }
       }
     }, intervalMs);
   }
@@ -59,6 +74,14 @@ class ActuatorService {
     }
   }
 
+  onError(callback: ErrorCallback) {
+    this.errorListeners.add(callback);
+  }
+
+  offError(callback: ErrorCallback) {
+    this.errorListeners.delete(callback);
+  }
+
   private notifyListeners(actuatorId: string, state: any) {
     const callbacks = this.listeners.get(actuatorId);
     if (callbacks) {
@@ -66,17 +89,41 @@ class ActuatorService {
     }
   }
 
-  async emit(actuatorId: string, state: any): Promise<void> {
-    await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state }),
-    });
+  private notifyError(error: Error) {
+    this.errorListeners.forEach((cb) => cb(error));
+  }
+
+  async emit(actuatorId: string, state: any, retries: number = 3): Promise<void> {
+    let lastError: Error | null = null;
+    
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return; // Success
+      } catch (error) {
+        lastError = error as Error;
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay * (i + 1)));
+        }
+      }
+    }
+    
+    throw lastError || new Error("Failed to update actuator");
   }
 
   async getState(actuatorId: string): Promise<any> {
     try {
       const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`);
+      if (!response.ok) return null;
       const data = await response.json();
       return data.state;
     } catch {
@@ -87,6 +134,7 @@ class ActuatorService {
   async getAllStates(): Promise<StateMap> {
     try {
       const response = await fetch(`${API_URL}/api/actuators`);
+      if (!response.ok) return {};
       return await response.json();
     } catch {
       return {};
