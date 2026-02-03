@@ -165,8 +165,8 @@ const Notifications: FC = () => {
                                         </IonBadge>
                                     )}
                                 </IonItem>
-                                <IonItemOptions side="end">
-                                    <IonItemOption color="danger" onClick={() => deleteNotification(notification.id)}>
+                                <IonItemOptions side="end" onIonSwipe={() => deleteNotification(notification.id)}>
+                                    <IonItemOption color="danger" expandable onClick={() => deleteNotification(notification.id)}>
                                         <IonIcon slot="icon-only" icon={trashOutline} />
                                     </IonItemOption>
                                 </IonItemOptions>
