@@ -14,7 +14,7 @@ class ActuatorService {
   private maxRetries: number = 3;
   private retryDelay: number = 2000;
 
-  startPolling(intervalMs: number = 2000) {
+  startPolling(intervalMs: number = 5000) {
     if (this.pollInterval) return;
 
     this.lastPollTime = Date.now();
