@@ -1,4 +1,4 @@
-import { createContext, FC, ReactNode, useContext, useState, useEffect } from "react";
+import { createContext, FC, ReactNode, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -28,8 +28,10 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [devices, setDevices] = useState<Device[]>([]);
     const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
     const [loading, setLoading] = useState(true);
+    const fetchedRef = useRef(false);
+    const userIdRef = useRef<string | null>(null);
 
-    const refreshDevices = async () => {
+    const refreshDevices = useCallback(async () => {
         if (!user?.id) {
             setDevices([]);
             setLoading(false);
@@ -42,23 +44,33 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             const deviceList = Array.isArray(data) ? data : [];
             setDevices(deviceList);
 
-            if (deviceList.length > 0) {
-                if (!currentDevice || !deviceList.find(d => d._id === currentDevice._id)) {
-                    setCurrentDevice(deviceList[0]);
+            setCurrentDevice(prev => {
+                if (deviceList.length > 0) {
+                    if (!prev || !deviceList.find(d => d._id === prev._id)) {
+                        return deviceList[0];
+                    }
+                    return prev;
                 }
-            } else {
-                setCurrentDevice(null);
-            }
+                return null;
+            });
         } catch {
             setDevices([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.id]);
 
     useEffect(() => {
-        refreshDevices();
-    }, [user?.id]);
+        if (user?.id && user.id !== userIdRef.current) {
+            userIdRef.current = user.id;
+            fetchedRef.current = false;
+        }
+
+        if (!fetchedRef.current && user?.id) {
+            fetchedRef.current = true;
+            refreshDevices();
+        }
+    }, [user?.id, refreshDevices]);
 
     return (
         <DeviceContext.Provider
