@@ -4,23 +4,25 @@ import {
     IonContent,
     IonIcon,
     IonItem,
+    IonItemOption,
+    IonItemOptions,
+    IonItemSliding,
     IonLabel,
     IonList,
     IonMenu,
-    IonMenuToggle,
     IonSegment,
     IonSegmentButton,
 } from '@ionic/react';
 import './Notifications.css';
 import { FC, useMemo, useState } from 'react';
-import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, warningOutline } from 'ionicons/icons';
+import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, trashOutline, warningOutline } from 'ionicons/icons';
 import { useNotification } from '../../context/NotificationContext';
 
 type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 
 const Notifications: FC = () => {
     const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
-    const { notifications, markAsRead, markAllAsRead } = useNotification();
+    const { notifications, markAsRead, markAllAsRead, deleteNotification, clearNotifications } = useNotification();
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -94,8 +96,21 @@ const Notifications: FC = () => {
                                 size="small"
                                 slot="end"
                                 onClick={markAllAsRead}
+                                title="Mark all as read"
                             >
                                 <IonIcon icon={checkmarkDoneOutline} />
+                            </IonButton>
+                        )}
+                        {notifications.length > 0 && (
+                            <IonButton
+                                fill="clear"
+                                size="small"
+                                slot="end"
+                                color="danger"
+                                onClick={clearNotifications}
+                                title="Clear all"
+                            >
+                                <IonIcon icon={trashOutline} />
                             </IonButton>
                         )}
                     </IonItem>
@@ -134,7 +149,7 @@ const Notifications: FC = () => {
                         </IonItem>
                     ) : (
                         filteredNotifications.map((notification) => (
-                            <IonMenuToggle key={notification.id} autoHide={false} menu="open-notifications">
+                            <IonItemSliding key={notification.id}>
                                 <IonItem
                                     className={`notification-item notification-${notification.type} ${!notification.read ? 'notification-unread' : ''}`}
                                     lines="none"
@@ -162,7 +177,12 @@ const Notifications: FC = () => {
                                         </IonBadge>
                                     )}
                                 </IonItem>
-                            </IonMenuToggle>
+                                <IonItemOptions side="end">
+                                    <IonItemOption color="danger" onClick={() => deleteNotification(notification.id)}>
+                                        <IonIcon slot="icon-only" icon={trashOutline} />
+                                    </IonItemOption>
+                                </IonItemOptions>
+                            </IonItemSliding>
                         ))
                     )}
                 </IonList>

@@ -15,6 +15,7 @@ interface NotificationContextProps {
     addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
+    deleteNotification: (id: string) => void;
     clearNotifications: () => void;
     unreadCount: number;
 }
@@ -45,6 +46,10 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     }, []);
 
+    const deleteNotification = useCallback((id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    }, []);
+
     const clearNotifications = useCallback(() => {
         setNotifications([]);
     }, []);
@@ -58,6 +63,7 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
                 addNotification,
                 markAsRead,
                 markAllAsRead,
+                deleteNotification,
                 clearNotifications,
                 unreadCount,
             }}
