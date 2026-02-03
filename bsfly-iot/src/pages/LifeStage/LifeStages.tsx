@@ -106,7 +106,7 @@ const LifeStages: FC = () => {
     const [present] = useIonToast();
     const [activeTimers, setActiveTimers] = useState<Record<string, { startTime: number; duration: number; stage: string } | null>>({});
     const [quadrantStages, setQuadrantStages] = useState<Record<string, string>>({});
-    const { currentDevice } = useDevice();
+    const { currentDevice, refreshDevices } = useDevice();
     const deviceId = currentDevice?._id;
 
     const lifecycleActuatorId = deviceId ? `${deviceId}:lifecycle` : 'lifecycle';
@@ -138,7 +138,7 @@ const LifeStages: FC = () => {
     }, [deviceId, lifecycleActuatorId, fetchLifecycleState]);
 
     const handleRefresh = async (event: CustomEvent) => {
-        await fetchLifecycleState();
+        await Promise.all([fetchLifecycleState(), refreshDevices()]);
         event.detail.complete();
     };
 

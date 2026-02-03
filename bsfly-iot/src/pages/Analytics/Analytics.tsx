@@ -21,7 +21,7 @@ interface SensorValues {
 
 const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
-    const { currentDevice } = useDevice();
+    const { currentDevice, refreshDevices } = useDevice();
     const thresholds = lifecycleThresholds[stage]
     const [selectedSegment, setSelectedSegment] = useState("Temperature")
     const [sensorValues, setSensorValues] = useState<SensorValues>({
@@ -51,7 +51,7 @@ const Analytics: FC = () => {
     }, [fetchCurrentValues]);
 
     const handleRefresh = async (event: CustomEvent) => {
-        await fetchCurrentValues();
+        await Promise.all([fetchCurrentValues(), refreshDevices()]);
         event.detail.complete();
     };
 

@@ -23,7 +23,7 @@ const Light: React.FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
     const [present] = useIonToast();
-    const { currentDevice } = useDevice();
+    const { currentDevice, refreshDevices } = useDevice();
     const deviceId = currentDevice?._id;
 
     const countdownDate = useMemo(() => startTime + (time * 1000), [startTime, time]);
@@ -58,7 +58,7 @@ const Light: React.FC = () => {
     }, [deviceId, lightActuatorId, fetchLightState]);
 
     const handleRefresh = async (event: CustomEvent) => {
-        await fetchLightState();
+        await Promise.all([fetchLightState(), refreshDevices()]);
         event.detail.complete();
     };
 

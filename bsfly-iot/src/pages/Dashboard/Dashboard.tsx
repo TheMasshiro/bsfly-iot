@@ -53,7 +53,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
-    const { currentDevice } = useDevice();
+    const { currentDevice, refreshDevices } = useDevice();
     const { addNotification } = useNotification();
     const deviceId = currentDevice?._id;
     const [sensorData, setSensorData] = useState<Record<string, number | null>>({
@@ -146,7 +146,7 @@ const Dashboard: React.FC = () => {
     }, [deviceId, fetchSensorData]);
 
     const handleRefresh = async (event: CustomEvent) => {
-        await fetchSensorData();
+        await Promise.all([fetchSensorData(), refreshDevices()]);
         event.detail.complete();
     };
 

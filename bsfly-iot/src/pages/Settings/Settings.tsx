@@ -6,6 +6,7 @@ import {
 import { hardwareChip, helpCircle, add, logOut, refresh, copy, people } from "ionicons/icons";
 import { FC, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import "./Settings.css";
 
@@ -30,6 +31,7 @@ interface Device {
 const Settings: FC = () => {
     const { user } = useUser();
     const [present] = useIonToast();
+    const { refreshDevices } = useDevice();
 
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ const Settings: FC = () => {
     }, [user?.id]);
 
     const handleRefresh = async (event: CustomEvent) => {
-        await fetchDevices();
+        await Promise.all([fetchDevices(), refreshDevices()]);
         event.detail.complete();
     };
 
