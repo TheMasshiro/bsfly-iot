@@ -24,7 +24,7 @@ interface Device {
     _id: string;
     name: string;
     ownerId: string;
-    status: "online" | "offline";
+    status: "Online" | "Offline";
     joinCode: string;
     members: DeviceMember[];
     lastSeen?: string;
@@ -105,7 +105,7 @@ const Settings: FC = () => {
     const registerDevice = async () => {
         const macResult = validateMacAddress(macAddress);
         const nameResult = validateDeviceName(deviceName);
-        
+
         setMacError(macResult.valid ? undefined : macResult.error);
         setNameError(nameResult.valid ? undefined : nameResult.error);
 
@@ -324,7 +324,7 @@ const Settings: FC = () => {
                                             <h2>{device.name}</h2>
                                             <p>{device._id}</p>
                                             <p>
-                                                <IonChip color={device.status === "online" ? "success" : "medium"}>
+                                                <IonChip color={device.status === "Online" ? "success" : "medium"}>
                                                     {device.status}
                                                 </IonChip>
                                                 <IonChip color={isOwner ? "primary" : "secondary"}>
