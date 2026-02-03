@@ -32,7 +32,7 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
             read: false,
         };
 
-        setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep max 50 notifications
+        setNotifications(prev => [newNotification, ...prev].slice(0, 50));
     }, []);
 
     const markAsRead = useCallback((id: string) => {
