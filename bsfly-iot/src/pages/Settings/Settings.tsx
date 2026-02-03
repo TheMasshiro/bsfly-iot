@@ -325,7 +325,7 @@ const Settings: FC = () => {
                                             <p>{device._id}</p>
                                             <p>
                                                 <IonChip color={device.status === "Online" ? "success" : "medium"}>
-                                                    {device.status}
+                                                    {device.status === "Online" ? "Online" : "Offline"}
                                                 </IonChip>
                                                 <IonChip color={isOwner ? "primary" : "secondary"}>
                                                     {isOwner ? "Owner" : "Member"}
