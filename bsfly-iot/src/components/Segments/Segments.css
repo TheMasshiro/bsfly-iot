@@ -14,7 +14,7 @@
 
 .stage-selector-container ion-segment {
   --background: rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .stage-selector-container ion-segment-button {
