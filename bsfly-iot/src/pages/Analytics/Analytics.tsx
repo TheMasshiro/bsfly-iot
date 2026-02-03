@@ -1,17 +1,55 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useState, useEffect } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
-import Graph, { getData } from '../../components/Graph/Graph';
+import { useDevice } from '../../context/DeviceContext';
+import Graph from '../../components/Graph/Graph';
 import Segments from '../../components/Segments/Segments';
 import "./Analytics.css"
 import Toolbar from '../../components/Toolbar/Toolbar';
 
+const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+
+interface SensorValues {
+    temperature: number | null;
+    humidity: number | null;
+    moisture1: number | null;
+    moisture2: number | null;
+    ammonia: number | null;
+}
+
 const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
+    const { currentDevice } = useDevice();
     const thresholds = lifecycleThresholds[stage]
     const [selectedSegment, setSelectedSegment] = useState("Temperature")
+    const [sensorValues, setSensorValues] = useState<SensorValues>({
+        temperature: null,
+        humidity: null,
+        moisture1: null,
+        moisture2: null,
+        ammonia: null,
+    });
+
+    useEffect(() => {
+        const fetchCurrentValues = async () => {
+            if (!currentDevice) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setSensorValues(data);
+                }
+            } catch {
+            }
+        };
+
+        fetchCurrentValues();
+        const interval = setInterval(fetchCurrentValues, 10000);
+        return () => clearInterval(interval);
+    }, [currentDevice]);
 
     const sensorGraphs = useMemo(() => {
         const moisture = 'moisture' in thresholds ? thresholds.moisture : null;
@@ -61,8 +99,18 @@ const Analytics: FC = () => {
 
     const sensorCurrentValues = useMemo(() => {
         return sensorGraphs.map(graph => {
-            const data = getData(graph.sensor);
-            const latestValue = data[data.length - 1]?.value ?? 0;
+            let latestValue = 0;
+            
+            if (graph.sensor === "Temperature") {
+                latestValue = sensorValues.temperature ?? 0;
+            } else if (graph.sensor === "Humidity") {
+                latestValue = sensorValues.humidity ?? 0;
+            } else if (graph.sensor === "Substrate Moisture 1") {
+                latestValue = sensorValues.moisture1 ?? 0;
+            } else if (graph.sensor === "Substrate Moisture 2") {
+                latestValue = sensorValues.moisture2 ?? 0;
+            }
+
             let status: 'danger' | 'warning' | 'primary' | 'success';
 
             if (latestValue >= graph.max) status = 'danger';
@@ -72,7 +120,7 @@ const Analytics: FC = () => {
 
             return { ...graph, latestValue, status };
         });
-    }, [sensorGraphs]);
+    }, [sensorGraphs, sensorValues]);
 
     return (
         <IonPage className="analytics-page">
