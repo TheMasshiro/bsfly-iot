@@ -1,0 +1,321 @@
+/* page */
+.lifestages-page ion-content {
+    --padding-bottom: 45px;
+}
+
+.lifestages-page ion-grid {
+    padding: 8px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.lifestages-page ion-row {
+    margin-bottom: 0;
+}
+
+/* hero card */
+.lifestages-page .hero-card {
+    margin: 0;
+    border-radius: 18px;
+}
+
+.lifestages-page .hero-icon-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    border-radius: 20px;
+    background: var(--ion-color-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .hero-icon-container {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+
+    .lifestages-page .hero-icon {
+        font-size: 32px;
+    }
+
+    .lifestages-page .hero-card h1 {
+        font-size: 1.5rem;
+    }
+}
+
+.lifestages-page .hero-icon {
+    font-size: 40px;
+    color: #fff;
+}
+
+.lifestages-page .lifecycle-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .lifecycle-summary ion-chip {
+        font-size: 0.7rem;
+        height: 28px;
+    }
+}
+
+/* drawer card */
+.lifestages-page .drawer-card {
+    margin: 0;
+    border-radius: 18px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-card ion-card-title {
+        font-size: 1.1rem;
+    }
+
+    .lifestages-page .drawer-card ion-card-subtitle {
+        font-size: 0.8rem;
+    }
+}
+
+/* quadrant grid */
+.lifestages-page .quadrant-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .quadrant-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* quadrant item */
+.lifestages-page .quadrant-item {
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid var(--ion-color-medium);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .quadrant-item {
+        padding: 12px;
+        gap: 10px;
+    }
+}
+
+.lifestages-page .quadrant-warning {
+    border-left-color: var(--ion-color-warning);
+}
+
+.lifestages-page .quadrant-success {
+    border-left-color: var(--ion-color-success);
+}
+
+.lifestages-page .quadrant-tertiary {
+    border-left-color: var(--ion-color-tertiary);
+}
+
+.lifestages-page .quadrant-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lifestages-page .quadrant-icon {
+    font-size: 18px;
+    color: var(--ion-color-medium);
+}
+
+.lifestages-page .quadrant-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+}
+
+/* stage segment */
+.lifestages-page .stage-segment {
+    --background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+}
+
+.lifestages-page .stage-segment ion-segment-button {
+    --indicator-color: var(--ion-color-primary);
+    --color: var(--ion-color-medium);
+    --color-checked: var(--ion-color-primary);
+    font-size: 0.8rem;
+    min-height: 40px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .stage-segment ion-segment-button {
+        min-height: 36px;
+    }
+}
+
+.lifestages-page .stage-segment ion-segment-button ion-icon {
+    font-size: 16px;
+    margin-right: 4px;
+}
+
+.lifestages-page .stage-segment ion-segment-button ion-label {
+    font-size: 0.75rem;
+}
+
+/* quadrant stage info */
+.lifestages-page .quadrant-stage-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lifestages-page .quadrant-stage-info .stage-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .quadrant-stage-info .stage-icon {
+        font-size: 28px;
+    }
+}
+
+.lifestages-page .quadrant-stage-info .stage-name {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .quadrant-stage-info .stage-name {
+        font-size: 0.9rem;
+    }
+}
+
+.lifestages-page .quadrant-stage-info .stage-duration {
+    height: 24px;
+    font-size: 0.75rem;
+}
+
+/* quadrant actions */
+.lifestages-page .quadrant-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lifestages-page .timer-display {
+    text-align: center;
+}
+
+.lifestages-page .countdown-time {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .countdown-time {
+        font-size: 1.1rem;
+    }
+}
+
+.lifestages-page .countdown-complete {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-success);
+}
+
+/* buttons */
+.lifestages-page ion-button {
+    --border-radius: 16px;
+}
+
+/* single drawer (no quadrants) */
+.lifestages-page .drawer-single {
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid var(--ion-color-medium);
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-single {
+        padding: 12px;
+    }
+}
+
+.lifestages-page .drawer-single.stage-tertiary {
+    border-left-color: var(--ion-color-tertiary);
+}
+
+.lifestages-page .drawer-stage-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-stage-info {
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+}
+
+.lifestages-page .drawer-stage-info .stage-icon {
+    font-size: 40px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-stage-info .stage-icon {
+        font-size: 32px;
+    }
+}
+
+.lifestages-page .drawer-stage-info .stage-name {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-stage-info .stage-name {
+        font-size: 1rem;
+        margin: 0 0 4px;
+    }
+}
+
+.lifestages-page .drawer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 576px) {
+    .lifestages-page .drawer-actions {
+        padding-top: 12px;
+    }
+}
+
+.lifestages-page .drawer-actions .timer-display {
+    text-align: center;
+}
