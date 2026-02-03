@@ -3,6 +3,7 @@ import Device from "../models/User.Device.js";
 import Drawer from "../models/Sensor.Drawer.js";
 import DrawerReading from "../models/Sensor.DrawerReadings.js";
 import ActuatorState from "../models/ActuatorState.js";
+import User from "../models/User.js";
 import { deviceLimiter } from "../middleware/rateLimiter.js";
 import {
   validateBody,
@@ -62,6 +63,8 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
     device.drawers = drawers.map((d) => d._id);
     await device.save();
 
+    await User.findByIdAndUpdate(userId, { $addToSet: { devices: device._id } });
+
     res.status(201).json(device);
   } catch (error) {
     console.error("Register device error:", error);
@@ -85,6 +88,8 @@ router.post("/join", validateBody(joinSchema), async (req, res) => {
 
     device.members.push({ userId, role: "member", joinedAt: new Date() });
     await device.save();
+
+    await User.findByIdAndUpdate(userId, { $addToSet: { devices: device._id } });
 
     res.json({ message: "Successfully joined device", device });
   } catch (error) {
@@ -161,7 +166,6 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
     }
 
     if (device.ownerId === userId) {
-      // Cascade delete: drawers, readings, actuator states, then device
       const drawers = await Drawer.find({ deviceId: device._id });
       const drawerIds = drawers.map((d) => d._id);
 
@@ -170,11 +174,17 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
       await Drawer.deleteMany({ deviceId: device._id });
       await Device.findByIdAndDelete(req.params.deviceId);
 
+      const memberIds = device.members.map((m) => m.userId);
+      await User.updateMany({ _id: { $in: memberIds } }, { $pull: { devices: device._id } });
+
       return res.json({ message: "Device deleted" });
     }
 
     device.members = device.members.filter((m) => m.userId !== userId);
     await device.save();
+
+    await User.findByIdAndUpdate(userId, { $pull: { devices: device._id } });
+
     res.json({ message: "Left device successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to leave device" });
