@@ -1,5 +1,6 @@
 import {
     IonBadge,
+    IonButton,
     IonContent,
     IonIcon,
     IonItem,
@@ -12,61 +13,14 @@ import {
 } from '@ionic/react';
 import './Notifications.css';
 import { FC, useMemo, useState } from 'react';
-import { alertCircleOutline, checkmarkCircleOutline, fileTrayOutline, informationCircleOutline, listOutline, warningOutline } from 'ionicons/icons';
+import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, warningOutline } from 'ionicons/icons';
+import { useNotification, Notification } from '../../context/NotificationContext';
 
 type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 
-interface Notification {
-    id: string;
-    type: 'success' | 'warning' | 'danger' | 'info';
-    title: string;
-    message: string;
-    timestamp: Date;
-    read: boolean;
-    drawer: 'drawer1' | 'drawer2' | 'drawer3';
-}
-
-const mockNotifications: Notification[] = [
-    {
-        id: '1',
-        type: 'danger',
-        title: 'Temperature Alert',
-        message: 'Temperature exceeded maximum threshold (32°C)',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5),
-        read: false,
-        drawer: 'drawer1'
-    },
-    {
-        id: '2',
-        type: 'warning',
-        title: 'Humidity Warning',
-        message: 'Humidity levels approaching warning limit (85%)',
-        timestamp: new Date(Date.now() - 1000 * 60 * 15),
-        read: false,
-        drawer: 'drawer2'
-    },
-    {
-        id: '3',
-        type: 'success',
-        title: 'Environment Stable',
-        message: 'All sensors within optimal range',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60),
-        read: true,
-        drawer: 'drawer1'
-    },
-    {
-        id: '4',
-        type: 'info',
-        title: 'Stage Changed',
-        message: 'Growth stage updated to Pinning',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        read: true,
-        drawer: 'drawer3'
-    }
-];
-
 const Notifications: FC = () => {
     const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
+    const { notifications, markAsRead, markAllAsRead } = useNotification();
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -111,9 +65,9 @@ const Notifications: FC = () => {
 
     const filteredNotifications = useMemo(
         () => selectedDrawer === 'all'
-            ? mockNotifications
-            : mockNotifications.filter(n => n.drawer === selectedDrawer),
-        [selectedDrawer]
+            ? notifications
+            : notifications.filter(n => n.drawer === selectedDrawer),
+        [selectedDrawer, notifications]
     );
 
     const unreadCount = useMemo(
@@ -133,6 +87,16 @@ const Notifications: FC = () => {
                             <IonBadge color="danger" slot="end">
                                 {unreadCount} unread
                             </IonBadge>
+                        )}
+                        {unreadCount > 0 && (
+                            <IonButton
+                                fill="clear"
+                                size="small"
+                                slot="end"
+                                onClick={markAllAsRead}
+                            >
+                                <IonIcon icon={checkmarkDoneOutline} />
+                            </IonButton>
                         )}
                     </IonItem>
 
@@ -170,12 +134,13 @@ const Notifications: FC = () => {
                         </IonItem>
                     ) : (
                         filteredNotifications.map((notification) => (
-                            <IonMenuToggle key={notification.id} autoHide={false}>
+                            <IonMenuToggle key={notification.id} autoHide={false} menu="open-notifications">
                                 <IonItem
                                     className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
                                     lines="none"
                                     detail={false}
                                     button
+                                    onClick={() => markAsRead(notification.id)}
                                 >
                                     <IonIcon
                                         aria-hidden="true"
