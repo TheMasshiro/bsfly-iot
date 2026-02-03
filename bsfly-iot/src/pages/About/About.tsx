@@ -17,23 +17,16 @@ import {
     IonText,
 } from "@ionic/react";
 import {
-    analyticsOutline,
     bugOutline,
     chevronForward,
     codeSlashOutline,
     documentTextOutline,
-    flashOutline,
     globeOutline,
-    hardwareChipOutline,
-    leafOutline,
     logoGithub,
     mailOutline,
     peopleOutline,
     personOutline,
     ribbonOutline,
-    shieldCheckmarkOutline,
-    sunnyOutline,
-    thermometerOutline,
 } from "ionicons/icons";
 import { FC } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
@@ -48,15 +41,6 @@ const researchers = [
     "Farrales, Mark Niel S.",
     "Maggay, Nigel Bennett",
     "Vicente, John Christian",
-];
-
-const features = [
-    { icon: thermometerOutline, title: "Environmental Monitoring", desc: "Temperature, humidity, moisture, ammonia" },
-    { icon: flashOutline, title: "Actuator Control", desc: "Fan, heater, humidifier, misting" },
-    { icon: sunnyOutline, title: "Light Management", desc: "Photoperiod timer control" },
-    { icon: leafOutline, title: "Life Stage Tracking", desc: "Eggs, larvae, prepupa timers" },
-    { icon: analyticsOutline, title: "Analytics & Reports", desc: "Historical data and PDF reports" },
-    { icon: hardwareChipOutline, title: "Multi-Device Support", desc: "Manage multiple ESP32 devices" },
 ];
 
 const About: FC = () => {
@@ -88,28 +72,6 @@ const About: FC = () => {
                                 conditions, manage actuators, and optimize your BSF farming operations.
                             </p>
                         </IonText>
-                    </IonCardContent>
-                </IonCard>
-
-                <IonCard className="ion-margin">
-                    <IonCardHeader>
-                        <IonCardSubtitle>
-                            <IonIcon icon={shieldCheckmarkOutline} style={{ verticalAlign: "middle", marginRight: 8 }} />
-                            Key Features
-                        </IonCardSubtitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        <div className="features-grid">
-                            {features.map((feature, index) => (
-                                <div key={index} className="feature-item">
-                                    <IonIcon icon={feature.icon} className="feature-icon" color="primary" />
-                                    <div className="feature-text">
-                                        <strong>{feature.title}</strong>
-                                        <span>{feature.desc}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </IonCardContent>
                 </IonCard>
 
