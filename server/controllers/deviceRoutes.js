@@ -32,14 +32,18 @@ const userIdSchema = {
 router.post("/register", deviceLimiter, validateBody(registerSchema), async (req, res) => {
   try {
     const { deviceId, name, userId } = req.body;
+    const normalizedId = deviceId.toUpperCase();
 
-    const existing = await Device.findById(deviceId.toUpperCase());
+    const existing = await Device.findById(normalizedId);
     if (existing) {
       return res.status(409).json({ error: "Device already registered" });
     }
 
+    // Clean up any orphan drawers from previous failed attempts
+    await Drawer.deleteMany({ deviceId: normalizedId });
+
     const device = new Device({
-      _id: deviceId.toUpperCase(),
+      _id: normalizedId,
       name,
       ownerId: userId,
       members: [{ userId, role: "owner", joinedAt: new Date() }],
@@ -61,7 +65,7 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
     res.status(201).json(device);
   } catch (error) {
     console.error("Register device error:", error);
-    res.status(500).json({ error: "Failed to register device", details: error.message });
+    res.status(500).json({ error: "Failed to register device" });
   }
 });
 
