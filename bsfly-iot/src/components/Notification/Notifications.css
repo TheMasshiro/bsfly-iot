@@ -4,8 +4,6 @@
 
 .notifications-menu ion-item-sliding {
   margin: 8px 12px;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 .notifications-menu .notification-item {
@@ -13,6 +11,17 @@
   --padding-end: 12px;
   --inner-padding-end: 8px;
   --background: var(--ion-card-background);
+  border-radius: 12px;
+}
+
+.notifications-menu ion-item-options {
+  border-radius: 0 12px 12px 0;
+}
+
+.notifications-menu ion-item-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notifications-menu .notification-unread {
