@@ -22,7 +22,7 @@ type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 
 const Notifications: FC = () => {
     const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
-    const { notifications, markAsRead, markAllAsRead, deleteNotification, clearNotifications } = useNotification();
+    const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotification();
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -99,18 +99,6 @@ const Notifications: FC = () => {
                                 title="Mark all as read"
                             >
                                 <IonIcon icon={checkmarkDoneOutline} />
-                            </IonButton>
-                        )}
-                        {notifications.length > 0 && (
-                            <IonButton
-                                fill="clear"
-                                size="small"
-                                slot="end"
-                                color="danger"
-                                onClick={clearNotifications}
-                                title="Clear all"
-                            >
-                                <IonIcon icon={trashOutline} />
                             </IonButton>
                         )}
                     </IonItem>
