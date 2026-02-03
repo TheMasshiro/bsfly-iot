@@ -24,7 +24,7 @@ interface Device {
     _id: string;
     name: string;
     ownerId: string;
-    status: "Online" | "Offline";
+    status: "online" | "offline";
     joinCode: string;
     members: DeviceMember[];
     lastSeen?: string;
@@ -324,8 +324,8 @@ const Settings: FC = () => {
                                             <h2>{device.name}</h2>
                                             <p>{device._id}</p>
                                             <p>
-                                                <IonChip color={device.status === "Online" ? "success" : "medium"}>
-                                                    {device.status === "Online" ? "Online" : "Offline"}
+                                                <IonChip color={device.status === "online" ? "success" : "medium"}>
+                                                    {device.status === "online" ? "Online" : "Offline"}
                                                 </IonChip>
                                                 <IonChip color={isOwner ? "primary" : "secondary"}>
                                                     {isOwner ? "Owner" : "Member"}
