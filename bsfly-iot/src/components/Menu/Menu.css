@@ -5,12 +5,12 @@ ion-menu ion-content {
 ion-menu.md ion-content {
   --padding-start: 8px;
   --padding-end: 8px;
-  --padding-top: 20px;
+  --padding-top: 0;
   --padding-bottom: 20px;
 }
 
 ion-menu.md ion-list {
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
 ion-menu.md ion-note {
@@ -66,7 +66,7 @@ ion-menu.ios ion-content {
 }
 
 ion-menu.ios ion-list {
-  padding: 20px 0 0 0;
+  padding: 8px 0;
 }
 
 ion-menu.ios ion-note {
@@ -111,4 +111,83 @@ ion-note {
 
 ion-item.selected {
   --color: var(--ion-color-primary);
+}
+
+/* Menu Header */
+.menu-header {
+  padding: 32px 20px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-success) 100%);
+  margin-bottom: 8px;
+}
+
+.menu-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-logo .logo-icon {
+  font-size: 36px;
+  color: #fff;
+}
+
+.menu-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.menu-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+/* User Section */
+.menu-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  margin: 0 8px 8px;
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  border-radius: 12px;
+}
+
+.menu-user .user-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.menu-user .user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menu-user .user-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-user .user-email {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
