@@ -1,8 +1,10 @@
-import { FC, useEffect, useRef, useMemo } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText } from '@ionic/react';
-import { humidityData, moistureData, temperatureData } from '../../assets/data';
+import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner } from '@ionic/react';
+import { useDevice } from '../../context/DeviceContext';
+
+const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 interface GraphProps {
     sensorType: string,
@@ -12,30 +14,82 @@ interface GraphProps {
     unit: string,
 }
 
-export const getData = (sensorType: string) => {
-    switch (sensorType.toLowerCase()) {
-        case "temperature":
-            return temperatureData;
-        case "humidity":
-            return humidityData;
-        case "substrate moisture":
-            return moistureData;
-        default:
-            return temperatureData;
-    }
-};
+interface ChartDataPoint {
+    time: string;
+    value: number;
+}
 
 Chart.register(annotationPlugin);
+
 const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimit, unit }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<Chart | null>(null);
+    const { currentDevice } = useDevice();
+    const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+    const [loading, setLoading] = useState(true);
 
+    const getSensorKey = (type: string): string => {
+        const normalized = type.toLowerCase();
+        if (normalized.includes('temperature')) return 'temperature';
+        if (normalized.includes('humidity')) return 'humidity';
+        if (normalized.includes('moisture')) return 'moisture';
+        if (normalized.includes('ammonia')) return 'ammonia';
+        return 'temperature';
+    };
 
-    const chartData = getData(sensorType);
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!currentDevice) {
+                setChartData([]);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const today = new Date();
+                const fromDate = new Date();
+                fromDate.setDate(fromDate.getDate() - 1);
+
+                const response = await fetch(
+                    `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${fromDate.toISOString().split('T')[0]}&to=${today.toISOString().split('T')[0]}`
+                );
+
+                if (!response.ok) throw new Error('Failed to fetch');
+
+                const data = await response.json();
+                const sensorKey = getSensorKey(sensorType);
+
+                const points: ChartDataPoint[] = [];
+                data.forEach((day: any) => {
+                    if (day.readings) {
+                        day.readings.forEach((reading: any) => {
+                            if (reading[sensorKey] !== undefined) {
+                                const date = new Date(reading.timestamp);
+                                points.push({
+                                    time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                    value: reading[sensorKey]
+                                });
+                            }
+                        });
+                    }
+                });
+
+                setChartData(points.slice(-24));
+            } catch {
+                setChartData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+        const interval = setInterval(fetchData, 30000);
+        return () => clearInterval(interval);
+    }, [currentDevice, sensorType]);
     
-    const latestValue = chartData[chartData.length - 1]?.value ?? 0;
+    const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
     
-    const { color, chipColor, statusText } = useMemo(() => {
+    const getStatusInfo = () => {
         if (latestValue >= upperLimit) {
             return { color: '#cb1a27', chipColor: 'danger', statusText: 'High' };
         }
@@ -46,7 +100,9 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             return { color: '#3dc2ff', chipColor: 'primary', statusText: 'Low' };
         }
         return { color: '#42d96b', chipColor: 'success', statusText: 'Optimal' };
-    }, [latestValue, upperLimit, warningLimit, lowerLimit]);
+    };
+
+    const { color, chipColor, statusText } = getStatusInfo();
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -123,7 +179,37 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 chartRef.current.destroy();
             }
         };
-    }, [sensorType, upperLimit, lowerLimit, warningLimit, unit]);
+    }, [chartData, sensorType, upperLimit, lowerLimit, warningLimit, unit]);
+
+    if (loading) {
+        return (
+            <IonCard mode="ios">
+                <IonCardHeader>
+                    <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
+                </IonCardHeader>
+                <IonCardContent>
+                    <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IonSpinner name="crescent" />
+                    </div>
+                </IonCardContent>
+            </IonCard>
+        );
+    }
+
+    if (chartData.length === 0) {
+        return (
+            <IonCard mode="ios">
+                <IonCardHeader>
+                    <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
+                </IonCardHeader>
+                <IonCardContent>
+                    <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IonText color="medium">No data available</IonText>
+                    </div>
+                </IonCardContent>
+            </IonCard>
+        );
+    }
 
     return (
         <IonCard mode="ios">
