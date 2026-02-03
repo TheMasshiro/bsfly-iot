@@ -42,7 +42,6 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             const deviceList = Array.isArray(data) ? data : [];
             setDevices(deviceList);
 
-            // Auto-select first device if none selected or current device no longer exists
             if (deviceList.length > 0) {
                 if (!currentDevice || !deviceList.find(d => d._id === currentDevice._id)) {
                     setCurrentDevice(deviceList[0]);
@@ -50,8 +49,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             } else {
                 setCurrentDevice(null);
             }
-        } catch (error) {
-            console.error("Failed to fetch devices:", error);
+        } catch {
             setDevices([]);
         } finally {
             setLoading(false);
