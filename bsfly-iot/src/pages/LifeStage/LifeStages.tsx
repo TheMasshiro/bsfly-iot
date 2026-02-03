@@ -13,6 +13,8 @@ import {
     IonIcon,
     IonLabel,
     IonPage,
+    IonRefresher,
+    IonRefresherContent,
     IonRow,
     IonSegment,
     IonSegmentButton,
@@ -109,15 +111,19 @@ const LifeStages: FC = () => {
 
     const lifecycleActuatorId = deviceId ? `${deviceId}:lifecycle` : 'lifecycle';
 
+    const fetchLifecycleState = useCallback(async () => {
+        if (!deviceId) return;
+        const state = await actuatorService.getState(lifecycleActuatorId);
+        if (state) {
+            if (state.timers) setActiveTimers(state.timers);
+            if (state.stages) setQuadrantStages(state.stages);
+        }
+    }, [deviceId, lifecycleActuatorId]);
+
     useEffect(() => {
         if (!deviceId) return;
 
-        actuatorService.getState(lifecycleActuatorId).then((state) => {
-            if (state) {
-                if (state.timers) setActiveTimers(state.timers);
-                if (state.stages) setQuadrantStages(state.stages);
-            }
-        });
+        fetchLifecycleState();
 
         const onLifecycleResponse = (state: { timers: typeof activeTimers; stages: typeof quadrantStages }) => {
             if (state.timers) setActiveTimers(state.timers);
@@ -129,7 +135,12 @@ const LifeStages: FC = () => {
         return () => {
             actuatorService.off(lifecycleActuatorId, onLifecycleResponse);
         };
-    }, [deviceId, lifecycleActuatorId]);
+    }, [deviceId, lifecycleActuatorId, fetchLifecycleState]);
+
+    const handleRefresh = async (event: CustomEvent) => {
+        await fetchLifecycleState();
+        event.detail.complete();
+    };
 
     useEffect(() => {
         if (Object.keys(quadrantStages).length === 0) {
@@ -251,6 +262,9 @@ const LifeStages: FC = () => {
             </IonHeader>
 
             <IonContent fullscreen>
+                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+                    <IonRefresherContent />
+                </IonRefresher>
                 <IonGrid>
                     <IonRow>
                         <IonCol>

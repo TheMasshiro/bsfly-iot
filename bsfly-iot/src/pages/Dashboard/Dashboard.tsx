@@ -1,4 +1,4 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRefresher, IonRefresherContent, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Dashboard.css';
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -127,24 +127,28 @@ const Dashboard: React.FC = () => {
 
     const shownAlertsRef = useRef<Set<string>>(new Set());
 
+    const fetchSensorData = useCallback(async () => {
+        if (!deviceId) return;
+        try {
+            const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+            const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
+            const data = await response.json();
+            setSensorData(data);
+        } catch {
+        }
+    }, [deviceId]);
+
     useEffect(() => {
         if (!deviceId) return;
-
-        const fetchSensorData = async () => {
-            try {
-                const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
-                const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
-                const data = await response.json();
-                setSensorData(data);
-            } catch {
-            }
-        };
-
         fetchSensorData();
         const interval = setInterval(fetchSensorData, 10000);
-
         return () => clearInterval(interval);
-    }, [deviceId]);
+    }, [deviceId, fetchSensorData]);
+
+    const handleRefresh = async (event: CustomEvent) => {
+        await fetchSensorData();
+        event.detail.complete();
+    };
 
     useEffect(() => {
         const drawerNum = stage.toLowerCase().replace('drawer ', '');
@@ -366,6 +370,9 @@ const Dashboard: React.FC = () => {
             </IonHeader>
 
             <IonContent fullscreen>
+                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+                    <IonRefresherContent />
+                </IonRefresher>
                 <IonHeader collapse="condense">
                     <IonToolbar>
                         <IonTitle size="large">Dashboard</IonTitle>

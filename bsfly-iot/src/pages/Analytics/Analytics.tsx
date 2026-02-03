@@ -1,6 +1,6 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC, useMemo, useState, useEffect } from 'react';
+import { FC, useMemo, useState, useEffect, useCallback } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { useDevice } from '../../context/DeviceContext';
@@ -32,24 +32,28 @@ const Analytics: FC = () => {
         ammonia: null,
     });
 
-    useEffect(() => {
-        const fetchCurrentValues = async () => {
-            if (!currentDevice) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setSensorValues(data);
-                }
-            } catch {
+    const fetchCurrentValues = useCallback(async () => {
+        if (!currentDevice) return;
+        try {
+            const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSensorValues(data);
             }
-        };
+        } catch {
+        }
+    }, [currentDevice]);
 
+    useEffect(() => {
         fetchCurrentValues();
         const interval = setInterval(fetchCurrentValues, 10000);
         return () => clearInterval(interval);
-    }, [currentDevice]);
+    }, [fetchCurrentValues]);
+
+    const handleRefresh = async (event: CustomEvent) => {
+        await fetchCurrentValues();
+        event.detail.complete();
+    };
 
     const sensorGraphs = useMemo(() => {
         const moisture = 'moisture' in thresholds ? thresholds.moisture : null;
@@ -131,6 +135,9 @@ const Analytics: FC = () => {
             </IonHeader>
 
             <IonContent fullscreen>
+                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+                    <IonRefresherContent />
+                </IonRefresher>
                 <IonHeader collapse="condense">
                     <IonToolbar>
                         <IonTitle size="large">Analytics</IonTitle>

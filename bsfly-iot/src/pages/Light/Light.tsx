@@ -1,4 +1,4 @@
-import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRadio, IonRadioGroup, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
+import { IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, IonRadio, IonRadioGroup, IonRefresher, IonRefresherContent, IonRow, IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import './Light.css';
 import 'react-circular-progressbar/dist/styles.css';
 import { timers } from '../../assets/assets';
@@ -31,15 +31,19 @@ const Light: React.FC = () => {
 
     const lightActuatorId = deviceId ? `${deviceId}:light` : 'light';
 
+    const fetchLightState = useCallback(async () => {
+        if (!deviceId) return;
+        const state = await actuatorService.getState(lightActuatorId);
+        if (state) {
+            setTime(state.time);
+            setStartTime(state.startTime);
+        }
+    }, [deviceId, lightActuatorId]);
+
     useEffect(() => {
         if (!deviceId) return;
 
-        actuatorService.getState(lightActuatorId).then((state) => {
-            if (state) {
-                setTime(state.time);
-                setStartTime(state.startTime);
-            }
-        });
+        fetchLightState();
 
         const onLightResponse = (state: { time: number; startTime: number }) => {
             setTime(state.time);
@@ -51,7 +55,12 @@ const Light: React.FC = () => {
         return () => {
             actuatorService.off(lightActuatorId, onLightResponse);
         };
-    }, [deviceId, lightActuatorId]);
+    }, [deviceId, lightActuatorId, fetchLightState]);
+
+    const handleRefresh = async (event: CustomEvent) => {
+        await fetchLightState();
+        event.detail.complete();
+    };
 
     const handleTimeChange = useCallback((newTime: number) => {
         if (!deviceId) {
@@ -99,6 +108,9 @@ const Light: React.FC = () => {
                 />
             </IonHeader>
             <IonContent fullscreen>
+                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+                    <IonRefresherContent />
+                </IonRefresher>
                 <IonHeader collapse="condense">
                     <IonToolbar>
                         <IonTitle size="large">Timer</IonTitle>
