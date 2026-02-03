@@ -11,7 +11,6 @@ import { apiLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
 
-// Trust first proxy (Vercel, etc.) for correct client IP detection in rate limiting
 app.set("trust proxy", 1);
 
 app.use("/api/webhooks", webhookRoutes);

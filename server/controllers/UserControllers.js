@@ -9,7 +9,6 @@ const router = express.Router();
 const isValidEmail = (email) => validator.isEmail(email);
 const isValidName = (name) => typeof name === "string" && name.trim().length >= 1 && name.length <= 100;
 
-// Validation schemas
 const createUserSchema = {
   userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
   name: { required: true, type: "string", validator: isValidName, message: "Name must be 1-100 characters" },

@@ -72,7 +72,6 @@ export const validateBody = (schema) => {
           errors.push(rules.message || `${field} is invalid`);
         }
 
-        // Sanitize string values
         if (typeof value === "string" && rules.sanitize !== false) {
           req.body[field] = sanitizeString(value);
         }

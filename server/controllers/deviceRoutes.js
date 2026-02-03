@@ -40,7 +40,6 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
       return res.status(409).json({ error: "Device already registered" });
     }
 
-    // Clean up any orphan drawers from previous failed attempts
     await Drawer.deleteMany({ deviceId: normalizedId });
 
     const device = new Device({
