@@ -36,14 +36,11 @@ const Settings: FC = () => {
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Register device form
     const [macAddress, setMacAddress] = useState("");
     const [deviceName, setDeviceName] = useState("");
 
-    // Join device form
     const [joinCode, setJoinCode] = useState("");
 
-    // Alerts
     const [showLeaveAlert, setShowLeaveAlert] = useState(false);
     const [deviceToLeave, setDeviceToLeave] = useState<Device | null>(null);
 
