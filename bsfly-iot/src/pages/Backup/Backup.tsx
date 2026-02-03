@@ -16,8 +16,9 @@ import {
     IonSpinner,
     useIonToast,
 } from "@ionic/react";
-import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline } from "ionicons/icons";
+import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline } from "ionicons/icons";
 import { FC, useState, useMemo } from "react";
+import { jsPDF } from "jspdf";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import { useDevice } from "../../context/DeviceContext";
 import "./Backup.css";
@@ -123,6 +124,237 @@ const Backup: FC = () => {
             ),
         };
         return JSON.stringify(exportData, null, 2);
+    };
+
+    interface DailyAverage {
+        date: string;
+        temperature: { avg: number; min: number; max: number; count: number };
+        humidity: { avg: number; min: number; max: number; count: number };
+        moisture: { avg: number; min: number; max: number; count: number };
+        ammonia: { avg: number; min: number; max: number; count: number };
+    }
+
+    const calculateDailyAverages = (data: DayReading[]): DailyAverage[] => {
+        const dailyMap = new Map<string, {
+            temp: number[]; hum: number[]; moist: number[]; amm: number[];
+        }>();
+
+        data.forEach((day) => {
+            day.readings.forEach((reading) => {
+                const dateKey = new Date(reading.timestamp).toISOString().split('T')[0];
+                if (!dailyMap.has(dateKey)) {
+                    dailyMap.set(dateKey, { temp: [], hum: [], moist: [], amm: [] });
+                }
+                const entry = dailyMap.get(dateKey)!;
+                if (reading.temperature !== undefined) entry.temp.push(reading.temperature);
+                if (reading.humidity !== undefined) entry.hum.push(reading.humidity);
+                if (reading.moisture !== undefined) entry.moist.push(reading.moisture);
+                if (reading.ammonia !== undefined) entry.amm.push(reading.ammonia);
+            });
+        });
+
+        const calcStats = (arr: number[]) => {
+            if (arr.length === 0) return { avg: 0, min: 0, max: 0, count: 0 };
+            const sum = arr.reduce((a, b) => a + b, 0);
+            return {
+                avg: Math.round((sum / arr.length) * 10) / 10,
+                min: Math.round(Math.min(...arr) * 10) / 10,
+                max: Math.round(Math.max(...arr) * 10) / 10,
+                count: arr.length,
+            };
+        };
+
+        return Array.from(dailyMap.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, values]) => ({
+                date,
+                temperature: calcStats(values.temp),
+                humidity: calcStats(values.hum),
+                moisture: calcStats(values.moist),
+                ammonia: calcStats(values.amm),
+            }));
+    };
+
+    const generatePDFReport = (data: DayReading[], startDate: Date) => {
+        const doc = new jsPDF();
+        const dailyAverages = calculateDailyAverages(data);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let y = 20;
+
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.text("BSF Weekly Report", pageWidth / 2, y, { align: "center" });
+        y += 10;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text(`Device: ${currentDevice?.name || "Unknown"}`, pageWidth / 2, y, { align: "center" });
+        y += 6;
+        doc.text(`Period: ${formatDate(startDate)} - ${formatDate(today)}`, pageWidth / 2, y, { align: "center" });
+        y += 6;
+        doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, y, { align: "center" });
+        y += 15;
+
+        doc.setDrawColor(200);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 10;
+
+        doc.setTextColor(0);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Weekly Summary", 20, y);
+        y += 10;
+
+        const allTemps: number[] = [];
+        const allHums: number[] = [];
+        const allMoist: number[] = [];
+        const allAmm: number[] = [];
+
+        dailyAverages.forEach(day => {
+            if (day.temperature.count > 0) allTemps.push(day.temperature.avg);
+            if (day.humidity.count > 0) allHums.push(day.humidity.avg);
+            if (day.moisture.count > 0) allMoist.push(day.moisture.avg);
+            if (day.ammonia.count > 0) allAmm.push(day.ammonia.avg);
+        });
+
+        const calcOverall = (arr: number[]) => {
+            if (arr.length === 0) return { avg: "N/A", min: "N/A", max: "N/A" };
+            const sum = arr.reduce((a, b) => a + b, 0);
+            return {
+                avg: (sum / arr.length).toFixed(1),
+                min: Math.min(...arr).toFixed(1),
+                max: Math.max(...arr).toFixed(1),
+            };
+        };
+
+        const tempStats = calcOverall(allTemps);
+        const humStats = calcOverall(allHums);
+        const moistStats = calcOverall(allMoist);
+        const ammStats = calcOverall(allAmm);
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+
+        const summaryData = [
+            ["Parameter", "Average", "Min", "Max"],
+            ["Temperature (°C)", tempStats.avg, tempStats.min, tempStats.max],
+            ["Humidity (%)", humStats.avg, humStats.min, humStats.max],
+            ["Moisture (%)", moistStats.avg, moistStats.min, moistStats.max],
+            ["Ammonia (ppm)", ammStats.avg, ammStats.min, ammStats.max],
+        ];
+
+        const colWidths = [50, 35, 35, 35];
+        const startX = 25;
+
+        summaryData.forEach((row, rowIndex) => {
+            let x = startX;
+            row.forEach((cell, colIndex) => {
+                if (rowIndex === 0) {
+                    doc.setFont("helvetica", "bold");
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(x - 2, y - 4, colWidths[colIndex], 7, "F");
+                } else {
+                    doc.setFont("helvetica", "normal");
+                }
+                doc.text(String(cell), x, y);
+                x += colWidths[colIndex];
+            });
+            y += 8;
+        });
+
+        y += 10;
+        doc.setDrawColor(200);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 10;
+
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Daily Averages", 20, y);
+        y += 10;
+
+        doc.setFontSize(9);
+        const dailyHeaders = ["Date", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const dailyColWidths = [35, 30, 35, 35, 35];
+
+        let x = startX;
+        doc.setFont("helvetica", "bold");
+        doc.setFillColor(240, 240, 240);
+        doc.rect(startX - 2, y - 4, dailyColWidths.reduce((a, b) => a + b, 0), 7, "F");
+        dailyHeaders.forEach((header, i) => {
+            doc.text(header, x, y);
+            x += dailyColWidths[i];
+        });
+        y += 8;
+
+        doc.setFont("helvetica", "normal");
+        dailyAverages.forEach((day) => {
+            if (y > 270) {
+                doc.addPage();
+                y = 20;
+            }
+
+            x = startX;
+            const rowData = [
+                day.date,
+                day.temperature.count > 0 ? day.temperature.avg.toString() : "-",
+                day.humidity.count > 0 ? day.humidity.avg.toString() : "-",
+                day.moisture.count > 0 ? day.moisture.avg.toString() : "-",
+                day.ammonia.count > 0 ? day.ammonia.avg.toString() : "-",
+            ];
+
+            rowData.forEach((cell, i) => {
+                doc.text(cell, x, y);
+                x += dailyColWidths[i];
+            });
+            y += 6;
+        });
+
+        y += 10;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text("Black Soldier Fly IoT Monitoring System", pageWidth / 2, 285, { align: "center" });
+
+        return doc;
+    };
+
+    const handlePDFReport = async () => {
+        if (!currentDevice) {
+            present({ message: "Please select a device first", duration: 2000, color: "warning" });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            
+            const response = await fetch(
+                `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch sensor data");
+            }
+
+            const data: DayReading[] = await response.json();
+
+            if (!data || data.length === 0) {
+                present({ message: "No sensor data found for the last 7 days", duration: 2000, color: "warning" });
+                return;
+            }
+
+            const doc = generatePDFReport(data, weekAgo);
+            const deviceName = currentDevice.name.replace(/[^a-z0-9]/gi, "_");
+            const weekStr = formatDateISO(weekAgo);
+            doc.save(`${deviceName}_weekly_report_${weekStr}.pdf`);
+
+            present({ message: "Weekly PDF report generated", duration: 2000, color: "success" });
+        } catch (error: any) {
+            present({ message: error.message || "Failed to generate report", duration: 2000, color: "danger" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -257,9 +489,9 @@ const Backup: FC = () => {
                                 icon={cloudUpload}
                                 style={{ verticalAlign: "middle", marginRight: 8 }}
                             />
-                            Backup Action
+                            Export Options
                         </IonCardSubtitle>
-                        <IonCardTitle>Create Backup</IonCardTitle>
+                        <IonCardTitle>Backup & Reports</IonCardTitle>
                     </IonCardHeader>
 
                     <IonCardContent>
@@ -271,6 +503,33 @@ const Backup: FC = () => {
                         </IonText>
 
                         <div style={{ display: "flex", gap: "12px", flexDirection: "column" }}>
+                            <IonButton
+                                expand="block"
+                                onClick={handlePDFReport}
+                                size="large"
+                                disabled={loading || !currentDevice}
+                                color="danger"
+                                style={{
+                                    "--border-radius": "12px",
+                                    height: "56px",
+                                    fontSize: "18px",
+                                    fontWeight: "600",
+                                }}
+                            >
+                                {loading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon
+                                            icon={documentTextOutline}
+                                            slot="start"
+                                            style={{ fontSize: 24 }}
+                                        />
+                                        Weekly PDF Report
+                                    </>
+                                )}
+                            </IonButton>
+
                             <IonButton
                                 expand="block"
                                 onClick={() => handleBackup("csv")}
