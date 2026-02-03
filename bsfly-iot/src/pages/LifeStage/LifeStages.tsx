@@ -171,7 +171,8 @@ const LifeStages: FC = () => {
 
         const key = getTimerKey(drawerIndex, quadrantIndex);
         const stageKey = quadrantStages[key];
-        const stage = lifeStages[stageKey];
+        const stage = lifeStages[stageKey] || lifeStages[drawerData[drawerIndex].availableStages[0]];
+        if (!stage) return;
         const duration = stage.days * MILLISECONDS_PER_DAY;
         const drawer = drawerData[drawerIndex];
         const hasQuadrants = drawer.quadrants > 0;
