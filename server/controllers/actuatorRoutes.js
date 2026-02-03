@@ -4,7 +4,6 @@ import { isValidActuatorState } from "../middleware/validation.js";
 
 const router = express.Router();
 
-// Get all actuator states (for polling)
 router.get("/", async (_req, res) => {
   try {
     const states = await ActuatorState.find({});
@@ -18,7 +17,6 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// Get specific actuator state
 router.get("/:actuatorId", async (req, res) => {
   try {
     const { actuatorId } = req.params;
@@ -32,13 +30,11 @@ router.get("/:actuatorId", async (req, res) => {
   }
 });
 
-// Set actuator state
 router.post("/:actuatorId", async (req, res) => {
   try {
     const { actuatorId } = req.params;
     const { state } = req.body;
 
-    // Validate state input
     if (state === undefined || state === null) {
       return res.status(400).json({ error: "state is required" });
     }
@@ -58,7 +54,6 @@ router.post("/:actuatorId", async (req, res) => {
   }
 });
 
-// Get states updated since timestamp (for efficient polling)
 router.get("/poll/since/:timestamp", async (req, res) => {
   try {
     const { timestamp } = req.params;

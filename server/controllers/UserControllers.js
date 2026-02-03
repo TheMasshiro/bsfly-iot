@@ -6,7 +6,6 @@ import validator from "validator";
 
 const router = express.Router();
 
-// Validation helpers
 const isValidEmail = (email) => validator.isEmail(email);
 const isValidName = (name) => typeof name === "string" && name.trim().length >= 1 && name.length <= 100;
 
@@ -22,7 +21,6 @@ const updateUserSchema = {
   email: { required: false, type: "string", validator: isValidEmail, message: "Invalid email address" },
 };
 
-// Create or update user (for Clerk webhook or first login)
 router.post("/", validateBody(createUserSchema), async (req, res) => {
   try {
     const { userId, name, email } = req.body;
@@ -39,7 +37,6 @@ router.post("/", validateBody(createUserSchema), async (req, res) => {
   }
 });
 
-// Get user by ID
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -59,7 +56,6 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-// Update user
 router.put("/:userId", validateBody(updateUserSchema), async (req, res) => {
   try {
     const { userId } = req.params;
@@ -88,7 +84,6 @@ router.put("/:userId", validateBody(updateUserSchema), async (req, res) => {
   }
 });
 
-// Delete user and remove from all devices
 router.delete("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -97,16 +92,13 @@ router.delete("/:userId", async (req, res) => {
       return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    // Remove user from all devices they're a member of
     await Device.updateMany(
       { "members.userId": userId },
       { $pull: { members: { userId } } }
     );
 
-    // Delete devices owned by this user
     await Device.deleteMany({ ownerId: userId });
 
-    // Delete the user
     const user = await User.findByIdAndDelete(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -118,7 +110,6 @@ router.delete("/:userId", async (req, res) => {
   }
 });
 
-// Get user's devices summary
 router.get("/:userId/devices", async (req, res) => {
   try {
     const { userId } = req.params;

@@ -11,7 +11,6 @@ import {
 
 const router = express.Router();
 
-// Validation schemas
 const registerSchema = {
   deviceId: { required: true, type: "string", validator: isValidMacAddress, message: "Invalid MAC address format" },
   name: { required: true, type: "string", validator: isValidDeviceName, message: "Device name must be 1-50 characters" },
@@ -27,12 +26,10 @@ const userIdSchema = {
   userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
 };
 
-// Register a new device (owner)
 router.post("/register", deviceLimiter, validateBody(registerSchema), async (req, res) => {
   try {
     const { deviceId, name, userId } = req.body;
 
-    // Check if device already exists
     const existing = await Device.findById(deviceId.toUpperCase());
     if (existing) {
       return res.status(409).json({ error: "Device already registered" });
@@ -52,7 +49,6 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
   }
 });
 
-// Join a device using join code
 router.post("/join", validateBody(joinSchema), async (req, res) => {
   try {
     const { joinCode, userId } = req.body;
@@ -62,7 +58,6 @@ router.post("/join", validateBody(joinSchema), async (req, res) => {
       return res.status(404).json({ error: "Invalid join code" });
     }
 
-    // Check if user is already a member
     const isMember = device.members.some((m) => m.userId === userId);
     if (isMember) {
       return res.status(409).json({ error: "Already a member of this device" });
@@ -77,7 +72,6 @@ router.post("/join", validateBody(joinSchema), async (req, res) => {
   }
 });
 
-// Get all devices for a user
 router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -93,7 +87,6 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
-// Get a specific device
 router.get("/:deviceId", async (req, res) => {
   try {
     const device = await Device.findById(req.params.deviceId);
@@ -106,7 +99,6 @@ router.get("/:deviceId", async (req, res) => {
   }
 });
 
-// Get all members of a device
 router.get("/:deviceId/members", async (req, res) => {
   try {
     const device = await Device.findById(req.params.deviceId);
@@ -119,7 +111,6 @@ router.get("/:deviceId/members", async (req, res) => {
   }
 });
 
-// Regenerate join code (owner only)
 router.post("/:deviceId/regenerate-code", validateBody(userIdSchema), async (req, res) => {
   try {
     const { userId } = req.body;
@@ -140,7 +131,6 @@ router.post("/:deviceId/regenerate-code", validateBody(userIdSchema), async (req
   }
 });
 
-// Leave a device (member) or delete device (owner)
 router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) => {
   try {
     const { userId } = req.body;
@@ -150,13 +140,11 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
       return res.status(404).json({ error: "Device not found" });
     }
 
-    // If owner, delete the entire device
     if (device.ownerId === userId) {
       await Device.findByIdAndDelete(req.params.deviceId);
       return res.json({ message: "Device deleted" });
     }
 
-    // Otherwise, remove user from members
     device.members = device.members.filter((m) => m.userId !== userId);
     await device.save();
     res.json({ message: "Left device successfully" });
@@ -165,7 +153,6 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
   }
 });
 
-// Update device status (for ESP32 heartbeat)
 router.post("/:deviceId/heartbeat", async (req, res) => {
   try {
     const device = await Device.findByIdAndUpdate(
@@ -184,8 +171,7 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
   }
 });
 
-// Background job: Mark devices offline if they haven't sent heartbeat
-const HEARTBEAT_TIMEOUT = 90000; // 90 seconds
+const HEARTBEAT_TIMEOUT = 90000;
 setInterval(async () => {
   try {
     const cutoff = new Date(Date.now() - HEARTBEAT_TIMEOUT);
@@ -194,7 +180,6 @@ setInterval(async () => {
       { status: "offline" }
     );
   } catch {
-    // Silent fail for background job
   }
 }, 30000);
 

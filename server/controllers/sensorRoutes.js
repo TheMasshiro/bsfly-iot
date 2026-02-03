@@ -9,7 +9,6 @@ import {
 
 const router = express.Router();
 
-// Store sensor readings from ESP32
 router.post("/", sensorLimiter, async (req, res) => {
   try {
     const { deviceId, temperature, humidity, moisture, ammonia, timestamp } = req.body;
@@ -36,7 +35,6 @@ router.post("/", sensorLimiter, async (req, res) => {
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
 
-    // Only include defined values
     if (temperature !== undefined) readingData.temperature = temperature;
     if (humidity !== undefined) readingData.humidity = humidity;
     if (moisture !== undefined) readingData.moisture = moisture;
@@ -54,7 +52,6 @@ router.post("/", sensorLimiter, async (req, res) => {
   }
 });
 
-// Get latest sensor readings for a device
 router.get("/device/:deviceId", async (req, res) => {
   try {
     const { deviceId } = req.params;
@@ -63,7 +60,6 @@ router.get("/device/:deviceId", async (req, res) => {
       return res.status(400).json({ error: "deviceId is required" });
     }
 
-    // Get today's readings for this device
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -82,7 +78,6 @@ router.get("/device/:deviceId", async (req, res) => {
       });
     }
 
-    // Get the latest reading
     const latest = reading.readings[reading.readings.length - 1];
 
     res.json({
@@ -98,7 +93,6 @@ router.get("/device/:deviceId", async (req, res) => {
   }
 });
 
-// Get sensor history for a device within date range
 router.get("/device/:deviceId/history", async (req, res) => {
   try {
     const { deviceId } = req.params;
@@ -125,7 +119,6 @@ router.get("/device/:deviceId/history", async (req, res) => {
   }
 });
 
-// Get latest readings for a specific drawer
 router.get("/drawer/:drawerId", async (req, res) => {
   try {
     const { drawerId } = req.params;
