@@ -1,0 +1,8 @@
+/* Backup page */
+.backup-page ion-content {
+    --padding-bottom: 45px;
+}
+
+.backup-page ion-card {
+    border-radius: 18px;
+}
