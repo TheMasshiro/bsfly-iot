@@ -30,6 +30,7 @@ import {
 } from "ionicons/icons";
 import { FC } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
+import "./About.css";
 
 const APP_VERSION = "0.1a";
 
@@ -50,7 +51,6 @@ const About: FC = () => {
             </IonHeader>
 
             <IonContent fullscreen>
-                {/* Hero Card */}
                 <IonCard className="ion-margin">
                     <IonCardHeader className="ion-text-center ion-padding">
                         <div
@@ -88,9 +88,7 @@ const About: FC = () => {
                     </IonCardContent>
                 </IonCard>
 
-                {/* Expandable Sections */}
                 <IonAccordionGroup className="ion-margin">
-                    {/* Developer Section */}
                     <IonAccordion value="developer">
                         <IonItem slot="header">
                             <IonIcon
@@ -124,7 +122,6 @@ const About: FC = () => {
                         </IonList>
                     </IonAccordion>
 
-                    {/* Research Team Section */}
                     <IonAccordion value="researchers">
                         <IonItem slot="header">
                             <IonIcon
@@ -151,7 +148,6 @@ const About: FC = () => {
                         </IonList>
                     </IonAccordion>
 
-                    {/* Support Section */}
                     <IonAccordion value="support">
                         <IonItem slot="header">
                             <IonIcon icon={bug} slot="start" color="primary" />
@@ -217,7 +213,6 @@ const About: FC = () => {
                     </IonAccordion>
                 </IonAccordionGroup>
 
-                {/* Footer */}
                 <div
                     className="ion-text-center ion-padding"
                     style={{ paddingBottom: 32 }}

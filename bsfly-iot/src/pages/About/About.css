@@ -1,0 +1,39 @@
+/* About page */
+.about-page ion-content {
+    --padding-bottom: 45px;
+}
+
+/* Hero card */
+.about-page ion-card {
+    border-radius: 18px;
+}
+
+/* Accordion group */
+.about-page ion-accordion-group {
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.about-page ion-accordion {
+    background: var(--ion-card-background);
+}
+
+.about-page ion-accordion ion-item[slot="header"] {
+    --background: var(--ion-card-background);
+}
+
+.about-page ion-accordion ion-list {
+    background: var(--ion-card-background);
+    padding: 0;
+}
+
+.about-page ion-accordion ion-list ion-item {
+    --background: var(--ion-card-background);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+    .about-page ion-card h1 {
+        font-size: 1.5rem;
+    }
+}
