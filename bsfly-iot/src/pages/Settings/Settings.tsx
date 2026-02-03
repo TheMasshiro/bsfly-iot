@@ -4,7 +4,7 @@ import {
     IonRefresher, IonRefresherContent
 } from "@ionic/react";
 import { hardwareChip, helpCircle, add, logOut, refresh, copy, people } from "ionicons/icons";
-import { FC, useState, useEffect } from "react";
+import { FC, useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
@@ -47,7 +47,7 @@ const Settings: FC = () => {
     const [showLeaveAlert, setShowLeaveAlert] = useState(false);
     const [deviceToLeave, setDeviceToLeave] = useState<Device | null>(null);
 
-    const fetchDevices = async () => {
+    const fetchDevices = useCallback(async () => {
         if (!user?.id) return;
         try {
             const res = await fetch(`${API_URL}/api/devices/user/${user.id}`);
@@ -57,11 +57,11 @@ const Settings: FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.id]);
 
     useEffect(() => {
         fetchDevices();
-    }, [user?.id]);
+    }, [fetchDevices]);
 
     const handleRefresh = async (event: CustomEvent) => {
         await Promise.all([fetchDevices(), refreshDevices()]);

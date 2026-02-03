@@ -1,6 +1,6 @@
 import { IonButton, IonButtons, IonChip, IonIcon, IonTitle, IonToolbar } from "@ionic/react";
 import { hardwareChipOutline, menuOutline, notifications } from "ionicons/icons";
-import { FC, useEffect, useState, useRef } from "react";
+import { FC, useEffect, useRef } from "react";
 import { menuController } from '@ionic/core/components';
 import { actuatorService } from "../../services/socket/socket";
 import { useDevice } from "../../context/DeviceContext";
@@ -13,18 +13,12 @@ interface ToolbarProps {
 let pollingStarted = false;
 
 const Toolbar: FC<ToolbarProps> = ({ header }) => {
-    const [isOnline, setIsOnline] = useState(false);
-    const { devices, currentDevice } = useDevice();
+    const { devices, currentDevice, refreshDevices } = useDevice();
     const statusIntervalRef = useRef<number | null>(null);
 
     useEffect(() => {
-        const checkStatus = async () => {
-            const online = await actuatorService.checkConnection();
-            setIsOnline(online);
-        };
-
-        checkStatus();
-        statusIntervalRef.current = window.setInterval(checkStatus, 30000);
+        refreshDevices();
+        statusIntervalRef.current = window.setInterval(refreshDevices, 30000);
 
         if (!pollingStarted) {
             pollingStarted = true;
@@ -36,7 +30,7 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
                 clearInterval(statusIntervalRef.current);
             }
         };
-    }, []);
+    }, [refreshDevices]);
 
     async function openMainMenu() {
         await menuController.open('open-menu');
@@ -49,6 +43,8 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
     async function openNotifications() {
         await menuController.open('open-notifications');
     }
+
+    const isDeviceOnline = currentDevice?.status === "online";
 
     return (
         <IonToolbar>
@@ -65,8 +61,8 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
                 </IonButton>
             )}
             
-            <IonChip slot='end' color={currentDevice?.status === "online" ? "success" : isOnline ? "warning" : "danger"}>
-                {currentDevice?.status === "online" ? "Device Online" : isOnline ? "API Online" : "Offline"}
+            <IonChip slot='end' color={isDeviceOnline ? "success" : "danger"}>
+                {isDeviceOnline ? "Online" : "Offline"}
             </IonChip>
             <IonButtons slot="end">
                 <IonButton expand="block" onClick={openNotifications}>

@@ -135,7 +135,7 @@ const LifeStages: FC = () => {
         return () => {
             actuatorService.off(lifecycleActuatorId, onLifecycleResponse);
         };
-    }, [deviceId, lifecycleActuatorId, fetchLifecycleState]);
+    }, [deviceId, lifecycleActuatorId]);
 
     const handleRefresh = async (event: CustomEvent) => {
         await Promise.all([fetchLifecycleState(), refreshDevices()]);
@@ -152,7 +152,7 @@ const LifeStages: FC = () => {
             });
             setQuadrantStages(defaults);
         }
-    }, [quadrantStages]);
+    }, []);
 
     const syncToBackend = useCallback((timers: typeof activeTimers, stages: typeof quadrantStages) => {
         if (!deviceId) return;

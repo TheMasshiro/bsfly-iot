@@ -46,10 +46,11 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
             setCurrentDevice(prev => {
                 if (deviceList.length > 0) {
-                    if (!prev || !deviceList.find(d => d._id === prev._id)) {
-                        return deviceList[0];
+                    const updated = deviceList.find(d => d._id === prev?._id);
+                    if (updated) {
+                        return updated;
                     }
-                    return prev;
+                    return deviceList[0];
                 }
                 return null;
             });
