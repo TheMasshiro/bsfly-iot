@@ -2,41 +2,41 @@
   --padding-bottom: 45px;
 }
 
+.notifications-menu ion-item-sliding {
+  margin: 8px 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .notifications-menu .notification-item {
   --padding-start: 12px;
   --padding-end: 12px;
   --inner-padding-end: 8px;
-  margin: 8px 12px;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.notifications-menu .notification-item:hover {
-  transform: translateX(4px);
+  --background: var(--ion-card-background);
 }
 
 .notifications-menu .notification-unread {
-  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
 }
 
 .notifications-menu .notification-success {
   border-left: 4px solid var(--ion-color-success);
-  background: rgba(var(--ion-color-success-rgb), 0.08);
+  --background: rgba(var(--ion-color-success-rgb), 0.08);
 }
 
 .notifications-menu .notification-warning {
   border-left: 4px solid var(--ion-color-warning);
-  background: rgba(var(--ion-color-warning-rgb), 0.08);
+  --background: rgba(var(--ion-color-warning-rgb), 0.08);
 }
 
 .notifications-menu .notification-danger {
   border-left: 4px solid var(--ion-color-danger);
-  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  --background: rgba(var(--ion-color-danger-rgb), 0.08);
 }
 
 .notifications-menu .notification-info {
   border-left: 4px solid var(--ion-color-primary);
-  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
 }
 
 .notifications-menu .notification-icon {
