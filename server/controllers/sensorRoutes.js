@@ -198,4 +198,78 @@ router.get("/drawer/:drawerId", async (req, res) => {
   }
 });
 
+router.get("/device/:deviceId/hourly", async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+
+    if (!deviceId) {
+      return res.status(400).json({ error: "deviceId is required" });
+    }
+
+    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+
+    if (drawers.length === 0) {
+      return res.json([]);
+    }
+
+    const now = new Date();
+    const past24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const startOfPast24h = new Date(past24h);
+    startOfPast24h.setHours(past24h.getHours(), 0, 0, 0);
+
+    const drawerIds = drawers.map((d) => d._id);
+    const readings = await DrawerReading.find({
+      drawerId: { $in: drawerIds },
+      date: { $gte: new Date(startOfPast24h.setHours(0, 0, 0, 0)) },
+    });
+
+    const hourlyData = {};
+    for (let i = 0; i < 24; i++) {
+      const hourStart = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      hourStart.setMinutes(0, 0, 0);
+      const hourKey = hourStart.toISOString();
+      hourlyData[hourKey] = {
+        hour: hourStart,
+        temperature: [],
+        humidity: [],
+        moisture: [],
+        ammonia: [],
+      };
+    }
+
+    readings.forEach((r) => {
+      if (r.readings) {
+        r.readings.forEach((reading) => {
+          const ts = new Date(reading.timestamp);
+          if (ts >= past24h) {
+            const hourStart = new Date(ts);
+            hourStart.setMinutes(0, 0, 0);
+            const hourKey = hourStart.toISOString();
+
+            if (hourlyData[hourKey]) {
+              if (reading.temperature !== undefined) hourlyData[hourKey].temperature.push(reading.temperature);
+              if (reading.humidity !== undefined) hourlyData[hourKey].humidity.push(reading.humidity);
+              if (reading.moisture !== undefined) hourlyData[hourKey].moisture.push(reading.moisture);
+              if (reading.ammonia !== undefined) hourlyData[hourKey].ammonia.push(reading.ammonia);
+            }
+          }
+        });
+      }
+    });
+
+    const result = Object.values(hourlyData).map((h) => ({
+      hour: h.hour,
+      temperature: h.temperature.length > 0 ? h.temperature.reduce((a, b) => a + b, 0) / h.temperature.length : null,
+      humidity: h.humidity.length > 0 ? h.humidity.reduce((a, b) => a + b, 0) / h.humidity.length : null,
+      moisture: h.moisture.length > 0 ? h.moisture.reduce((a, b) => a + b, 0) / h.moisture.length : null,
+      ammonia: h.ammonia.length > 0 ? h.ammonia.reduce((a, b) => a + b, 0) / h.ammonia.length : null,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch hourly data" });
+  }
+});
+
 export default router;
