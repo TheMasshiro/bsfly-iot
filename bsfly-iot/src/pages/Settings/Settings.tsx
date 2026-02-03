@@ -7,6 +7,7 @@ import { hardwareChip, helpCircle, add, logOut, refresh, copy, people } from "io
 import { FC, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import Toolbar from "../../components/Toolbar/Toolbar";
+import "./Settings.css";
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -50,8 +51,7 @@ const Settings: FC = () => {
             const res = await fetch(`${API_URL}/api/devices/user/${user.id}`);
             const data = await res.json();
             setDevices(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Failed to fetch devices:", error);
+        } catch {
         } finally {
             setLoading(false);
         }
@@ -169,7 +169,7 @@ const Settings: FC = () => {
     };
 
     return (
-        <IonPage>
+        <IonPage className="settings-page">
             <IonHeader class="ion-no-border">
                 <Toolbar header={"Settings"} />
             </IonHeader>
@@ -179,7 +179,6 @@ const Settings: FC = () => {
                     <IonRefresherContent />
                 </IonRefresher>
 
-                {/* Register New Device */}
                 <IonList inset>
                     <IonItem lines="none">
                         <IonIcon icon={add} slot="start" />
@@ -214,7 +213,6 @@ const Settings: FC = () => {
                     </IonItem>
                 </IonList>
 
-                {/* Join Existing Device */}
                 <IonList inset>
                     <IonItem lines="none">
                         <IonIcon icon={people} slot="start" />
@@ -237,7 +235,6 @@ const Settings: FC = () => {
                     </IonItem>
                 </IonList>
 
-                {/* My Devices */}
                 <IonList inset>
                     <IonItem lines="none">
                         <IonIcon icon={hardwareChip} slot="start" />

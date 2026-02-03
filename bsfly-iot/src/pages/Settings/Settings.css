@@ -1,0 +1,14 @@
+/* Settings page */
+.settings-page ion-content {
+    --padding-bottom: 45px;
+}
+
+.settings-page ion-list {
+    border-radius: 18px !important;
+    --ion-item-border-radius: 18px;
+    overflow: hidden;
+}
+
+.settings-page ion-button {
+    --border-radius: 16px;
+}
