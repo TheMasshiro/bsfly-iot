@@ -4,12 +4,13 @@ import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { useDevice } from '../../context/DeviceContext';
+import { useNotification } from '../../context/NotificationContext';
 import { sensorsData, controlsData } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { snow, flame, water, rainy } from 'ionicons/icons';
 import { actuatorService } from '../../services/socket/socket';
 
@@ -30,7 +31,6 @@ const quickActionIcons: Record<string, string> = {
     "Misting Device 2": water,
 };
 
-// Build actuator ID with device prefix: {deviceId}:{drawer}:{actuator}
 const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
     const drawerNum = stage.toLowerCase().replace('drawer ', '');
     const actionMap: Record<string, string> = {
@@ -54,6 +54,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
     const { currentDevice } = useDevice();
+    const { addNotification } = useNotification();
     const deviceId = currentDevice?._id;
     const [sensorData, setSensorData] = useState<Record<string, number | null>>({
         temperature: null,
@@ -63,27 +64,13 @@ const Dashboard: React.FC = () => {
         ammonia: null,
     });
     const thresholds = lifecycleThresholds[stage];
-    const quality = useMemo(() => calculateQuality(sensorsData, thresholds, stage), [stage, thresholds]);
 
     const status = useCallback((name: string, value: number) => {
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
     }, [thresholds]);
 
-    const qualityColor = useMemo(() =>
-        quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27'
-        , [quality]);
-
-    const qualityChipColor = useMemo(() =>
-        quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'
-        , [quality]);
-
-    const qualityText = useMemo(() =>
-        quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
-        , [quality]);
-
     const filteredSensors = useMemo(() =>
         sensorsData.map(sensor => {
-            // Replace mock data with real sensor data
             if (sensor.name === "Temperature" && sensorData.temperature !== null) {
                 return { ...sensor, value: sensorData.temperature };
             }
@@ -110,6 +97,20 @@ const Dashboard: React.FC = () => {
             return true;
         }), [stage, sensorData]);
 
+    const quality = useMemo(() => calculateQuality(filteredSensors, thresholds, stage), [filteredSensors, thresholds, stage]);
+
+    const qualityColor = useMemo(() =>
+        quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27'
+        , [quality]);
+
+    const qualityChipColor = useMemo(() =>
+        quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'
+        , [quality]);
+
+    const qualityText = useMemo(() =>
+        quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
+        , [quality]);
+
     const [present] = useIonToast();
 
     const [actuatorStates, setActuatorStates] = useState<Record<string, Record<string, boolean>>>(() => {
@@ -124,7 +125,8 @@ const Dashboard: React.FC = () => {
         return initial;
     });
 
-    // Fetch sensor data
+    const shownAlertsRef = useRef<Set<string>>(new Set());
+
     useEffect(() => {
         if (!deviceId) return;
 
@@ -134,16 +136,74 @@ const Dashboard: React.FC = () => {
                 const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
                 const data = await response.json();
                 setSensorData(data);
-            } catch (error) {
-                console.error("Failed to fetch sensor data:", error);
+            } catch {
             }
         };
 
         fetchSensorData();
-        const interval = setInterval(fetchSensorData, 5000); // Fetch every 5 seconds
+        const interval = setInterval(fetchSensorData, 10000);
 
         return () => clearInterval(interval);
     }, [deviceId]);
+
+    useEffect(() => {
+        const drawerNum = stage.toLowerCase().replace('drawer ', '');
+        const drawer = `drawer${drawerNum}` as 'drawer1' | 'drawer2' | 'drawer3';
+
+        const sensorChecks = [
+            { key: 'temperature', name: 'Temperature', value: sensorData.temperature, unit: '°C' },
+            { key: 'humidity', name: 'Humidity', value: sensorData.humidity, unit: '%' },
+            { key: 'moisture', name: 'Substrate Moisture 1', value: sensorData.moisture1, unit: '%' },
+            { key: 'moisture', name: 'Substrate Moisture 2', value: sensorData.moisture2, unit: '%' },
+            { key: 'ammonia', name: 'Ammonia', value: sensorData.ammonia, unit: 'ppm' },
+        ];
+
+        sensorChecks.forEach(({ key, name, value, unit }) => {
+            if (value === null || value === undefined) return;
+
+            const threshold = thresholds[key as keyof typeof thresholds];
+            if (!threshold) return;
+
+            const isLow = value < threshold.min;
+            const isHigh = value > threshold.max;
+            const alertKey = `${stage}-${name}-${isLow ? 'low' : 'high'}`;
+
+            if (isLow && !shownAlertsRef.current.has(alertKey)) {
+                shownAlertsRef.current.add(alertKey);
+                addNotification({
+                    type: 'danger',
+                    title: `${name} Alert`,
+                    message: `${name} is too low: ${value}${unit} (min: ${threshold.min}${unit})`,
+                    drawer,
+                });
+                present({
+                    message: `${name} is too low: ${value}${unit}`,
+                    duration: 3000,
+                    position: "top",
+                    mode: "ios",
+                    color: "danger",
+                });
+            } else if (isHigh && !shownAlertsRef.current.has(alertKey)) {
+                shownAlertsRef.current.add(alertKey);
+                addNotification({
+                    type: 'danger',
+                    title: `${name} Alert`,
+                    message: `${name} is too high: ${value}${unit} (max: ${threshold.max}${unit})`,
+                    drawer,
+                });
+                present({
+                    message: `${name} is too high: ${value}${unit}`,
+                    duration: 3000,
+                    position: "top",
+                    mode: "ios",
+                    color: "danger",
+                });
+            } else if (!isLow && !isHigh) {
+                shownAlertsRef.current.delete(`${stage}-${name}-low`);
+                shownAlertsRef.current.delete(`${stage}-${name}-high`);
+            }
+        });
+    }, [sensorData, thresholds, stage, present, addNotification]);
 
     useEffect(() => {
         if (!deviceId) return;
@@ -154,11 +214,10 @@ const Dashboard: React.FC = () => {
             setActuatorStates(prev => {
                 const updated = { ...prev };
                 Object.entries(allStates).forEach(([actuatorId, state]) => {
-                    // Parse device-scoped actuator ID: {deviceId}:{drawer}:{actuator}
                     const parts = actuatorId.split(':');
                     if (parts.length < 3 || parts[0] !== deviceId) return;
 
-                    const drawerPart = parts[1]; // drawer1, drawer2, drawer3
+                    const drawerPart = parts[1];
                     const drawerName = `Drawer ${drawerPart.replace('drawer', '')}`;
                     const actionName = controlsData.find(c =>
                         getActuatorId(deviceId, drawerName, c.name) === actuatorId
@@ -171,7 +230,6 @@ const Dashboard: React.FC = () => {
                 return updated;
             });
         };
-
         loadStates();
 
         const stages = ['Drawer 1', 'Drawer 2', 'Drawer 3'];
