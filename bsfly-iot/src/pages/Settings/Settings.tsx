@@ -1,13 +1,15 @@
 import {
     IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList,
     IonPage, IonButton, IonBadge, IonAlert, IonText, useIonToast, IonChip,
-    IonRefresher, IonRefresherContent
+    IonRefresher, IonRefresherContent, IonNote
 } from "@ionic/react";
 import { hardwareChip, helpCircle, add, logOut, refresh, copy, people } from "ionicons/icons";
 import { FC, useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
+import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
+import { validateMacAddress, validateDeviceName, validateJoinCode, formatMacAddress } from "../../utils/validation";
 import "./Settings.css";
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -38,8 +40,11 @@ const Settings: FC = () => {
 
     const [macAddress, setMacAddress] = useState("");
     const [deviceName, setDeviceName] = useState("");
+    const [macError, setMacError] = useState<string | undefined>();
+    const [nameError, setNameError] = useState<string | undefined>();
 
     const [joinCode, setJoinCode] = useState("");
+    const [joinCodeError, setJoinCodeError] = useState<string | undefined>();
 
     const [showLeaveAlert, setShowLeaveAlert] = useState(false);
     const [deviceToLeave, setDeviceToLeave] = useState<Device | null>(null);
@@ -65,9 +70,52 @@ const Settings: FC = () => {
         event.detail.complete();
     };
 
+    const handleMacChange = (value: string) => {
+        const formatted = formatMacAddress(value);
+        setMacAddress(formatted);
+        if (formatted) {
+            const result = validateMacAddress(formatted);
+            setMacError(result.valid ? undefined : result.error);
+        } else {
+            setMacError(undefined);
+        }
+    };
+
+    const handleNameChange = (value: string) => {
+        setDeviceName(value);
+        if (value) {
+            const result = validateDeviceName(value);
+            setNameError(result.valid ? undefined : result.error);
+        } else {
+            setNameError(undefined);
+        }
+    };
+
+    const handleJoinCodeChange = (value: string) => {
+        const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+        setJoinCode(cleaned);
+        if (cleaned) {
+            const result = validateJoinCode(cleaned);
+            setJoinCodeError(result.valid ? undefined : result.error);
+        } else {
+            setJoinCodeError(undefined);
+        }
+    };
+
     const registerDevice = async () => {
-        if (!user?.id || !macAddress || !deviceName) {
-            present({ message: "Please fill in all fields", duration: 2000, color: "warning" });
+        const macResult = validateMacAddress(macAddress);
+        const nameResult = validateDeviceName(deviceName);
+        
+        setMacError(macResult.valid ? undefined : macResult.error);
+        setNameError(nameResult.valid ? undefined : nameResult.error);
+
+        if (!macResult.valid || !nameResult.valid) {
+            present({ message: "Please fix validation errors", duration: 2000, color: "warning" });
+            return;
+        }
+
+        if (!user?.id) {
+            present({ message: "Please sign in", duration: 2000, color: "warning" });
             return;
         }
 
@@ -88,6 +136,8 @@ const Settings: FC = () => {
             present({ message: "Device registered successfully!", duration: 2000, color: "success" });
             setMacAddress("");
             setDeviceName("");
+            setMacError(undefined);
+            setNameError(undefined);
             fetchDevices();
         } catch (error: any) {
             present({ message: error.message, duration: 2000, color: "danger" });
@@ -95,8 +145,16 @@ const Settings: FC = () => {
     };
 
     const joinDevice = async () => {
-        if (!user?.id || !joinCode) {
-            present({ message: "Please enter a join code", duration: 2000, color: "warning" });
+        const codeResult = validateJoinCode(joinCode);
+        setJoinCodeError(codeResult.valid ? undefined : codeResult.error);
+
+        if (!codeResult.valid) {
+            present({ message: "Please fix validation errors", duration: 2000, color: "warning" });
+            return;
+        }
+
+        if (!user?.id) {
+            present({ message: "Please sign in", duration: 2000, color: "warning" });
             return;
         }
 
@@ -112,6 +170,7 @@ const Settings: FC = () => {
 
             present({ message: "Joined device successfully!", duration: 2000, color: "success" });
             setJoinCode("");
+            setJoinCodeError(undefined);
             fetchDevices();
         } catch (error: any) {
             present({ message: error.message, duration: 2000, color: "danger" });
@@ -183,26 +242,30 @@ const Settings: FC = () => {
                         <IonIcon icon={add} slot="start" />
                         <IonLabel>Register New ESP32</IonLabel>
                     </IonItem>
-                    <IonItem>
+                    <IonItem className={nameError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="Device Name"
                             labelPlacement="stacked"
-                            placeholder="My Butterfly Farm"
+                            placeholder="My BSF Farm"
                             value={deviceName}
-                            onIonInput={(e) => setDeviceName(e.detail.value || "")}
+                            onIonInput={(e) => handleNameChange(e.detail.value || "")}
+                            className={nameError ? 'ion-invalid ion-touched' : ''}
                         />
+                        {nameError && <IonNote slot="error">{nameError}</IonNote>}
                     </IonItem>
-                    <IonItem>
+                    <IonItem className={macError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="MAC Address"
                             labelPlacement="stacked"
                             placeholder="AA:BB:CC:DD:EE:FF"
                             value={macAddress}
-                            onIonInput={(e) => setMacAddress(e.detail.value || "")}
+                            onIonInput={(e) => handleMacChange(e.detail.value || "")}
+                            className={macError ? 'ion-invalid ion-touched' : ''}
                         />
+                        {macError && <IonNote slot="error">{macError}</IonNote>}
                     </IonItem>
                     <IonItem lines="none">
-                        <IonButton expand="block" onClick={registerDevice} style={{ width: "100%" }}>
+                        <IonButton expand="block" onClick={registerDevice} style={{ width: "100%" }} disabled={!!macError || !!nameError}>
                             Register Device
                         </IonButton>
                     </IonItem>
@@ -217,18 +280,20 @@ const Settings: FC = () => {
                         <IonIcon icon={people} slot="start" />
                         <IonLabel>Join Existing Device</IonLabel>
                     </IonItem>
-                    <IonItem>
+                    <IonItem className={joinCodeError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="Join Code"
                             labelPlacement="stacked"
                             placeholder="Enter 8-character code"
                             value={joinCode}
-                            onIonInput={(e) => setJoinCode(e.detail.value || "")}
+                            onIonInput={(e) => handleJoinCodeChange(e.detail.value || "")}
                             maxlength={8}
+                            className={joinCodeError ? 'ion-invalid ion-touched' : ''}
                         />
+                        {joinCodeError && <IonNote slot="error">{joinCodeError}</IonNote>}
                     </IonItem>
                     <IonItem lines="none">
-                        <IonButton expand="block" onClick={joinDevice} style={{ width: "100%" }}>
+                        <IonButton expand="block" onClick={joinDevice} style={{ width: "100%" }} disabled={!!joinCodeError}>
                             Join Device
                         </IonButton>
                     </IonItem>
@@ -242,9 +307,9 @@ const Settings: FC = () => {
                     </IonItem>
 
                     {loading ? (
-                        <IonItem>
-                            <IonLabel color="medium">Loading...</IonLabel>
-                        </IonItem>
+                        <div style={{ padding: '8px 16px' }}>
+                            <LoadingSkeleton variant="list-item" count={2} />
+                        </div>
                     ) : devices.length === 0 ? (
                         <IonItem>
                             <IonLabel color="medium">No devices yet. Register or join one above.</IonLabel>
