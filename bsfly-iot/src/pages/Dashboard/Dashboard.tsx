@@ -164,43 +164,86 @@ const Dashboard: React.FC = () => {
             const threshold = thresholds[key as keyof typeof thresholds];
             if (!threshold) return;
 
-            const isLow = value < threshold.min;
-            const isHigh = value > threshold.max;
-            const alertKey = `${stage}-${name}-${isLow ? 'low' : 'high'}`;
+            const [optimalMin, optimalMax] = threshold.optimal;
+            const isDanger = value < threshold.min || value > threshold.max;
+            const isWarning = !isDanger && (value < optimalMin || value > optimalMax);
+            const isNormal = value >= optimalMin && value <= optimalMax;
 
-            if (isLow && !shownAlertsRef.current.has(alertKey)) {
-                shownAlertsRef.current.add(alertKey);
+            const dangerLowKey = `${stage}-${name}-danger-low`;
+            const dangerHighKey = `${stage}-${name}-danger-high`;
+            const warningLowKey = `${stage}-${name}-warning-low`;
+            const warningHighKey = `${stage}-${name}-warning-high`;
+
+            if (value < threshold.min && !shownAlertsRef.current.has(dangerLowKey)) {
+                shownAlertsRef.current.add(dangerLowKey);
                 addNotification({
                     type: 'danger',
-                    title: `${name} Alert`,
-                    message: `${name} is too low: ${value}${unit} (min: ${threshold.min}${unit})`,
+                    title: `${name} Critical`,
+                    message: `${name} is critically low: ${value}${unit} (min: ${threshold.min}${unit})`,
                     drawer,
                 });
                 present({
-                    message: `${name} is too low: ${value}${unit}`,
+                    message: `${name} is critically low: ${value}${unit}`,
                     duration: 3000,
                     position: "top",
                     mode: "ios",
                     color: "danger",
                 });
-            } else if (isHigh && !shownAlertsRef.current.has(alertKey)) {
-                shownAlertsRef.current.add(alertKey);
+            } else if (value > threshold.max && !shownAlertsRef.current.has(dangerHighKey)) {
+                shownAlertsRef.current.add(dangerHighKey);
                 addNotification({
                     type: 'danger',
-                    title: `${name} Alert`,
-                    message: `${name} is too high: ${value}${unit} (max: ${threshold.max}${unit})`,
+                    title: `${name} Critical`,
+                    message: `${name} is critically high: ${value}${unit} (max: ${threshold.max}${unit})`,
                     drawer,
                 });
                 present({
-                    message: `${name} is too high: ${value}${unit}`,
+                    message: `${name} is critically high: ${value}${unit}`,
                     duration: 3000,
                     position: "top",
                     mode: "ios",
                     color: "danger",
                 });
-            } else if (!isLow && !isHigh) {
-                shownAlertsRef.current.delete(`${stage}-${name}-low`);
-                shownAlertsRef.current.delete(`${stage}-${name}-high`);
+            } else if (isWarning && value < optimalMin && !shownAlertsRef.current.has(warningLowKey)) {
+                shownAlertsRef.current.add(warningLowKey);
+                addNotification({
+                    type: 'warning',
+                    title: `${name} Warning`,
+                    message: `${name} is below optimal: ${value}${unit} (optimal: ${optimalMin}-${optimalMax}${unit})`,
+                    drawer,
+                });
+                present({
+                    message: `${name} below optimal: ${value}${unit}`,
+                    duration: 2500,
+                    position: "top",
+                    mode: "ios",
+                    color: "warning",
+                });
+            } else if (isWarning && value > optimalMax && !shownAlertsRef.current.has(warningHighKey)) {
+                shownAlertsRef.current.add(warningHighKey);
+                addNotification({
+                    type: 'warning',
+                    title: `${name} Warning`,
+                    message: `${name} is above optimal: ${value}${unit} (optimal: ${optimalMin}-${optimalMax}${unit})`,
+                    drawer,
+                });
+                present({
+                    message: `${name} above optimal: ${value}${unit}`,
+                    duration: 2500,
+                    position: "top",
+                    mode: "ios",
+                    color: "warning",
+                });
+            }
+
+            if (isNormal) {
+                shownAlertsRef.current.delete(dangerLowKey);
+                shownAlertsRef.current.delete(dangerHighKey);
+                shownAlertsRef.current.delete(warningLowKey);
+                shownAlertsRef.current.delete(warningHighKey);
+            } else if (!isDanger) {
+                shownAlertsRef.current.delete(dangerLowKey);
+                shownAlertsRef.current.delete(dangerHighKey);
             }
         });
     }, [sensorData, thresholds, stage, present, addNotification]);
