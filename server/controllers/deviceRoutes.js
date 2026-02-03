@@ -1,27 +1,45 @@
 import express from "express";
 import Device from "../models/User.Device.js";
+import { deviceLimiter } from "../middleware/rateLimiter.js";
+import {
+  validateBody,
+  isValidMacAddress,
+  isValidDeviceName,
+  isValidJoinCode,
+  isValidUserId,
+} from "../middleware/validation.js";
 
 const router = express.Router();
 
+// Validation schemas
+const registerSchema = {
+  deviceId: { required: true, type: "string", validator: isValidMacAddress, message: "Invalid MAC address format" },
+  name: { required: true, type: "string", validator: isValidDeviceName, message: "Device name must be 1-50 characters" },
+  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
+};
+
+const joinSchema = {
+  joinCode: { required: true, type: "string", validator: isValidJoinCode, message: "Join code must be 8 alphanumeric characters" },
+  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
+};
+
+const userIdSchema = {
+  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
+};
+
 // Register a new device (owner)
-router.post("/register", async (req, res) => {
+router.post("/register", deviceLimiter, validateBody(registerSchema), async (req, res) => {
   try {
     const { deviceId, name, userId } = req.body;
 
-    if (!deviceId || !name || !userId) {
-      return res
-        .status(400)
-        .json({ error: "deviceId, name, and userId are required" });
-    }
-
     // Check if device already exists
-    const existing = await Device.findById(deviceId);
+    const existing = await Device.findById(deviceId.toUpperCase());
     if (existing) {
       return res.status(409).json({ error: "Device already registered" });
     }
 
     const device = new Device({
-      _id: deviceId,
+      _id: deviceId.toUpperCase(),
       name,
       ownerId: userId,
       members: [{ userId, role: "owner", joinedAt: new Date() }],
@@ -30,20 +48,14 @@ router.post("/register", async (req, res) => {
     await device.save();
     res.status(201).json(device);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to register device" });
   }
 });
 
 // Join a device using join code
-router.post("/join", async (req, res) => {
+router.post("/join", validateBody(joinSchema), async (req, res) => {
   try {
     const { joinCode, userId } = req.body;
-
-    if (!joinCode || !userId) {
-      return res
-        .status(400)
-        .json({ error: "joinCode and userId are required" });
-    }
 
     const device = await Device.findOne({ joinCode: joinCode.toUpperCase() });
     if (!device) {
@@ -61,7 +73,7 @@ router.post("/join", async (req, res) => {
 
     res.json({ message: "Successfully joined device", device });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to join device" });
   }
 });
 
@@ -70,10 +82,14 @@ router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
+    if (!isValidUserId(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
     const devices = await Device.find({ "members.userId": userId });
     res.json(devices);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to fetch devices" });
   }
 });
 
@@ -86,7 +102,7 @@ router.get("/:deviceId", async (req, res) => {
     }
     res.json(device);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to fetch device" });
   }
 });
 
@@ -99,12 +115,12 @@ router.get("/:deviceId/members", async (req, res) => {
     }
     res.json(device.members);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to fetch members" });
   }
 });
 
 // Regenerate join code (owner only)
-router.post("/:deviceId/regenerate-code", async (req, res) => {
+router.post("/:deviceId/regenerate-code", validateBody(userIdSchema), async (req, res) => {
   try {
     const { userId } = req.body;
     const device = await Device.findById(req.params.deviceId);
@@ -114,20 +130,18 @@ router.post("/:deviceId/regenerate-code", async (req, res) => {
     }
 
     if (device.ownerId !== userId) {
-      return res
-        .status(403)
-        .json({ error: "Only the owner can regenerate the join code" });
+      return res.status(403).json({ error: "Only the owner can regenerate the join code" });
     }
 
     await device.regenerateJoinCode();
     res.json({ joinCode: device.joinCode });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to regenerate code" });
   }
 });
 
 // Leave a device (member) or delete device (owner)
-router.delete("/:deviceId/leave", async (req, res) => {
+router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) => {
   try {
     const { userId } = req.body;
     const device = await Device.findById(req.params.deviceId);
@@ -147,7 +161,7 @@ router.delete("/:deviceId/leave", async (req, res) => {
     await device.save();
     res.json({ message: "Left device successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to leave device" });
   }
 });
 
@@ -166,12 +180,12 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
 
     res.json({ status: "online", lastSeen: device.lastSeen });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to update heartbeat" });
   }
 });
 
 // Background job: Mark devices offline if they haven't sent heartbeat
-const HEARTBEAT_TIMEOUT = 90000; // 90 seconds (allows ~3 missed heartbeats)
+const HEARTBEAT_TIMEOUT = 90000; // 90 seconds
 setInterval(async () => {
   try {
     const cutoff = new Date(Date.now() - HEARTBEAT_TIMEOUT);
@@ -179,9 +193,9 @@ setInterval(async () => {
       { lastSeen: { $lt: cutoff }, status: "online" },
       { status: "offline" }
     );
-  } catch (error) {
-    console.error("Error updating offline devices:", error);
+  } catch {
+    // Silent fail for background job
   }
-}, 30000); // Run every 30 seconds
+}, 30000);
 
 export default router;
