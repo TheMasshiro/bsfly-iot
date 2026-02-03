@@ -66,72 +66,6 @@
     }
 }
 
-/* lifecycle cards */
-.lifestages-page .lifecycle-cards {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.lifestages-page .lifecycle-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border-left: 3px solid var(--ion-color-medium);
-    min-width: 90px;
-}
-
-.lifestages-page .lifecycle-card-warning {
-    border-left-color: var(--ion-color-warning);
-}
-
-.lifestages-page .lifecycle-card-success {
-    border-left-color: var(--ion-color-success);
-}
-
-.lifestages-page .lifecycle-card-tertiary {
-    border-left-color: var(--ion-color-tertiary);
-}
-
-.lifestages-page .lifecycle-card-icon {
-    font-size: 28px;
-}
-
-.lifestages-page .lifecycle-card-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--ion-text-color);
-}
-
-.lifestages-page .lifecycle-card-days {
-    font-size: 0.75rem;
-    color: var(--ion-color-medium);
-}
-
-@media (max-width: 576px) {
-    .lifestages-page .lifecycle-cards {
-        gap: 8px;
-    }
-
-    .lifestages-page .lifecycle-card {
-        padding: 12px 16px;
-        min-width: 80px;
-    }
-
-    .lifestages-page .lifecycle-card-icon {
-        font-size: 24px;
-    }
-
-    .lifestages-page .lifecycle-card-name {
-        font-size: 0.8rem;
-    }
-}
-
 /* drawer card */
 .lifestages-page .drawer-card {
     margin: 0;
@@ -246,32 +180,35 @@
 }
 
 .lifestages-page .quadrant-stage-info .stage-icon {
-    font-size: 32px;
+    font-size: 28px;
     flex-shrink: 0;
+}
+
+.lifestages-page .quadrant-stage-info .stage-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+    flex: 1;
+}
+
+.lifestages-page .quadrant-stage-info .stage-days {
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
 }
 
 @media (max-width: 576px) {
     .lifestages-page .quadrant-stage-info .stage-icon {
-        font-size: 28px;
+        font-size: 24px;
     }
-}
 
-.lifestages-page .quadrant-stage-info .stage-name {
-    margin: 0 0 4px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ion-text-color);
-}
-
-@media (max-width: 576px) {
     .lifestages-page .quadrant-stage-info .stage-name {
         font-size: 0.9rem;
     }
-}
 
-.lifestages-page .quadrant-stage-info .stage-duration {
-    height: 24px;
-    font-size: 0.75rem;
+    .lifestages-page .quadrant-stage-info .stage-days {
+        font-size: 0.8rem;
+    }
 }
 
 /* quadrant actions */
@@ -332,39 +269,44 @@
 .lifestages-page .drawer-stage-info {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     margin-bottom: 16px;
+}
+
+.lifestages-page .drawer-stage-info .stage-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.lifestages-page .drawer-stage-info .stage-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+    flex: 1;
+}
+
+.lifestages-page .drawer-stage-info .stage-days {
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
 }
 
 @media (max-width: 576px) {
     .lifestages-page .drawer-stage-info {
-        gap: 12px;
+        gap: 10px;
         margin-bottom: 12px;
     }
-}
 
-.lifestages-page .drawer-stage-info .stage-icon {
-    font-size: 40px;
-    flex-shrink: 0;
-}
-
-@media (max-width: 576px) {
     .lifestages-page .drawer-stage-info .stage-icon {
-        font-size: 32px;
+        font-size: 28px;
     }
-}
 
-.lifestages-page .drawer-stage-info .stage-name {
-    margin: 0 0 8px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--ion-text-color);
-}
-
-@media (max-width: 576px) {
     .lifestages-page .drawer-stage-info .stage-name {
         font-size: 1rem;
-        margin: 0 0 4px;
+    }
+
+    .lifestages-page .drawer-stage-info .stage-days {
+        font-size: 0.85rem;
     }
 }
 

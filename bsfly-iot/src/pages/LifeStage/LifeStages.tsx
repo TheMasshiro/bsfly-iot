@@ -21,7 +21,7 @@ import {
     IonText,
     useIonToast,
 } from "@ionic/react";
-import { bugOutline, eggOutline, gridOutline, leafOutline, playOutline, stopOutline, timeOutline } from "ionicons/icons";
+import { bugOutline, eggOutline, gridOutline, leafOutline, playOutline, stopOutline } from "ionicons/icons";
 import { FC, useState, useEffect, useMemo, useCallback } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import Countdown from "react-countdown";
@@ -280,19 +280,24 @@ const LifeStages: FC = () => {
                                 </IonCardHeader>
                                 <IonCardContent className="ion-text-center">
                                     <IonText color="medium">
-                                        <p style={{ margin: "0 0 16px" }}>
+                                        <p style={{ margin: "0 0 12px" }}>
                                             Track lifecycle stages from eggs through larvae to prepupa.
                                             Total cycle: approximately <strong>{totalDays} days</strong>.
                                         </p>
                                     </IonText>
-                                    <div className="lifecycle-cards">
-                                        {Object.entries(lifeStages).map(([key, stage]) => (
-                                            <div key={key} className={`lifecycle-card lifecycle-card-${stage.color}`}>
-                                                <IonIcon icon={stage.icon} className="lifecycle-card-icon" color={stage.color} />
-                                                <span className="lifecycle-card-name">{stage.name}</span>
-                                                <span className="lifecycle-card-days">{stage.days} days</span>
-                                            </div>
-                                        ))}
+                                    <div className="lifecycle-summary">
+                                        <IonChip color="warning" outline>
+                                            <IonIcon icon={eggOutline} />
+                                            <IonLabel>Eggs: 4 days</IonLabel>
+                                        </IonChip>
+                                        <IonChip color="success" outline>
+                                            <IonIcon icon={bugOutline} />
+                                            <IonLabel>Larvae: 13-18 days</IonLabel>
+                                        </IonChip>
+                                        <IonChip color="tertiary" outline>
+                                            <IonIcon icon={leafOutline} />
+                                            <IonLabel>Prepupa/Pupa: 14 days</IonLabel>
+                                        </IonChip>
                                     </div>
                                 </IonCardContent>
                             </IonCard>
@@ -318,13 +323,8 @@ const LifeStages: FC = () => {
                                                 <div className={`drawer-single stage-${stage.color}`}>
                                                     <div className="drawer-stage-info">
                                                         <IonIcon icon={stage.icon} className="stage-icon" color={stage.color} />
-                                                        <div>
-                                                            <h4 className="stage-name">{stage.name}</h4>
-                                                            <IonChip color={stage.color} outline className="stage-duration">
-                                                                <IonIcon icon={timeOutline} />
-                                                                <IonLabel>{stage.days} days</IonLabel>
-                                                            </IonChip>
-                                                        </div>
+                                                        <span className="stage-name">{stage.name}</span>
+                                                        <span className="stage-days">{stage.days} days</span>
                                                     </div>
 
                                                     <div className="drawer-actions">
@@ -410,13 +410,8 @@ const LifeStages: FC = () => {
 
                                                             <div className="quadrant-stage-info">
                                                                 <IonIcon icon={activeStage.icon} className="stage-icon" color={activeStage.color} />
-                                                                <div>
-                                                                    <h4 className="stage-name">{activeStage.name}</h4>
-                                                                    <IonChip color={activeStage.color} outline className="stage-duration">
-                                                                        <IonIcon icon={timeOutline} />
-                                                                        <IonLabel>{activeStage.days} days</IonLabel>
-                                                                    </IonChip>
-                                                                </div>
+                                                                <span className="stage-name">{activeStage.name}</span>
+                                                                <span className="stage-days">{activeStage.days} days</span>
                                                             </div>
 
                                                             <div className="quadrant-actions">
