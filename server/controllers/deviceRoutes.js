@@ -1,6 +1,8 @@
 import express from "express";
 import Device from "../models/User.Device.js";
 import Drawer from "../models/Sensor.Drawer.js";
+import DrawerReading from "../models/Sensor.DrawerReadings.js";
+import ActuatorState from "../models/ActuatorState.js";
 import { deviceLimiter } from "../middleware/rateLimiter.js";
 import {
   validateBody,
@@ -154,7 +156,15 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
     }
 
     if (device.ownerId === userId) {
+      // Cascade delete: drawers, readings, actuator states, then device
+      const drawers = await Drawer.find({ deviceId: device._id });
+      const drawerIds = drawers.map((d) => d._id);
+
+      await DrawerReading.deleteMany({ drawerId: { $in: drawerIds } });
+      await ActuatorState.deleteMany({ actuatorId: { $regex: `^${device._id}` } });
+      await Drawer.deleteMany({ deviceId: device._id });
       await Device.findByIdAndDelete(req.params.deviceId);
+
       return res.json({ message: "Device deleted" });
     }
 
