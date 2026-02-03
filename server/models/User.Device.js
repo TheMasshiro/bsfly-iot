@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 const deviceSchema = new mongoose.Schema(
   {
-    _id: { type: String, required: true }, // MAC address as ID
+    _id: { type: String, required: true },
     ownerId: {
       type: String,
       ref: "User",
@@ -18,14 +18,12 @@ const deviceSchema = new mongoose.Schema(
     },
     lastSeen: { type: Date },
 
-    // Join code for sharing device with other users
     joinCode: {
       type: String,
       unique: true,
       default: () => crypto.randomBytes(4).toString("hex").toUpperCase(),
     },
 
-    // Users who have joined this device (many users -> 1 device)
     members: [
       {
         userId: { type: String, ref: "User", required: true },
@@ -39,7 +37,6 @@ const deviceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Generate new join code
 deviceSchema.methods.regenerateJoinCode = function () {
   this.joinCode = crypto.randomBytes(4).toString("hex").toUpperCase();
   return this.save();
