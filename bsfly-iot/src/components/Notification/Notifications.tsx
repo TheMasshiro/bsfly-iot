@@ -14,7 +14,7 @@ import {
 import './Notifications.css';
 import { FC, useMemo, useState } from 'react';
 import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, warningOutline } from 'ionicons/icons';
-import { useNotification, Notification } from '../../context/NotificationContext';
+import { useNotification } from '../../context/NotificationContext';
 
 type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 
@@ -76,7 +76,7 @@ const Notifications: FC = () => {
     );
 
     return (
-        <IonMenu menuId="open-notifications" contentId="main" type="overlay" side="end">
+        <IonMenu menuId="open-notifications" contentId="main" type="overlay" side="end" className="notifications-menu">
             <IonContent>
                 <IonList id="notification-header">
                     <IonItem lines="none" button={false}>
@@ -136,7 +136,7 @@ const Notifications: FC = () => {
                         filteredNotifications.map((notification) => (
                             <IonMenuToggle key={notification.id} autoHide={false} menu="open-notifications">
                                 <IonItem
-                                    className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
+                                    className={`notification-item notification-${notification.type} ${!notification.read ? 'notification-unread' : ''}`}
                                     lines="none"
                                     detail={false}
                                     button
@@ -147,16 +147,17 @@ const Notifications: FC = () => {
                                         slot="start"
                                         icon={getNotificationIcon(notification.type)}
                                         color={getNotificationColor(notification.type)}
+                                        className="notification-icon"
                                     />
                                     <IonLabel>
-                                        <h2>{notification.title}</h2>
-                                        <p>{notification.message}</p>
+                                        <h2 className="notification-title">{notification.title}</h2>
+                                        <p className="notification-message">{notification.message}</p>
                                         <p className="notification-timestamp">
                                             {formatTimestamp(notification.timestamp)}
                                         </p>
                                     </IonLabel>
                                     {!notification.read && (
-                                        <IonBadge color="primary" slot="end">
+                                        <IonBadge color={getNotificationColor(notification.type)} slot="end" className="unread-dot">
                                             •
                                         </IonBadge>
                                     )}
