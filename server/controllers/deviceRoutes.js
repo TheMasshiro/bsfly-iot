@@ -1,5 +1,6 @@
 import express from "express";
 import Device from "../models/User.Device.js";
+import Drawer from "../models/Sensor.Drawer.js";
 import { deviceLimiter } from "../middleware/rateLimiter.js";
 import {
   validateBody,
@@ -43,6 +44,18 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
     });
 
     await device.save();
+
+    const drawerNames = ["Drawer 1", "Drawer 2", "Drawer 3"];
+    const drawers = await Drawer.insertMany(
+      drawerNames.map((drawerName) => ({
+        deviceId: device._id,
+        name: drawerName,
+      }))
+    );
+
+    device.drawers = drawers.map((d) => d._id);
+    await device.save();
+
     res.status(201).json(device);
   } catch (error) {
     res.status(500).json({ error: "Failed to register device" });

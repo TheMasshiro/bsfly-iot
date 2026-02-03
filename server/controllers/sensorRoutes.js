@@ -1,4 +1,5 @@
 import express from "express";
+import Drawer from "../models/Sensor.Drawer.js";
 import DrawerReading from "../models/Sensor.DrawerReadings.js";
 import { sensorLimiter } from "../middleware/rateLimiter.js";
 import {
@@ -11,13 +12,12 @@ const router = express.Router();
 
 router.post("/", sensorLimiter, async (req, res) => {
   try {
-    const { deviceId, temperature, humidity, moisture, ammonia, timestamp } = req.body;
+    const { deviceId, drawerName, temperature, humidity, moisture, ammonia } = req.body;
 
     if (!deviceId || typeof deviceId !== "string") {
       return res.status(400).json({ error: "Valid deviceId is required" });
     }
 
-    // Validate sensor values if provided
     if (temperature !== undefined && !isValidTemperature(temperature)) {
       return res.status(400).json({ error: "Invalid temperature value" });
     }
@@ -28,11 +28,23 @@ router.post("/", sensorLimiter, async (req, res) => {
       return res.status(400).json({ error: "Invalid moisture value" });
     }
 
+    let drawer = await Drawer.findOne({
+      deviceId: deviceId.toUpperCase(),
+      name: drawerName || "Drawer 1",
+    });
+
+    if (!drawer) {
+      drawer = await Drawer.create({
+        deviceId: deviceId.toUpperCase(),
+        name: drawerName || "Drawer 1",
+      });
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const readingData = {
-      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      timestamp: new Date(),
     };
 
     if (temperature !== undefined) readingData.temperature = temperature;
@@ -41,7 +53,7 @@ router.post("/", sensorLimiter, async (req, res) => {
     if (ammonia !== undefined) readingData.ammonia = ammonia;
 
     const reading = await DrawerReading.findOneAndUpdate(
-      { drawerId: deviceId.toUpperCase(), date: today },
+      { drawerId: drawer._id, date: today },
       { $push: { readings: readingData } },
       { upsert: true, new: true }
     );
@@ -60,15 +72,9 @@ router.get("/device/:deviceId", async (req, res) => {
       return res.status(400).json({ error: "deviceId is required" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const reading = await DrawerReading.findOne({
-      drawerId: deviceId.toUpperCase(),
-      date: { $gte: today }
-    });
-
-    if (!reading || !reading.readings || reading.readings.length === 0) {
+    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+    
+    if (drawers.length === 0) {
       return res.json({
         temperature: null,
         humidity: null,
@@ -78,7 +84,44 @@ router.get("/device/:deviceId", async (req, res) => {
       });
     }
 
-    const latest = reading.readings[reading.readings.length - 1];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const drawerIds = drawers.map((d) => d._id);
+    const readings = await DrawerReading.find({
+      drawerId: { $in: drawerIds },
+      date: { $gte: today },
+    });
+
+    if (!readings || readings.length === 0) {
+      return res.json({
+        temperature: null,
+        humidity: null,
+        moisture1: null,
+        moisture2: null,
+        ammonia: null,
+      });
+    }
+
+    let latest = null;
+    readings.forEach((r) => {
+      if (r.readings && r.readings.length > 0) {
+        const lastReading = r.readings[r.readings.length - 1];
+        if (!latest || lastReading.timestamp > latest.timestamp) {
+          latest = lastReading;
+        }
+      }
+    });
+
+    if (!latest) {
+      return res.json({
+        temperature: null,
+        humidity: null,
+        moisture1: null,
+        moisture2: null,
+        ammonia: null,
+      });
+    }
 
     res.json({
       temperature: latest.temperature ?? null,
@@ -102,15 +145,22 @@ router.get("/device/:deviceId/history", async (req, res) => {
       return res.status(400).json({ error: "deviceId is required" });
     }
 
+    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+    
+    if (drawers.length === 0) {
+      return res.json([]);
+    }
+
     const fromDate = from ? new Date(from) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const toDate = to ? new Date(to) : new Date();
     
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 999);
 
+    const drawerIds = drawers.map((d) => d._id);
     const readings = await DrawerReading.find({
-      drawerId: deviceId.toUpperCase(),
-      date: { $gte: fromDate, $lte: toDate }
+      drawerId: { $in: drawerIds },
+      date: { $gte: fromDate, $lte: toDate },
     }).sort({ date: 1 });
 
     res.json(readings);
@@ -128,7 +178,7 @@ router.get("/drawer/:drawerId", async (req, res) => {
 
     const reading = await DrawerReading.findOne({
       drawerId: drawerId,
-      date: { $gte: today }
+      date: { $gte: today },
     });
 
     if (!reading || !reading.readings || reading.readings.length === 0) {
