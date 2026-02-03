@@ -6,3 +6,12 @@ ion-toolbar ion-chip {
     height: 28px;
     margin: 0 4px;
 }
+
+ion-toolbar .offline-chip {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

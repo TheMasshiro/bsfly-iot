@@ -1,7 +1,9 @@
 import { createContext, FC, ReactNode, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { offlineService } from "../services/offline/OfflineService";
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+const CACHE_KEY_DEVICES = "devices";
 
 export interface Device {
     _id: string;
@@ -38,11 +40,28 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             return;
         }
 
+        if (!offlineService.getOnlineStatus()) {
+            const cached = offlineService.get<Device[]>(`${CACHE_KEY_DEVICES}_${user.id}`);
+            if (cached) {
+                setDevices(cached);
+                setCurrentDevice(prev => {
+                    if (cached.length > 0) {
+                        const updated = cached.find(d => d._id === prev?._id);
+                        return updated || cached[0];
+                    }
+                    return null;
+                });
+            }
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/devices/user/${user.id}`);
             const data = await res.json();
             const deviceList = Array.isArray(data) ? data : [];
             setDevices(deviceList);
+            offlineService.set(`${CACHE_KEY_DEVICES}_${user.id}`, deviceList);
 
             setCurrentDevice(prev => {
                 if (deviceList.length > 0) {
@@ -55,7 +74,12 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 return null;
             });
         } catch {
-            setDevices([]);
+            const cached = offlineService.get<Device[]>(`${CACHE_KEY_DEVICES}_${user.id}`);
+            if (cached) {
+                setDevices(cached);
+            } else {
+                setDevices([]);
+            }
         } finally {
             setLoading(false);
         }
