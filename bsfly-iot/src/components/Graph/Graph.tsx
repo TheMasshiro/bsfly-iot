@@ -46,12 +46,8 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             }
 
             try {
-                const today = new Date();
-                const fromDate = new Date();
-                fromDate.setDate(fromDate.getDate() - 1);
-
                 const response = await fetch(
-                    `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${fromDate.toISOString().split('T')[0]}&to=${today.toISOString().split('T')[0]}`
+                    `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`
                 );
 
                 if (!response.ok) throw new Error('Failed to fetch');
@@ -59,22 +55,14 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 const data = await response.json();
                 const sensorKey = getSensorKey(sensorType);
 
-                const points: ChartDataPoint[] = [];
-                data.forEach((day: any) => {
-                    if (day.readings) {
-                        day.readings.forEach((reading: any) => {
-                            if (reading[sensorKey] !== undefined) {
-                                const date = new Date(reading.timestamp);
-                                points.push({
-                                    time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                    value: reading[sensorKey]
-                                });
-                            }
-                        });
-                    }
-                });
+                const points: ChartDataPoint[] = data
+                    .filter((h: any) => h[sensorKey] !== null)
+                    .map((h: any) => ({
+                        time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        value: Math.round(h[sensorKey] * 10) / 10
+                    }));
 
-                setChartData(points.slice(-24));
+                setChartData(points);
             } catch {
                 setChartData([]);
             } finally {
