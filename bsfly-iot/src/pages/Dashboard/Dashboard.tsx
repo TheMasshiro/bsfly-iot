@@ -10,6 +10,7 @@ import { getStatus, lifecycleThresholds, Threshold } from '../../config/threshol
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
+import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { snow, flame, water, rainy } from 'ionicons/icons';
 import { actuatorService } from '../../services/socket/socket';
@@ -53,9 +54,10 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
-    const { currentDevice, refreshDevices } = useDevice();
+    const { currentDevice, refreshDevices, loading: deviceLoading } = useDevice();
     const { addNotification } = useNotification();
     const deviceId = currentDevice?._id;
+    const [sensorLoading, setSensorLoading] = useState(true);
     const [sensorData, setSensorData] = useState<Record<string, number | null>>({
         temperature: null,
         humidity: null,
@@ -128,13 +130,18 @@ const Dashboard: React.FC = () => {
     const shownAlertsRef = useRef<Set<string>>(new Set());
 
     const fetchSensorData = useCallback(async () => {
-        if (!deviceId) return;
+        if (!deviceId) {
+            setSensorLoading(false);
+            return;
+        }
         try {
             const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
             const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
             const data = await response.json();
             setSensorData(data);
         } catch {
+        } finally {
+            setSensorLoading(false);
         }
     }, [deviceId]);
 
@@ -412,7 +419,14 @@ const Dashboard: React.FC = () => {
                         </IonCol>
                     </IonRow>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
-                        {filteredSensors.map((sensor) => (
+                        {(deviceLoading || sensorLoading) ? (
+                            <>
+                                <IonCol size="12" sizeMd="6"><LoadingSkeleton variant="card" /></IonCol>
+                                <IonCol size="12" sizeMd="6"><LoadingSkeleton variant="card" /></IonCol>
+                                <IonCol size="12" sizeMd="6"><LoadingSkeleton variant="card" /></IonCol>
+                                <IonCol size="12" sizeMd="6"><LoadingSkeleton variant="card" /></IonCol>
+                            </>
+                        ) : filteredSensors.map((sensor) => (
                             <IonCol size="12" sizeMd="6" key={sensor.name}>
                                 <IonCard
                                     className={`sensor-card sensor-card-${status(sensor.name, sensor.value)}`}
