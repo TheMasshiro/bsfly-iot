@@ -60,7 +60,8 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
 
     res.status(201).json(device);
   } catch (error) {
-    res.status(500).json({ error: "Failed to register device" });
+    console.error("Register device error:", error);
+    res.status(500).json({ error: "Failed to register device", details: error.message });
   }
 });
 
