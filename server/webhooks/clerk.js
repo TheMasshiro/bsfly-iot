@@ -1,5 +1,6 @@
 import { Webhook } from "svix";
 import Device from "../models/User.Device.js";
+import User from "../models/User.js";
 
 export async function handleClerkWebhook(req, res) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
@@ -26,8 +27,24 @@ export async function handleClerkWebhook(req, res) {
     const { type, data } = event;
 
     switch (type) {
+      case "user.created":
+      case "user.updated": {
+        const userId = data.id;
+        const email = data.email_addresses?.[0]?.email_address || "";
+        const name = `${data.first_name || ""} ${data.last_name || ""}`.trim() || email;
+
+        await User.findByIdAndUpdate(
+          userId,
+          { _id: userId, name, email },
+          { upsert: true, new: true }
+        );
+        break;
+      }
+
       case "user.deleted": {
         const userId = data.id;
+
+        await User.findByIdAndDelete(userId);
 
         await Device.updateMany(
           { "members.userId": userId },
@@ -39,9 +56,6 @@ export async function handleClerkWebhook(req, res) {
         break;
       }
 
-      case "user.created":
-      case "user.updated":
-        break;
       default:
         break;
     }
