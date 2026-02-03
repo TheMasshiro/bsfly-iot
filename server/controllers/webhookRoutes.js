@@ -7,6 +7,7 @@ router.get("/clerk", (_req, res) => {
   res.json({ status: "Webhook endpoint active", method: "POST required" });
 });
 
-router.post("/clerk", express.raw({ type: "application/json" }), handleClerkWebhook);
+// Use express.text() to preserve raw body as string for svix signature verification
+router.post("/clerk", express.text({ type: "application/json" }), handleClerkWebhook);
 
 export default router;

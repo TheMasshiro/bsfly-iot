@@ -19,7 +19,9 @@ export async function handleClerkWebhook(req, res) {
 
   try {
     const wh = new Webhook(webhookSecret);
-    const event = wh.verify(req.body, {
+    // Handle both Buffer (express.raw) and string (Vercel) body formats
+    const payload = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : req.body;
+    const event = wh.verify(payload, {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
