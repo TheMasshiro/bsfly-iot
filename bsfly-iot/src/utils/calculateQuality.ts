@@ -41,13 +41,11 @@ export const calculateQuality = (
     return 0;
   };
 
-  // Group scores by sensor type to handle multiple sensors of same type (e.g., moisture 1 & 2)
   const scoresByType: Record<string, number[]> = {};
 
   sensorsData.forEach((sensor) => {
     const sensorType = getSensorType(sensor.name);
     
-    // Skip moisture and ammonia sensors for Drawer 3
     if (isDrawer3 && (sensorType === "moisture" || sensorType === "ammonia")) {
       return;
     }
@@ -61,7 +59,6 @@ export const calculateQuality = (
     }
   });
 
-  // Average scores within each type, then average across all types
   const typeScores = Object.values(scoresByType).map(
     (scores) => scores.reduce((sum, s) => sum + s, 0) / scores.length
   );
