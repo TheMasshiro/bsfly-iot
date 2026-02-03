@@ -57,7 +57,10 @@ export const validateBody = (schema) => {
     for (const [field, rules] of Object.entries(schema)) {
       const value = req.body[field];
 
-      if (rules.required && (value === undefined || value === null || value === "")) {
+      if (
+        rules.required &&
+        (value === undefined || value === null || value === "")
+      ) {
         errors.push(`${field} is required`);
         continue;
       }
