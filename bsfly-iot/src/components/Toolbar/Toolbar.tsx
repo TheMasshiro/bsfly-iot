@@ -1,6 +1,6 @@
 import { IonButton, IonButtons, IonChip, IonIcon, IonTitle, IonToolbar } from "@ionic/react";
 import { hardwareChipOutline, menuOutline, notifications } from "ionicons/icons";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState, useRef } from "react";
 import { menuController } from '@ionic/core/components';
 import { actuatorService } from "../../services/socket/socket";
 import { useDevice } from "../../context/DeviceContext";
@@ -10,9 +10,12 @@ interface ToolbarProps {
     header: string,
 }
 
+let pollingStarted = false;
+
 const Toolbar: FC<ToolbarProps> = ({ header }) => {
     const [isOnline, setIsOnline] = useState(false);
     const { devices, currentDevice } = useDevice();
+    const statusIntervalRef = useRef<number | null>(null);
 
     useEffect(() => {
         const checkStatus = async () => {
@@ -21,12 +24,17 @@ const Toolbar: FC<ToolbarProps> = ({ header }) => {
         };
 
         checkStatus();
-        const interval = setInterval(checkStatus, 8000); // Check every 8s
-        actuatorService.startPolling(2500); // Poll every 2.5s for responsiveness
+        statusIntervalRef.current = window.setInterval(checkStatus, 30000);
+
+        if (!pollingStarted) {
+            pollingStarted = true;
+            actuatorService.startPolling(10000);
+        }
 
         return () => {
-            clearInterval(interval);
-            actuatorService.stopPolling();
+            if (statusIntervalRef.current) {
+                clearInterval(statusIntervalRef.current);
+            }
         };
     }, []);
 
