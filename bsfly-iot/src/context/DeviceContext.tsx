@@ -29,7 +29,7 @@ const DeviceContext = createContext<DeviceContextProps | null>(null);
 
 export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useUser();
-    const { getToken } = useAuth();
+    const { getToken, isLoaded: authLoaded } = useAuth();
     const [devices, setDevices] = useState<Device[]>([]);
     const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }, [getToken]);
 
     const refreshDevices = useCallback(async () => {
-        if (!user?.id) {
+        if (!authLoaded || !user?.id) {
             setDevices([]);
             setLoading(false);
             return;
@@ -94,9 +94,11 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [user?.id, getToken]);
+    }, [user?.id, getToken, authLoaded]);
 
     useEffect(() => {
+        if (!authLoaded) return;
+        
         if (user?.id && user.id !== userIdRef.current) {
             userIdRef.current = user.id;
             fetchedRef.current = false;
@@ -106,7 +108,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             fetchedRef.current = true;
             refreshDevices();
         }
-    }, [user?.id, refreshDevices]);
+    }, [user?.id, refreshDevices, authLoaded]);
 
     return (
         <DeviceContext.Provider
