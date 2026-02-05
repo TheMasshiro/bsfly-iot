@@ -1,5 +1,6 @@
 .dashboard-page ion-content {
   --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
+  --padding-bottom: 45px;
 }
 
 .dashboard-page .circular-progress-container {
