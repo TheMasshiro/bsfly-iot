@@ -14,8 +14,7 @@ const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").re
 interface SensorValues {
     temperature: number | null;
     humidity: number | null;
-    moisture1: number | null;
-    moisture2: number | null;
+    moisture: number | null;
     ammonia: number | null;
 }
 
@@ -27,8 +26,7 @@ const Analytics: FC = () => {
     const [sensorValues, setSensorValues] = useState<SensorValues>({
         temperature: null,
         humidity: null,
-        moisture1: null,
-        moisture2: null,
+        moisture: null,
         ammonia: null,
     });
     const [present] = useIonToast();
@@ -92,16 +90,7 @@ const Analytics: FC = () => {
             ...(moisture ? [
                 {
                     id: "3",
-                    sensor: "Substrate Moisture 1",
-                    max: moisture.max,
-                    min: moisture.min,
-                    warn: moisture.optimal[1],
-                    unit: "%",
-                    icon: waterOutline
-                },
-                {
-                    id: "4",
-                    sensor: "Substrate Moisture 2",
+                    sensor: "Moisture",
                     max: moisture.max,
                     min: moisture.min,
                     warn: moisture.optimal[1],
@@ -122,10 +111,8 @@ const Analytics: FC = () => {
                 latestValue = sensorValues.temperature ?? 0;
             } else if (graph.sensor === "Humidity") {
                 latestValue = sensorValues.humidity ?? 0;
-            } else if (graph.sensor === "Substrate Moisture 1") {
-                latestValue = sensorValues.moisture1 ?? 0;
-            } else if (graph.sensor === "Substrate Moisture 2") {
-                latestValue = sensorValues.moisture2 ?? 0;
+            } else if (graph.sensor === "Moisture") {
+                latestValue = sensorValues.moisture ?? 0;
             }
 
             let status: 'danger' | 'warning' | 'primary' | 'success';

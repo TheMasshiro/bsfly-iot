@@ -21,15 +21,8 @@ export const sensorsData = [
     type: "humidity",
   },
   {
-    name: "Substrate Moisture 1",
+    name: "Substrate Moisture",
     value: 68,
-    unit: "%",
-    icon: waterOutline,
-    type: "moisture",
-  },
-  {
-    name: "Substrate Moisture 2",
-    value: 70,
     unit: "%",
     icon: waterOutline,
     type: "moisture",
@@ -88,14 +81,8 @@ export const controlsData = [
     available: true,
   },
   {
-    sensor: "Substrate Moisture 1",
-    name: "Misting Device 1",
-    description: "Increases Moisture",
-    available: true,
-  },
-  {
-    sensor: "Substrate Moisture 2",
-    name: "Misting Device 2",
+    sensor: "Substrate Moisture",
+    name: "Misting Device",
     description: "Increases Moisture",
     available: true,
   },

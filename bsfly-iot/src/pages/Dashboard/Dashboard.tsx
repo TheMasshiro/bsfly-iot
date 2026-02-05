@@ -18,8 +18,7 @@ import { actuatorService } from '../../services/socket/socket';
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
     "humidity": "humidity",
-    "substrate moisture 1": "moisture",
-    "substrate moisture 2": "moisture",
+    "substrate moisture": "moisture",
     "ammonia": "ammonia",
 };
 
@@ -28,8 +27,7 @@ const quickActionIcons: Record<string, string> = {
     "Heater": flame,
     "Humidifier": water,
     "Dehumidifier": rainy,
-    "Misting Device 1": water,
-    "Misting Device 2": water,
+    "Misting Device": water,
 };
 
 const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
@@ -39,8 +37,7 @@ const getActuatorId = (deviceId: string | undefined, stage: string, actionName: 
         "Heater": "heater",
         "Humidifier": "humidifier",
         "Dehumidifier": "dehumidifier",
-        "Misting Device 1": "misting1",
-        "Misting Device 2": "misting2",
+        "Misting Device": "misting",
     };
     const actuator = actionMap[actionName] || actionName.toLowerCase();
     return deviceId ? `${deviceId}:drawer${drawerNum}:${actuator}` : `drawer${drawerNum}:${actuator}`;
@@ -61,8 +58,7 @@ const Dashboard: React.FC = () => {
     const [sensorData, setSensorData] = useState<Record<string, number | null>>({
         temperature: null,
         humidity: null,
-        moisture1: null,
-        moisture2: null,
+        moisture: null,
         ammonia: null,
     });
     const thresholds = lifecycleThresholds[stage];
@@ -79,11 +75,8 @@ const Dashboard: React.FC = () => {
             if (sensor.name === "Humidity" && sensorData.humidity !== null) {
                 return { ...sensor, value: sensorData.humidity };
             }
-            if (sensor.name === "Substrate Moisture 1" && sensorData.moisture1 !== null) {
-                return { ...sensor, value: sensorData.moisture1 };
-            }
-            if (sensor.name === "Substrate Moisture 2" && sensorData.moisture2 !== null) {
-                return { ...sensor, value: sensorData.moisture2 };
+            if (sensor.name === "Substrate Moisture" && sensorData.moisture !== null) {
+                return { ...sensor, value: sensorData.moisture };
             }
             if (sensor.name === "Ammonia" && sensorData.ammonia !== null) {
                 return { ...sensor, value: sensorData.ammonia };
@@ -171,8 +164,7 @@ const Dashboard: React.FC = () => {
         const sensorChecks = [
             { key: 'temperature', name: 'Temperature', value: sensorData.temperature, unit: '°C' },
             { key: 'humidity', name: 'Humidity', value: sensorData.humidity, unit: '%' },
-            { key: 'moisture', name: 'Substrate Moisture 1', value: sensorData.moisture1, unit: '%' },
-            { key: 'moisture', name: 'Substrate Moisture 2', value: sensorData.moisture2, unit: '%' },
+            { key: 'moisture', name: 'Substrate Moisture', value: sensorData.moisture, unit: '%' },
             { key: 'ammonia', name: 'Ammonia', value: sensorData.ammonia, unit: 'ppm' },
         ];
 
