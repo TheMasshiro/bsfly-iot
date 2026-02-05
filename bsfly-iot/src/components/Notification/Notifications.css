@@ -97,13 +97,15 @@
 }
 
 .notification-segment {
-  min-width: auto;
+  width: 100%;
 }
 
 .notification-segment ion-segment-button {
-  --padding-start: 8px;
-  --padding-end: 8px;
-  min-width: 40px;
+  --indicator-color: var(--ion-color-success);
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-success);
+  min-width: 0;
+  flex: 1;
 }
 
 .notification-segment ion-segment-button ion-label {
