@@ -98,9 +98,12 @@
 
 .notification-segment {
   width: 100%;
+  --background: transparent;
 }
 
 .notification-segment ion-segment-button {
+  --background: transparent;
+  --background-checked: rgba(var(--ion-color-success-rgb), 0.15);
   --indicator-color: var(--ion-color-success);
   --color: var(--ion-color-medium);
   --color-checked: var(--ion-color-success);
