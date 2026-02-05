@@ -19,13 +19,13 @@
 
 .stage-selector-container ion-segment-button {
   --color: var(--ion-color-medium);
-  --color-checked: var(--ion-color-dark);
-  --indicator-color: var(--ion-color-primary);
-  --background-checked: rgba(var(--ion-color-primary-rgb), 0.2);
+  --color-checked: #2dd55b;
+  --indicator-color: #2dd55b;
+  --background-checked: rgba(45, 213, 91, 0.15);
 }
 
 .stage-selector-container ion-segment-button::part(indicator-background) {
-  background: var(--ion-color-primary);
+  background: #2dd55b;
 }
 
 .stage-button-content {

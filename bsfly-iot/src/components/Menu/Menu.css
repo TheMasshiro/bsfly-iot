@@ -1,5 +1,5 @@
 ion-menu ion-content {
-  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
 ion-menu.md ion-content {
@@ -11,50 +11,41 @@ ion-menu.md ion-content {
 
 ion-menu.md ion-list {
   padding: 8px 0;
-}
-
-ion-menu.md ion-note {
-  margin-bottom: 30px;
-}
-
-ion-menu.md ion-list-header,
-ion-menu.md ion-note {
-  padding-left: 10px;
+  background: transparent;
 }
 
 ion-menu.md ion-list#main-list {
-  border-bottom: 1px solid var(--ion-background-color-step-150, #d7d8da);
-}
-
-ion-menu.md ion-list#main-list ion-list-header {
-  font-size: 22px;
-  font-weight: 600;
-  min-height: 20px;
-}
-
-ion-menu.md ion-list#more-list ion-list-header {
-  font-size: 16px;
-  margin-bottom: 18px;
-  color: #757575;
-  min-height: 26px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 ion-menu.md ion-item {
   --padding-start: 10px;
   --padding-end: 10px;
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+
+ion-menu.md ion-item:hover {
+  --background: rgba(255, 255, 255, 0.05);
 }
 
 ion-menu.md ion-item.selected {
-  --background: rgba(var(--ion-color-primary-rgb), 0.14);
+  --background: rgba(45, 213, 91, 0.15);
 }
 
 ion-menu.md ion-item.selected ion-icon {
-  color: var(--ion-color-primary);
+  color: #2dd55b;
+}
+
+ion-menu.md ion-item.selected ion-label {
+  color: #2dd55b;
 }
 
 ion-menu.md ion-item ion-icon {
-  color: #616e7e;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 ion-menu.md ion-item ion-label {
@@ -67,57 +58,48 @@ ion-menu.ios ion-content {
 
 ion-menu.ios ion-list {
   padding: 8px 0;
-}
-
-ion-menu.ios ion-note {
-  line-height: 24px;
-  margin-bottom: 20px;
+  background: transparent;
 }
 
 ion-menu.ios ion-item {
   --padding-start: 16px;
   --padding-end: 16px;
   --min-height: 50px;
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+ion-menu.ios ion-item:hover {
+  --background: rgba(255, 255, 255, 0.05);
 }
 
 ion-menu.ios ion-item ion-icon {
   font-size: 24px;
-  color: #73849a;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-ion-menu.ios ion-item .selected ion-icon {
-  color: var(--ion-color-primary);
+ion-menu.ios ion-item.selected {
+  --background: rgba(45, 213, 91, 0.15);
 }
 
-ion-menu.ios ion-list#labels-list ion-list-header {
-  margin-bottom: 8px;
+ion-menu.ios ion-item.selected ion-icon {
+  color: #2dd55b;
 }
 
-ion-menu.ios ion-list-header,
-ion-menu.ios ion-note {
-  padding-left: 16px;
-  padding-right: 16px;
-}
-
-ion-menu.ios ion-note {
-  margin-bottom: 8px;
-}
-
-ion-note {
-  display: inline-block;
-  font-size: 16px;
-  color: var(--ion-color-medium-shade);
+ion-menu.ios ion-item.selected ion-label {
+  color: #2dd55b;
 }
 
 ion-item.selected {
-  --color: var(--ion-color-primary);
+  --color: #2dd55b;
 }
 
-/* Menu Header */
 .menu-header {
   padding: 32px 20px 24px;
   text-align: center;
-  background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-success) 100%);
+  background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
   margin-bottom: 8px;
 }
 
@@ -130,6 +112,7 @@ ion-item.selected {
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(10px);
 }
 
 .menu-logo .logo-icon {
@@ -152,14 +135,15 @@ ion-item.selected {
   font-weight: 500;
 }
 
-/* User Section */
 .menu-user {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
   margin: 0 8px 8px;
-  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
 }
 
@@ -167,6 +151,8 @@ ion-item.selected {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
+  border: 2px solid rgba(45, 213, 91, 0.5);
+  border-radius: 50%;
 }
 
 .menu-user .user-info {
@@ -178,7 +164,7 @@ ion-item.selected {
 .menu-user .user-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--ion-text-color);
+  color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,7 +172,7 @@ ion-item.selected {
 
 .menu-user .user-email {
   font-size: 0.75rem;
-  color: var(--ion-color-medium);
+  color: rgba(255, 255, 255, 0.5);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

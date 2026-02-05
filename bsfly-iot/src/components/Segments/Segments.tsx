@@ -12,6 +12,7 @@ const Segments: FC<SegmentsProps> = ({ stage, setStage }) => {
     return (
         <div className="stage-selector-container">
             <IonSegment
+                color="success"
                 value={stage}
                 onIonChange={(e) => setStage(e.detail.value as Stage)}
             >
