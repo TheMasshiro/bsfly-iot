@@ -429,7 +429,7 @@ const Settings: FC = () => {
                             const isOwner = device.ownerId === userId;
                             return (
                                 <div key={device._id}>
-                                    <IonItem>
+                                    <IonItem lines="none">
                                         <IonLabel>
                                             <h2>{device.name}</h2>
                                             <p>{device._id}</p>
@@ -449,7 +449,7 @@ const Settings: FC = () => {
                                     </IonItem>
 
                                     {isOwner && (
-                                        <IonItem>
+                                        <IonItem lines="none">
                                             <IonLabel>
                                                 <IonText color="medium">Join Code: </IonText>
                                                 <IonText><strong>{device.joinCode}</strong></IonText>
@@ -464,7 +464,7 @@ const Settings: FC = () => {
                                     )}
 
                                     {isOwner && (
-                                        <IonItem button detail detailIcon={chevronForward} onClick={() => openMembersModal(device)}>
+                                        <IonItem lines="none" button detail detailIcon={chevronForward} onClick={() => openMembersModal(device)}>
                                             <IonIcon icon={people} slot="start" />
                                             <IonLabel>Manage Members</IonLabel>
                                             <IonBadge slot="end">{device.members.length}</IonBadge>
