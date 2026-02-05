@@ -92,6 +92,13 @@
   margin: 0;
 }
 
+#notification-header ion-item {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+}
+
 #notification-list {
   padding: 0;
 }
@@ -103,6 +110,9 @@
 
 .notification-segment ion-segment-button {
   --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
   --background-checked: rgba(var(--ion-color-success-rgb), 0.15);
   --indicator-color: var(--ion-color-success);
   --color: var(--ion-color-medium);
