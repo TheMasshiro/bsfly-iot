@@ -9,15 +9,15 @@ const router = express.Router();
 const getDeviceIdFromActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return null;
   const parts = actuatorId.split(":");
-  if (parts.length < 7) return null;
-  return parts.slice(0, 6).join(":");
+  if (parts.length < 2) return null;
+  return parts[0];
 };
 
 const verifyActuatorAccess = async (userId, actuatorId) => {
   const deviceId = getDeviceIdFromActuatorId(actuatorId);
   if (!deviceId) return false;
   
-  const device = await Device.findById(deviceId.toUpperCase());
+  const device = await Device.findById(deviceId);
   if (!device) return false;
   
   return device.members.some((m) => m.userId === userId);
@@ -55,13 +55,13 @@ router.get("/poll/since/:timestamp", async (req, res) => {
   try {
     const { timestamp } = req.params;
     const apiKey = req.headers["x-api-key"];
-    const deviceId = req.query.deviceId;
+    const macAddress = req.query.macAddress;
     
-    if (!deviceId) {
-      return res.status(400).json({ error: "deviceId query parameter required" });
+    if (!macAddress) {
+      return res.status(400).json({ error: "macAddress query parameter required" });
     }
     
-    const device = await Device.findById(deviceId.toUpperCase());
+    const device = await Device.findOne({ macAddress: macAddress.toUpperCase() });
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
@@ -77,7 +77,7 @@ router.get("/poll/since/:timestamp", async (req, res) => {
     }
     
     const states = await ActuatorState.find({
-      actuatorId: { $regex: `^${deviceId.toUpperCase()}:` },
+      actuatorId: { $regex: `^${device._id}:` },
       updatedAt: { $gt: since },
     });
     
@@ -106,7 +106,7 @@ router.get("/:actuatorId", async (req, res) => {
       return res.status(400).json({ error: "Invalid actuator ID format" });
     }
     
-    const device = await Device.findById(deviceId.toUpperCase());
+    const device = await Device.findById(deviceId);
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }

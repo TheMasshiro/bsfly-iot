@@ -1,6 +1,7 @@
 import express from "express";
 import Drawer from "../models/Sensor.Drawer.js";
 import DrawerReading from "../models/Sensor.DrawerReadings.js";
+import Device from "../models/User.Device.js";
 import { sensorLimiter } from "../middleware/rateLimiter.js";
 import { requireAuth, requireDeviceAuth, requireDeviceMembership } from "../middleware/auth.js";
 import {
@@ -14,7 +15,7 @@ const router = express.Router();
 
 router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
   try {
-    const { deviceId, drawerName, temperature, humidity, moisture, ammonia } = req.body;
+    const { macAddress, drawerName, temperature, humidity, moisture, ammonia } = req.body;
 
     if (temperature !== undefined && !isValidTemperature(temperature)) {
       return res.status(400).json({ error: "Invalid temperature value" });
@@ -29,14 +30,19 @@ router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
       return res.status(400).json({ error: "Invalid ammonia value" });
     }
 
+    const device = await Device.findOne({ macAddress: macAddress.toUpperCase() });
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
     let drawer = await Drawer.findOne({
-      deviceId: deviceId.toUpperCase(),
+      deviceId: device._id,
       name: drawerName || "Drawer 1",
     });
 
     if (!drawer) {
       drawer = await Drawer.create({
-        deviceId: deviceId.toUpperCase(),
+        deviceId: device._id,
         name: drawerName || "Drawer 1",
       });
     }
@@ -69,7 +75,7 @@ router.get("/device/:deviceId", requireAuth, requireDeviceMembership, async (req
   try {
     const { deviceId } = req.params;
 
-    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+    const drawers = await Drawer.find({ deviceId });
     
     if (drawers.length === 0) {
       return res.json({
@@ -134,7 +140,7 @@ router.get("/device/:deviceId/history", requireAuth, requireDeviceMembership, as
     const { deviceId } = req.params;
     const { from, to } = req.query;
 
-    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+    const drawers = await Drawer.find({ deviceId });
     
     if (drawers.length === 0) {
       return res.json([]);
@@ -191,7 +197,7 @@ router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, asy
   try {
     const { deviceId } = req.params;
 
-    const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
+    const drawers = await Drawer.find({ deviceId });
 
     if (drawers.length === 0) {
       return res.json([]);

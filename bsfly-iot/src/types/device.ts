@@ -8,6 +8,7 @@ export interface DeviceMember {
 
 export interface Device {
     _id: string;
+    macAddress: string;
     name: string;
     ownerId: string;
     status: "online" | "offline";

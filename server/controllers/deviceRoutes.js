@@ -16,7 +16,7 @@ import {
 const router = express.Router();
 
 const registerSchema = {
-  deviceId: { required: true, type: "string", validator: isValidMacAddress, message: "Invalid MAC address format" },
+  macAddress: { required: true, type: "string", validator: isValidMacAddress, message: "Invalid MAC address format" },
   name: { required: true, type: "string", validator: isValidDeviceName, message: "Device name must be 1-50 characters" },
 };
 
@@ -26,25 +26,25 @@ const joinSchema = {
 
 router.post("/register", requireAuth, deviceLimiter, validateBody(registerSchema), async (req, res) => {
   try {
-    const { deviceId, name } = req.body;
+    const { macAddress, name } = req.body;
     const userId = req.userId;
-    const normalizedId = deviceId.toUpperCase();
+    const normalizedMac = macAddress.toUpperCase();
 
-    const existing = await Device.findById(normalizedId);
+    const existing = await Device.findOne({ macAddress: normalizedMac });
     if (existing) {
       return res.status(409).json({ error: "Device already registered" });
     }
 
-    await Drawer.deleteMany({ deviceId: normalizedId });
-
     const device = new Device({
-      _id: normalizedId,
+      macAddress: normalizedMac,
       name,
       ownerId: userId,
       members: [{ userId, role: "owner", joinedAt: new Date() }],
     });
 
     await device.save();
+
+    await Drawer.deleteMany({ deviceId: device._id });
 
     const drawerNames = ["Drawer 1", "Drawer 2", "Drawer 3"];
     const drawers = await Drawer.insertMany(
@@ -232,6 +232,25 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
   }
 });
 
+router.get("/by-mac/:macAddress", async (req, res) => {
+  try {
+    const apiKey = req.headers["x-api-key"];
+    const device = await Device.findOne({ macAddress: req.params.macAddress.toUpperCase() });
+
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    if (!apiKey || device.apiKey !== apiKey) {
+      return res.status(401).json({ error: "Invalid API key" });
+    }
+
+    res.json({ deviceId: device._id, macAddress: device.macAddress });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch device" });
+  }
+});
+
 router.get("/:deviceId/api-key", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -357,8 +376,7 @@ setInterval(async () => {
       { lastSeen: { $lt: cutoff }, status: "online" },
       { status: "offline" }
     );
-  } catch {
-  }
+  } catch {}
 }, 30000);
 
 export default router;

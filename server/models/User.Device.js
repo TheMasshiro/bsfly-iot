@@ -3,7 +3,12 @@ import crypto from "crypto";
 
 const deviceSchema = new mongoose.Schema(
   {
-    _id: { type: String, required: true },
+    macAddress: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+    },
     ownerId: {
       type: String,
       ref: "User",

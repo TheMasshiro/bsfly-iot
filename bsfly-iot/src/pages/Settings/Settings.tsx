@@ -131,7 +131,7 @@ const Settings: FC = () => {
                     ...(token ? { Authorization: `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    deviceId: macAddress.toUpperCase(),
+                    macAddress: macAddress.toUpperCase(),
                     name: deviceName
                 })
             });

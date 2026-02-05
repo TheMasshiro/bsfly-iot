@@ -22,17 +22,17 @@ export const requireAuth = (req, res, next) => {
 export const requireDeviceAuth = async (req, res, next) => {
   try {
     const apiKey = req.headers["x-api-key"];
-    const deviceId = req.body?.deviceId || req.params?.deviceId;
+    const macAddress = req.body?.macAddress;
 
     if (!apiKey) {
       return res.status(401).json({ error: "API key required" });
     }
 
-    if (!deviceId) {
-      return res.status(400).json({ error: "Device ID required" });
+    if (!macAddress) {
+      return res.status(400).json({ error: "MAC address required" });
     }
 
-    const device = await Device.findById(deviceId.toUpperCase());
+    const device = await Device.findOne({ macAddress: macAddress.toUpperCase() });
     
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
@@ -59,7 +59,7 @@ export const requireDeviceMembership = async (req, res, next) => {
       return res.status(400).json({ error: "Device ID required" });
     }
 
-    const device = await Device.findById(deviceId.toUpperCase());
+    const device = await Device.findById(deviceId);
     
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
