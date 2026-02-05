@@ -352,7 +352,7 @@ const Settings: FC = () => {
                         <IonIcon icon={add} slot="start" />
                         <IonLabel>Register New ESP32</IonLabel>
                     </IonItem>
-                    <IonItem className={nameError ? 'ion-invalid' : ''}>
+                    <IonItem lines="none" className={nameError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="Device Name"
                             labelPlacement="stacked"
@@ -363,7 +363,7 @@ const Settings: FC = () => {
                         />
                         {nameError && <IonNote slot="error">{nameError}</IonNote>}
                     </IonItem>
-                    <IonItem className={macError ? 'ion-invalid' : ''}>
+                    <IonItem lines="none" className={macError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="MAC Address"
                             labelPlacement="stacked"
@@ -390,7 +390,7 @@ const Settings: FC = () => {
                         <IonIcon icon={people} slot="start" />
                         <IonLabel>Join Existing Device</IonLabel>
                     </IonItem>
-                    <IonItem className={joinCodeError ? 'ion-invalid' : ''}>
+                    <IonItem lines="none" className={joinCodeError ? 'ion-invalid' : ''}>
                         <IonInput
                             label="Join Code"
                             labelPlacement="stacked"
