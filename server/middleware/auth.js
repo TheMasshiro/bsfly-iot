@@ -1,23 +1,19 @@
-import { clerkClient } from "@clerk/express";
+import { clerkMiddleware, getAuth, requireAuth as clerkRequireAuth } from "@clerk/express";
 import Device from "../models/User.Device.js";
 
-export const requireAuth = async (req, res, next) => {
+// Re-export clerkMiddleware for use in server.js
+export { clerkMiddleware };
+
+// Custom requireAuth that extracts userId for our routes
+export const requireAuth = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "No token provided" });
+    const auth = getAuth(req);
+    
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const token = authHeader.split(" ")[1];
-
-    const { sub: userId } = await clerkClient.verifyToken(token);
-
-    if (!userId) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    req.userId = userId;
+    req.userId = auth.userId;
     next();
   } catch (error) {
     console.error("Auth error:", error.message);

@@ -8,6 +8,7 @@ import deviceRoutes from "./controllers/deviceRoutes.js";
 import sensorRoutes from "./controllers/sensorRoutes.js";
 import webhookRoutes from "./controllers/webhookRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
+import { clerkMiddleware } from "./middleware/auth.js";
 
 const app = express();
 
@@ -26,6 +27,9 @@ app.use(
 );
 
 app.use(express.json({ limit: "10kb" }));
+
+// Add Clerk middleware to parse auth from requests
+app.use(clerkMiddleware());
 
 app.use("/api", apiLimiter);
 
