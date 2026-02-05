@@ -144,12 +144,7 @@ const Terms: FC<TermsProps> = ({ isOpen, onClose }) => {
                     These Terms may be updated as part of academic revisions or improvements to the project. Continued use of the App constitutes acceptance of the updated Terms.
                 </p>
 
-                <h2>13. Governing Law</h2>
-                <p>
-                    These Terms are governed by the laws of the Republic of the Philippines.
-                </p>
-
-                <h2>14. Contact</h2>
+                <h2>13. Contact</h2>
                 <p>
                     For academic or project-related inquiries, contact:<br />
                     <strong>Email:</strong> johnc.vicente1@gmail.com
