@@ -8,28 +8,28 @@ import {
 export const sensorsData = [
   {
     name: "Temperature",
-    value: 28,
+    value: "--",
     unit: "°C",
     icon: thermometerOutline,
     type: "temperature",
   },
   {
     name: "Humidity",
-    value: 65,
+    value: "--",
     unit: "%",
     icon: cloudOutline,
     type: "humidity",
   },
   {
     name: "Substrate Moisture",
-    value: 68,
+    value: "--",
     unit: "%",
     icon: waterOutline,
     type: "moisture",
   },
   {
     name: "Ammonia",
-    value: 5,
+    value: "--",
     unit: "ppm",
     icon: leafOutline,
     type: "ammonia",

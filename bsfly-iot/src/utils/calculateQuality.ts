@@ -2,7 +2,7 @@ import { Threshold } from "../config/thresholds";
 
 interface SensorData {
   name: string;
-  value: number;
+  value: number | string;
 }
 
 type ThresholdsMap = Record<string, Threshold | { min: number; max: number; optimal: number[] }>;
@@ -44,6 +44,10 @@ export const calculateQuality = (
   const scoresByType: Record<string, number[]> = {};
 
   sensorsData.forEach((sensor) => {
+    if (sensor.value === "--" || typeof sensor.value === "string") {
+      return;
+    }
+
     const sensorType = getSensorType(sensor.name);
     
     if (isDrawer3 && (sensorType === "moisture" || sensorType === "ammonia")) {

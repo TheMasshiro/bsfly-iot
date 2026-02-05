@@ -63,7 +63,8 @@ const Dashboard: React.FC = () => {
     });
     const thresholds = lifecycleThresholds[stage];
 
-    const status = useCallback((name: string, value: number) => {
+    const status = useCallback((name: string, value: number | string) => {
+        if (value === "--" || typeof value === "string") return "medium";
         return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
     }, [thresholds]);
 
