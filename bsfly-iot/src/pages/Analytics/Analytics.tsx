@@ -20,7 +20,7 @@ interface SensorValues {
 
 const Analytics: FC = () => {
     const { stage, setStage } = useLifeCycle()
-    const { currentDevice, refreshDevices } = useDevice();
+    const { currentDevice, refreshDevices, getToken } = useDevice();
     const thresholds = lifecycleThresholds[stage]
     const [selectedSegment, setSelectedSegment] = useState("Temperature")
     const [sensorValues, setSensorValues] = useState<SensorValues>({
@@ -35,7 +35,10 @@ const Analytics: FC = () => {
     const fetchCurrentValues = useCallback(async () => {
         if (!currentDevice) return;
         try {
-            const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`);
+            const token = await getToken();
+            const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             if (response.ok) {
                 const data = await response.json();
                 setSensorValues(data);
@@ -53,7 +56,7 @@ const Analytics: FC = () => {
                 });
             }
         }
-    }, [currentDevice, present]);
+    }, [currentDevice, present, getToken]);
 
     useEffect(() => {
         fetchCurrentValues();

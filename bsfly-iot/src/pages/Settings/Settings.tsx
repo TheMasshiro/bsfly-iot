@@ -6,7 +6,7 @@ import {
 } from "@ionic/react";
 import { hardwareChip, helpCircle, add, logOut, refresh, copy, people, personRemove, swapHorizontal, close, chevronForward } from "ionicons/icons";
 import { FC, useState, useEffect, useCallback, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
@@ -34,7 +34,7 @@ interface Device {
 }
 
 const Settings: FC = () => {
-    const { user } = useUser();
+    const { userId, getToken } = useAuth();
     const [present] = useIonToast();
     const { refreshDevices } = useDevice();
 
@@ -66,16 +66,19 @@ const Settings: FC = () => {
     const slidingRefs = useRef<Map<string, HTMLIonItemSlidingElement>>(new Map());
 
     const fetchDevices = useCallback(async () => {
-        if (!user?.id) return;
+        if (!userId) return;
         try {
-            const res = await fetch(`${API_URL}/api/devices/user/${user.id}`);
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/api/devices/user/me`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             setDevices(Array.isArray(data) ? data : []);
         } catch {
         } finally {
             setLoading(false);
         }
-    }, [user?.id]);
+    }, [userId, getToken]);
 
     useEffect(() => {
         fetchDevices();
@@ -130,19 +133,22 @@ const Settings: FC = () => {
             return;
         }
 
-        if (!user?.id) {
+        if (!userId) {
             present({ message: "Please sign in", duration: 2000, color: "warning" });
             return;
         }
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/register`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     deviceId: macAddress.toUpperCase(),
-                    name: deviceName,
-                    userId: user.id
+                    name: deviceName
                 })
             });
 
@@ -169,16 +175,20 @@ const Settings: FC = () => {
             return;
         }
 
-        if (!user?.id) {
+        if (!userId) {
             present({ message: "Please sign in", duration: 2000, color: "warning" });
             return;
         }
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/join`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ joinCode, userId: user.id })
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ joinCode })
             });
 
             const data = await res.json();
@@ -194,20 +204,23 @@ const Settings: FC = () => {
     };
 
     const leaveDevice = async (device: Device) => {
-        if (!user?.id) return;
+        if (!userId) return;
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/${device._id}/leave`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id })
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                }
             });
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
             present({
-                message: device.ownerId === user.id ? "Device deleted" : "Left device",
+                message: device.ownerId === userId ? "Device deleted" : "Left device",
                 duration: 2000,
                 color: "success"
             });
@@ -218,13 +231,16 @@ const Settings: FC = () => {
     };
 
     const regenerateCode = async (device: Device) => {
-        if (!user?.id) return;
+        if (!userId) return;
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/${device._id}/regenerate-code`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id })
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                }
             });
 
             const data = await res.json();
@@ -248,7 +264,10 @@ const Settings: FC = () => {
         setMembersLoading(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/devices/${device._id}/members`);
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/api/devices/${device._id}/members`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setMembers(data);
@@ -260,13 +279,16 @@ const Settings: FC = () => {
     };
 
     const removeMember = async () => {
-        if (!user?.id || !selectedDevice || !memberToRemove) return;
+        if (!userId || !selectedDevice || !memberToRemove) return;
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToRemove.userId}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id })
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                }
             });
 
             const data = await res.json();
@@ -281,13 +303,17 @@ const Settings: FC = () => {
     };
 
     const transferOwnership = async () => {
-        if (!user?.id || !selectedDevice || !memberToTransfer) return;
+        if (!userId || !selectedDevice || !memberToTransfer) return;
 
         try {
+            const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToTransfer.userId}/role`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id, role: "owner" })
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ role: "owner" })
             });
 
             const data = await res.json();
@@ -398,7 +424,7 @@ const Settings: FC = () => {
                         </IonItem>
                     ) : (
                         devices.map((device) => {
-                            const isOwner = device.ownerId === user?.id;
+                            const isOwner = device.ownerId === userId;
                             return (
                                 <div key={device._id}>
                                     <IonItem>
@@ -485,7 +511,7 @@ const Settings: FC = () => {
                                 </IonItem>
                             ) : (
                                 members.map((member) => {
-                                    const isCurrentUser = member.userId === user?.id;
+                                    const isCurrentUser = member.userId === userId;
                                     const isOwnerMember = member.role === "owner";
 
                                     return (
@@ -578,16 +604,16 @@ const Settings: FC = () => {
                 <IonAlert
                     isOpen={showLeaveAlert}
                     onDidDismiss={() => setShowLeaveAlert(false)}
-                    header={deviceToLeave?.ownerId === user?.id ? "Delete Device?" : "Leave Device?"}
+                    header={deviceToLeave?.ownerId === userId ? "Delete Device?" : "Leave Device?"}
                     message={
-                        deviceToLeave?.ownerId === user?.id
+                        deviceToLeave?.ownerId === userId
                             ? "This will remove the device for all members."
                             : "You can rejoin later with a join code."
                     }
                     buttons={[
                         { text: "Cancel", role: "cancel" },
                         {
-                            text: deviceToLeave?.ownerId === user?.id ? "Delete" : "Leave",
+                            text: deviceToLeave?.ownerId === userId ? "Delete" : "Leave",
                             role: "destructive",
                             handler: () => {
                                 if (deviceToLeave) leaveDevice(deviceToLeave);

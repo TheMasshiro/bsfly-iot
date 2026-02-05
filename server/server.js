@@ -20,7 +20,7 @@ app.use(
     origin: process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',') 
       : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8100', 'https://bsfly-iot.vercel.app'],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );

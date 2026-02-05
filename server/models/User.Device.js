@@ -24,6 +24,13 @@ const deviceSchema = new mongoose.Schema(
       default: () => crypto.randomBytes(4).toString("hex").toUpperCase(),
     },
 
+    apiKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: () => crypto.randomBytes(32).toString("hex"),
+    },
+
     members: [
       {
         userId: { type: String, ref: "User", required: true },
@@ -39,6 +46,11 @@ const deviceSchema = new mongoose.Schema(
 
 deviceSchema.methods.regenerateJoinCode = function () {
   this.joinCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+  return this.save();
+};
+
+deviceSchema.methods.regenerateApiKey = function () {
+  this.apiKey = crypto.randomBytes(32).toString("hex");
   return this.save();
 };
 

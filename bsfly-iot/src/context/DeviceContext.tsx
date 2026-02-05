@@ -1,6 +1,7 @@
 import { createContext, FC, ReactNode, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { offlineService } from "../services/offline/OfflineService";
+import { actuatorService } from "../services/socket/socket";
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 const CACHE_KEY_DEVICES = "devices";
@@ -21,17 +22,24 @@ interface DeviceContextProps {
     setCurrentDevice: (device: Device | null) => void;
     refreshDevices: () => Promise<void>;
     loading: boolean;
+    getToken: () => Promise<string | null>;
 }
 
 const DeviceContext = createContext<DeviceContextProps | null>(null);
 
 export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useUser();
+    const { getToken } = useAuth();
     const [devices, setDevices] = useState<Device[]>([]);
     const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
     const [loading, setLoading] = useState(true);
     const fetchedRef = useRef(false);
     const userIdRef = useRef<string | null>(null);
+
+    // Set the token getter for the actuator service
+    useEffect(() => {
+        actuatorService.setTokenGetter(getToken);
+    }, [getToken]);
 
     const refreshDevices = useCallback(async () => {
         if (!user?.id) {
@@ -57,7 +65,10 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
         }
 
         try {
-            const res = await fetch(`${API_URL}/api/devices/user/${user.id}`);
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/api/devices/user/me`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             const deviceList = Array.isArray(data) ? data : [];
             setDevices(deviceList);
@@ -83,7 +94,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [user?.id]);
+    }, [user?.id, getToken]);
 
     useEffect(() => {
         if (user?.id && user.id !== userIdRef.current) {
@@ -104,7 +115,8 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 currentDevice,
                 setCurrentDevice,
                 refreshDevices,
-                loading
+                loading,
+                getToken
             }}
         >
             {children}

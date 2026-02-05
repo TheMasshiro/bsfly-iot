@@ -44,6 +44,10 @@ export const isValidMoisture = (moisture) => {
   return isValidSensorValue(moisture, 0, 100);
 };
 
+export const isValidAmmonia = (ammonia) => {
+  return isValidSensorValue(ammonia, 0, 500);
+};
+
 export const isValidActuatorState = (state) => {
   if (typeof state === "boolean") return true;
   if (typeof state === "object" && state !== null) return true;

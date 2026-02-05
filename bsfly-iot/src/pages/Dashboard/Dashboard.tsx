@@ -51,7 +51,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
 
 const Dashboard: React.FC = () => {
     const { stage, setStage } = useLifeCycle()
-    const { currentDevice, refreshDevices, loading: deviceLoading } = useDevice();
+    const { currentDevice, refreshDevices, loading: deviceLoading, getToken } = useDevice();
     const { addNotification } = useNotification();
     const deviceId = currentDevice?._id;
     const [sensorLoading, setSensorLoading] = useState(true);
@@ -130,7 +130,10 @@ const Dashboard: React.FC = () => {
         }
         try {
             const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
-            const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`);
+            const token = await getToken();
+            const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await response.json();
             setSensorData(data);
         } catch {
@@ -144,7 +147,7 @@ const Dashboard: React.FC = () => {
         } finally {
             setSensorLoading(false);
         }
-    }, [deviceId, present]);
+    }, [deviceId, present, getToken]);
 
     useEffect(() => {
         if (!deviceId) return;

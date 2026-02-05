@@ -2,21 +2,20 @@ import express from "express";
 import Drawer from "../models/Sensor.Drawer.js";
 import DrawerReading from "../models/Sensor.DrawerReadings.js";
 import { sensorLimiter } from "../middleware/rateLimiter.js";
+import { requireAuth, requireDeviceAuth, requireDeviceMembership } from "../middleware/auth.js";
 import {
   isValidTemperature,
   isValidHumidity,
   isValidMoisture,
+  isValidAmmonia,
 } from "../middleware/validation.js";
 
 const router = express.Router();
 
-router.post("/", sensorLimiter, async (req, res) => {
+// ESP32 device endpoint - requires device API key
+router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
   try {
     const { deviceId, drawerName, temperature, humidity, moisture, ammonia } = req.body;
-
-    if (!deviceId || typeof deviceId !== "string") {
-      return res.status(400).json({ error: "Valid deviceId is required" });
-    }
 
     if (temperature !== undefined && !isValidTemperature(temperature)) {
       return res.status(400).json({ error: "Invalid temperature value" });
@@ -26,6 +25,9 @@ router.post("/", sensorLimiter, async (req, res) => {
     }
     if (moisture !== undefined && !isValidMoisture(moisture)) {
       return res.status(400).json({ error: "Invalid moisture value" });
+    }
+    if (ammonia !== undefined && !isValidAmmonia(ammonia)) {
+      return res.status(400).json({ error: "Invalid ammonia value" });
     }
 
     let drawer = await Drawer.findOne({
@@ -64,13 +66,10 @@ router.post("/", sensorLimiter, async (req, res) => {
   }
 });
 
-router.get("/device/:deviceId", async (req, res) => {
+// User endpoints - require user auth and device membership
+router.get("/device/:deviceId", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;
-
-    if (!deviceId) {
-      return res.status(400).json({ error: "deviceId is required" });
-    }
 
     const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
     
@@ -132,14 +131,10 @@ router.get("/device/:deviceId", async (req, res) => {
   }
 });
 
-router.get("/device/:deviceId/history", async (req, res) => {
+router.get("/device/:deviceId/history", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;
     const { from, to } = req.query;
-
-    if (!deviceId) {
-      return res.status(400).json({ error: "deviceId is required" });
-    }
 
     const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
     
@@ -165,7 +160,7 @@ router.get("/device/:deviceId/history", async (req, res) => {
   }
 });
 
-router.get("/drawer/:drawerId", async (req, res) => {
+router.get("/drawer/:drawerId", requireAuth, async (req, res) => {
   try {
     const { drawerId } = req.params;
 
@@ -194,13 +189,9 @@ router.get("/drawer/:drawerId", async (req, res) => {
   }
 });
 
-router.get("/device/:deviceId/hourly", async (req, res) => {
+router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;
-
-    if (!deviceId) {
-      return res.status(400).json({ error: "deviceId is required" });
-    }
 
     const drawers = await Drawer.find({ deviceId: deviceId.toUpperCase() });
 

@@ -2,6 +2,8 @@ import express from "express";
 import User from "../models/User.js";
 import Device from "../models/User.Device.js";
 import { validateBody, isValidUserId } from "../middleware/validation.js";
+import { requireAuth } from "../middleware/auth.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
 import validator from "validator";
 
 const router = express.Router();
@@ -20,6 +22,7 @@ const updateUserSchema = {
   email: { required: false, type: "string", validator: isValidEmail, message: "Invalid email address" },
 };
 
+// Create user (called on first login via Clerk webhook or sync)
 router.post("/", validateBody(createUserSchema), async (req, res) => {
   try {
     const { userId, name, email } = req.body;
@@ -36,14 +39,10 @@ router.post("/", validateBody(createUserSchema), async (req, res) => {
   }
 });
 
-router.get("/:userId", async (req, res) => {
+// Get current user profile
+router.get("/me", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!isValidUserId(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
+    const userId = req.userId;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -55,14 +54,11 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-router.put("/:userId", validateBody(updateUserSchema), async (req, res) => {
+// Update current user profile
+router.put("/me", requireAuth, validateBody(updateUserSchema), async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.userId;
     const { name, email } = req.body;
-
-    if (!isValidUserId(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
 
     const updateData = {};
     if (name) updateData.name = name;
@@ -83,13 +79,10 @@ router.put("/:userId", validateBody(updateUserSchema), async (req, res) => {
   }
 });
 
-router.delete("/:userId", async (req, res) => {
+// Delete current user account
+router.delete("/me", requireAuth, authLimiter, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!isValidUserId(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
+    const userId = req.userId;
 
     await Device.updateMany(
       { "members.userId": userId },
@@ -109,14 +102,10 @@ router.delete("/:userId", async (req, res) => {
   }
 });
 
-router.get("/:userId/devices", async (req, res) => {
+// Get current user's device summary
+router.get("/me/devices", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!isValidUserId(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
+    const userId = req.userId;
     const devices = await Device.find({ "members.userId": userId });
     
     const summary = {

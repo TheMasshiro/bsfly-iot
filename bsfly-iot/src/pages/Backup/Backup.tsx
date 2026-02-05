@@ -43,7 +43,7 @@ const Backup: FC = () => {
     const [daysAgo, setDaysAgo] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [present] = useIonToast();
-    const { currentDevice } = useDevice();
+    const { currentDevice, getToken } = useDevice();
 
     const today = useMemo(() => new Date(), []);
 
@@ -71,8 +71,10 @@ const Backup: FC = () => {
             throw new Error("No device selected");
         }
 
+        const token = await getToken();
         const response = await fetch(
-            `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`
+            `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
+            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
         );
 
         if (!response.ok) {
@@ -329,8 +331,10 @@ const Backup: FC = () => {
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
             
+            const token = await getToken();
             const response = await fetch(
-                `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`
+                `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
             );
 
             if (!response.ok) {

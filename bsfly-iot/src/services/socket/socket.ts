@@ -3,6 +3,7 @@ const API_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 type ActuatorCallback = (data: any) => void;
 type ErrorCallback = (error: Error) => void;
 type StateMap = Record<string, any>;
+type TokenGetter = () => Promise<string | null>;
 
 class ActuatorService {
   private listeners: Map<string, Set<ActuatorCallback>> = new Map();
@@ -13,6 +14,22 @@ class ActuatorService {
   private retryCount: number = 0;
   private maxRetries: number = 3;
   private retryDelay: number = 2000;
+  private tokenGetter: TokenGetter | null = null;
+
+  setTokenGetter(getter: TokenGetter) {
+    this.tokenGetter = getter;
+  }
+
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+    if (this.tokenGetter) {
+      const token = await this.tokenGetter();
+      if (token) {
+        (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    return headers;
+  }
 
   startPolling(intervalMs: number = 5000) {
     if (this.pollInterval) return;
@@ -25,8 +42,10 @@ class ActuatorService {
       if (!this.isPolling) return;
 
       try {
+        const headers = await this.getAuthHeaders();
         const response = await fetch(
-          `${API_URL}/api/actuators/poll/since/${this.lastPollTime}`
+          `${API_URL}/api/actuators/poll/since/${this.lastPollTime}`,
+          { headers }
         );
         
         if (!response.ok) {
@@ -98,9 +117,10 @@ class ActuatorService {
     
     for (let i = 0; i < retries; i++) {
       try {
+        const headers = await this.getAuthHeaders();
         const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ state }),
         });
         
@@ -122,7 +142,8 @@ class ActuatorService {
 
   async getState(actuatorId: string): Promise<any> {
     try {
-      const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`);
+      const headers = await this.getAuthHeaders();
+      const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`, { headers });
       if (!response.ok) return null;
       const data = await response.json();
       return data.state;
@@ -133,7 +154,8 @@ class ActuatorService {
 
   async getAllStates(): Promise<StateMap> {
     try {
-      const response = await fetch(`${API_URL}/api/actuators`);
+      const headers = await this.getAuthHeaders();
+      const response = await fetch(`${API_URL}/api/actuators`, { headers });
       if (!response.ok) return {};
       return await response.json();
     } catch {

@@ -5,12 +5,12 @@ import DrawerReading from "../models/Sensor.DrawerReadings.js";
 import ActuatorState from "../models/ActuatorState.js";
 import User from "../models/User.js";
 import { deviceLimiter } from "../middleware/rateLimiter.js";
+import { requireAuth } from "../middleware/auth.js";
 import {
   validateBody,
   isValidMacAddress,
   isValidDeviceName,
   isValidJoinCode,
-  isValidUserId,
 } from "../middleware/validation.js";
 
 const router = express.Router();
@@ -18,21 +18,16 @@ const router = express.Router();
 const registerSchema = {
   deviceId: { required: true, type: "string", validator: isValidMacAddress, message: "Invalid MAC address format" },
   name: { required: true, type: "string", validator: isValidDeviceName, message: "Device name must be 1-50 characters" },
-  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
 };
 
 const joinSchema = {
   joinCode: { required: true, type: "string", validator: isValidJoinCode, message: "Join code must be 8 alphanumeric characters" },
-  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
 };
 
-const userIdSchema = {
-  userId: { required: true, type: "string", validator: isValidUserId, message: "Invalid user ID" },
-};
-
-router.post("/register", deviceLimiter, validateBody(registerSchema), async (req, res) => {
+router.post("/register", requireAuth, deviceLimiter, validateBody(registerSchema), async (req, res) => {
   try {
-    const { deviceId, name, userId } = req.body;
+    const { deviceId, name } = req.body;
+    const userId = req.userId;
     const normalizedId = deviceId.toUpperCase();
 
     const existing = await Device.findById(normalizedId);
@@ -71,9 +66,10 @@ router.post("/register", deviceLimiter, validateBody(registerSchema), async (req
   }
 });
 
-router.post("/join", validateBody(joinSchema), async (req, res) => {
+router.post("/join", requireAuth, validateBody(joinSchema), async (req, res) => {
   try {
-    const { joinCode, userId } = req.body;
+    const { joinCode } = req.body;
+    const userId = req.userId;
 
     const device = await Device.findOne({ joinCode: joinCode.toUpperCase() });
     if (!device) {
@@ -96,14 +92,9 @@ router.post("/join", validateBody(joinSchema), async (req, res) => {
   }
 });
 
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/me", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!isValidUserId(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
+    const userId = req.userId;
     const devices = await Device.find({ "members.userId": userId });
     res.json(devices);
   } catch (error) {
@@ -111,23 +102,36 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
-router.get("/:deviceId", async (req, res) => {
+router.get("/:deviceId", requireAuth, async (req, res) => {
   try {
+    const userId = req.userId;
     const device = await Device.findById(req.params.deviceId);
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
+
+    const isMember = device.members.some((m) => m.userId === userId);
+    if (!isMember) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
     res.json(device);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch device" });
   }
 });
 
-router.get("/:deviceId/members", async (req, res) => {
+router.get("/:deviceId/members", requireAuth, async (req, res) => {
   try {
+    const userId = req.userId;
     const device = await Device.findById(req.params.deviceId);
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
+    }
+
+    const isMember = device.members.some((m) => m.userId === userId);
+    if (!isMember) {
+      return res.status(403).json({ error: "Access denied" });
     }
 
     const memberIds = device.members.map((m) => m.userId);
@@ -150,9 +154,9 @@ router.get("/:deviceId/members", async (req, res) => {
   }
 });
 
-router.post("/:deviceId/regenerate-code", validateBody(userIdSchema), async (req, res) => {
+router.post("/:deviceId/regenerate-code", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const device = await Device.findById(req.params.deviceId);
 
     if (!device) {
@@ -170,9 +174,9 @@ router.post("/:deviceId/regenerate-code", validateBody(userIdSchema), async (req
   }
 });
 
-router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) => {
+router.delete("/:deviceId/leave", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const device = await Device.findById(req.params.deviceId);
 
     if (!device) {
@@ -205,17 +209,23 @@ router.delete("/:deviceId/leave", validateBody(userIdSchema), async (req, res) =
   }
 });
 
+// Heartbeat endpoint - requires device API key
 router.post("/:deviceId/heartbeat", async (req, res) => {
   try {
-    const device = await Device.findByIdAndUpdate(
-      req.params.deviceId,
-      { status: "online", lastSeen: new Date() },
-      { new: true }
-    );
+    const apiKey = req.headers["x-api-key"];
+    const device = await Device.findById(req.params.deviceId);
 
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
+
+    if (!apiKey || device.apiKey !== apiKey) {
+      return res.status(401).json({ error: "Invalid API key" });
+    }
+
+    device.status = "online";
+    device.lastSeen = new Date();
+    await device.save();
 
     res.json({ status: "online", lastSeen: device.lastSeen });
   } catch (error) {
@@ -223,9 +233,50 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
   }
 });
 
-router.patch("/:deviceId/members/:memberId/role", validateBody(userIdSchema), async (req, res) => {
+// Get device API key (owner only)
+router.get("/:deviceId/api-key", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
+    const device = await Device.findById(req.params.deviceId);
+
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    if (device.ownerId !== userId) {
+      return res.status(403).json({ error: "Only the owner can view the API key" });
+    }
+
+    res.json({ apiKey: device.apiKey });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch API key" });
+  }
+});
+
+// Regenerate device API key (owner only)
+router.post("/:deviceId/regenerate-api-key", requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const device = await Device.findById(req.params.deviceId);
+
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    if (device.ownerId !== userId) {
+      return res.status(403).json({ error: "Only the owner can regenerate the API key" });
+    }
+
+    await device.regenerateApiKey();
+    res.json({ apiKey: device.apiKey });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to regenerate API key" });
+  }
+});
+
+router.patch("/:deviceId/members/:memberId/role", requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
     const { deviceId, memberId } = req.params;
     const { role } = req.body;
 
@@ -267,9 +318,9 @@ router.patch("/:deviceId/members/:memberId/role", validateBody(userIdSchema), as
   }
 });
 
-router.delete("/:deviceId/members/:memberId", validateBody(userIdSchema), async (req, res) => {
+router.delete("/:deviceId/members/:memberId", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const { deviceId, memberId } = req.params;
 
     const device = await Device.findById(deviceId);

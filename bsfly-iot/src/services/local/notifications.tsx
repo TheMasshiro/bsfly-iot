@@ -26,8 +26,8 @@ class NotificationService {
                 title: options.title,
                 body: options.body,
                 id: options.id ?? this.notificationId++,
-                schedule: options.schedule 
-                    ? { at: options.schedule } 
+                schedule: options.schedule
+                    ? { at: options.schedule }
                     : { at: new Date(Date.now() + 1000) },
             };
 
