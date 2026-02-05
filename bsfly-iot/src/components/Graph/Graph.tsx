@@ -1,7 +1,7 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -27,6 +27,8 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     const { currentDevice } = useDevice();
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
+    const [present] = useIonToast();
+    const lastErrorRef = useRef<number>(0);
 
     const getSensorKey = (type: string): string => {
         const normalized = type.toLowerCase();
@@ -65,6 +67,17 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 setChartData(points);
             } catch {
                 setChartData([]);
+                const now = Date.now();
+                if (now - lastErrorRef.current > 60000) {
+                    lastErrorRef.current = now;
+                    present({
+                        message: `Failed to load ${sensorType} graph data`,
+                        duration: 2000,
+                        position: "top",
+                        mode: "ios",
+                        color: "warning",
+                    });
+                }
             } finally {
                 setLoading(false);
             }
@@ -73,7 +86,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         fetchData();
         const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
-    }, [currentDevice, sensorType]);
+    }, [currentDevice, sensorType, present]);
     
     const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
     

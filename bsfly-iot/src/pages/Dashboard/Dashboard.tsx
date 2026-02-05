@@ -140,10 +140,17 @@ const Dashboard: React.FC = () => {
             const data = await response.json();
             setSensorData(data);
         } catch {
+            present({
+                message: "Failed to load sensor data",
+                duration: 2000,
+                position: "top",
+                mode: "ios",
+                color: "danger",
+            });
         } finally {
             setSensorLoading(false);
         }
-    }, [deviceId]);
+    }, [deviceId, present]);
 
     useEffect(() => {
         if (!deviceId) return;

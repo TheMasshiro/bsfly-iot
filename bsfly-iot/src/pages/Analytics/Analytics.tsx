@@ -1,6 +1,6 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar } from '@ionic/react';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonLabel, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
-import { FC, useMemo, useState, useEffect, useCallback } from 'react';
+import { FC, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { useDevice } from '../../context/DeviceContext';
@@ -31,6 +31,8 @@ const Analytics: FC = () => {
         moisture2: null,
         ammonia: null,
     });
+    const [present] = useIonToast();
+    const lastErrorRef = useRef<number>(0);
 
     const fetchCurrentValues = useCallback(async () => {
         if (!currentDevice) return;
@@ -41,8 +43,19 @@ const Analytics: FC = () => {
                 setSensorValues(data);
             }
         } catch {
+            const now = Date.now();
+            if (now - lastErrorRef.current > 30000) {
+                lastErrorRef.current = now;
+                present({
+                    message: "Failed to load sensor data",
+                    duration: 2000,
+                    position: "top",
+                    mode: "ios",
+                    color: "danger",
+                });
+            }
         }
-    }, [currentDevice]);
+    }, [currentDevice, present]);
 
     useEffect(() => {
         fetchCurrentValues();
