@@ -70,7 +70,7 @@ const App: React.FC = () => {
 
                         <SignedOut>
                             <Route exact path="/welcome" component={Welcome} />
-                            <Route path="/(dashboard|photoperiod|analytics|lifestages|settings|about|data/backup)">
+                            <Route path="/(dashboard|light|analytics|lifestages|settings|about|data/backup)">
                                 <Redirect to="/welcome" />
                             </Route>
                             <Route exact path="/">
