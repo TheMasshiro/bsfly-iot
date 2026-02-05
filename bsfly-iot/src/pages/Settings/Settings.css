@@ -58,3 +58,19 @@
 .settings-page .skeleton-container {
   padding: 8px 16px;
 }
+
+.settings-page ion-modal ion-item-sliding {
+  margin: 0;
+}
+
+.settings-page ion-modal ion-item-options {
+  display: flex;
+  align-items: stretch;
+}
+
+.settings-page ion-modal ion-item-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+}

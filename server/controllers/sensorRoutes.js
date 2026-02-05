@@ -78,8 +78,7 @@ router.get("/device/:deviceId", async (req, res) => {
       return res.json({
         temperature: null,
         humidity: null,
-        moisture1: null,
-        moisture2: null,
+        moisture: null,
         ammonia: null,
       });
     }
@@ -97,8 +96,7 @@ router.get("/device/:deviceId", async (req, res) => {
       return res.json({
         temperature: null,
         humidity: null,
-        moisture1: null,
-        moisture2: null,
+        moisture: null,
         ammonia: null,
       });
     }
@@ -117,8 +115,7 @@ router.get("/device/:deviceId", async (req, res) => {
       return res.json({
         temperature: null,
         humidity: null,
-        moisture1: null,
-        moisture2: null,
+        moisture: null,
         ammonia: null,
       });
     }
@@ -126,8 +123,7 @@ router.get("/device/:deviceId", async (req, res) => {
     res.json({
       temperature: latest.temperature ?? null,
       humidity: latest.humidity ?? null,
-      moisture1: latest.moisture ?? null,
-      moisture2: null,
+      moisture: latest.moisture ?? null,
       ammonia: latest.ammonia ?? null,
       timestamp: latest.timestamp,
     });
