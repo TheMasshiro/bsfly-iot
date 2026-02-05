@@ -1,24 +1,30 @@
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
 import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
+import { API_URL } from '../../utils/api';
 import './Graph.css';
 
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
-
 interface GraphProps {
-    sensorType: string,
-    upperLimit: number,
-    lowerLimit: number,
-    warningLimit: number,
-    unit: string,
+    sensorType: string;
+    upperLimit: number;
+    lowerLimit: number;
+    warningLimit: number;
+    unit: string;
 }
 
 interface ChartDataPoint {
     time: string;
     value: number;
 }
+
+const SENSOR_KEY_MAP: Record<string, string> = {
+    temperature: 'temperature',
+    humidity: 'humidity',
+    moisture: 'moisture',
+    ammonia: 'ammonia',
+};
 
 Chart.register(annotationPlugin);
 
@@ -31,167 +37,145 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     const [present] = useIonToast();
     const lastErrorRef = useRef<number>(0);
 
-    const getSensorKey = (type: string): string => {
-        const normalized = type.toLowerCase();
-        if (normalized.includes('temperature')) return 'temperature';
-        if (normalized.includes('humidity')) return 'humidity';
-        if (normalized.includes('moisture')) return 'moisture';
-        if (normalized.includes('ammonia')) return 'ammonia';
-        return 'temperature';
-    };
+    const sensorKey = useMemo(() => {
+        const normalized = sensorType.toLowerCase();
+        return Object.keys(SENSOR_KEY_MAP).find(key => normalized.includes(key)) || 'temperature';
+    }, [sensorType]);
+
+    const fetchData = useCallback(async () => {
+        if (!currentDevice) {
+            setChartData([]);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const token = await getToken();
+            const response = await fetch(
+                `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            );
+
+            if (!response.ok) throw new Error('Failed to fetch');
+
+            const data = await response.json();
+            const points: ChartDataPoint[] = data
+                .filter((h: any) => h[sensorKey] !== null)
+                .map((h: any) => ({
+                    time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    value: Math.round(h[sensorKey] * 10) / 10
+                }));
+
+            setChartData(points);
+        } catch {
+            setChartData([]);
+            const now = Date.now();
+            if (now - lastErrorRef.current > 60000) {
+                lastErrorRef.current = now;
+                present({
+                    message: `Failed to load ${sensorType} graph data`,
+                    duration: 2000,
+                    position: "top",
+                    mode: "ios",
+                    color: "warning",
+                });
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [currentDevice, sensorKey, sensorType, present, getToken]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!currentDevice) {
-                setChartData([]);
-                setLoading(false);
-                return;
-            }
-
-            try {
-                const token = await getToken();
-                const response = await fetch(
-                    `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`,
-                    {
-                        headers: token ? { Authorization: `Bearer ${token}` } : {},
-                    }
-                );
-
-                if (!response.ok) throw new Error('Failed to fetch');
-
-                const data = await response.json();
-                const sensorKey = getSensorKey(sensorType);
-
-                const points: ChartDataPoint[] = data
-                    .filter((h: any) => h[sensorKey] !== null)
-                    .map((h: any) => ({
-                        time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        value: Math.round(h[sensorKey] * 10) / 10
-                    }));
-
-                setChartData(points);
-            } catch {
-                setChartData([]);
-                const now = Date.now();
-                if (now - lastErrorRef.current > 60000) {
-                    lastErrorRef.current = now;
-                    present({
-                        message: `Failed to load ${sensorType} graph data`,
-                        duration: 2000,
-                        position: "top",
-                        mode: "ios",
-                        color: "warning",
-                    });
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
         const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
-    }, [currentDevice, sensorType, present, getToken]);
+    }, [fetchData]);
     
     const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
     
-    const getStatusInfo = () => {
-        if (latestValue >= upperLimit) {
-            return { color: '#cb1a27', chipColor: 'danger', statusText: 'High' };
-        }
-        if (latestValue >= warningLimit) {
-            return { color: '#ffca22', chipColor: 'warning', statusText: 'Warning' };
-        }
-        if (latestValue <= lowerLimit) {
-            return { color: '#3dc2ff', chipColor: 'primary', statusText: 'Low' };
-        }
-        return { color: '#42d96b', chipColor: 'success', statusText: 'Optimal' };
-    };
-
-    const { color, chipColor, statusText } = getStatusInfo();
+    const { colorClass, chipColor, statusText } = useMemo(() => {
+        if (latestValue >= upperLimit) return { colorClass: 'graph-value--high', chipColor: 'danger', statusText: 'High' };
+        if (latestValue >= warningLimit) return { colorClass: 'graph-value--warning', chipColor: 'warning', statusText: 'Warning' };
+        if (latestValue <= lowerLimit) return { colorClass: 'graph-value--low', chipColor: 'primary', statusText: 'Low' };
+        return { colorClass: 'graph-value--optimal', chipColor: 'success', statusText: 'Optimal' };
+    }, [latestValue, upperLimit, warningLimit, lowerLimit]);
 
     useEffect(() => {
-        if (canvasRef.current) {
-            if (chartRef.current) {
-                chartRef.current.destroy();
-            }
+        if (!canvasRef.current) return;
+        
+        chartRef.current?.destroy();
 
-            chartRef.current = new Chart(canvasRef.current, {
-                type: 'line',
-                data: {
-                    labels: chartData.map(row => row.time),
-                    datasets: [{
-                        label: `${sensorType} ${unit}`,
-                        data: chartData.map(row => row.value),
-                        backgroundColor: 'rgba(40, 187, 80, 0.2)',
-                        borderColor: 'rgba(40, 187, 80, 1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: chartData.map(row => {
-                            if (row.value >= upperLimit) return 'rgba(255, 99, 132, 1)';
-                            if (row.value >= warningLimit) return 'rgba(255, 205, 86, 1)';
-                            if (row.value <= lowerLimit) return 'rgba(54, 162, 235, 1)';
-                            return 'rgba(40, 187, 80, 1)';
-                        }),
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 1,
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                upperLimit: {
-                                    type: 'line',
-                                    yMin: upperLimit,
-                                    yMax: upperLimit,
-                                    borderColor: 'rgb(255, 99, 132)',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                },
-                                warningLimit: {
-                                    type: 'line',
-                                    yMin: warningLimit,
-                                    yMax: warningLimit,
-                                    borderColor: 'rgb(255, 205, 86)',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                },
-                                lowerLimit: {
-                                    type: 'line',
-                                    yMin: lowerLimit,
-                                    yMax: lowerLimit,
-                                    borderColor: 'rgb(54, 162, 235)',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                }
+        chartRef.current = new Chart(canvasRef.current, {
+            type: 'line',
+            data: {
+                labels: chartData.map(row => row.time),
+                datasets: [{
+                    label: `${sensorType} ${unit}`,
+                    data: chartData.map(row => row.value),
+                    backgroundColor: 'rgba(40, 187, 80, 0.2)',
+                    borderColor: 'rgba(40, 187, 80, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: chartData.map(row => {
+                        if (row.value >= upperLimit) return 'rgba(255, 99, 132, 1)';
+                        if (row.value >= warningLimit) return 'rgba(255, 205, 86, 1)';
+                        if (row.value <= lowerLimit) return 'rgba(54, 162, 235, 1)';
+                        return 'rgba(40, 187, 80, 1)';
+                    }),
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    annotation: {
+                        annotations: {
+                            upperLimit: {
+                                type: 'line',
+                                yMin: upperLimit,
+                                yMax: upperLimit,
+                                borderColor: 'rgb(255, 99, 132)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                            },
+                            warningLimit: {
+                                type: 'line',
+                                yMin: warningLimit,
+                                yMax: warningLimit,
+                                borderColor: 'rgb(255, 205, 86)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                            },
+                            lowerLimit: {
+                                type: 'line',
+                                yMin: lowerLimit,
+                                yMax: lowerLimit,
+                                borderColor: 'rgb(54, 162, 235)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
                             }
-                        },
-                        legend: {
-                            display: false
                         }
-                    }
+                    },
+                    legend: { display: false }
                 }
-            });
-        }
-
-        return () => {
-            if (chartRef.current) {
-                chartRef.current.destroy();
             }
-        };
+        });
+
+        return () => { chartRef.current?.destroy(); };
     }, [chartData, sensorType, upperLimit, lowerLimit, warningLimit, unit]);
+
+    const displayTitle = sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase();
 
     if (loading) {
         return (
             <IonCard mode="ios">
                 <IonCardHeader>
-                    <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
+                    <IonCardSubtitle>{displayTitle}</IonCardSubtitle>
                 </IonCardHeader>
                 <IonCardContent>
                     <div className="graph-loading">
@@ -206,7 +190,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         return (
             <IonCard mode="ios">
                 <IonCardHeader>
-                    <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
+                    <IonCardSubtitle>{displayTitle}</IonCardSubtitle>
                 </IonCardHeader>
                 <IonCardContent>
                     <div className="graph-empty">
@@ -221,9 +205,9 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         <IonCard mode="ios">
             <IonCardHeader>
                 <IonCardSubtitle className="graph-header">
-                    <span>{sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase()}</span>
+                    <span>{displayTitle}</span>
                     <div className="graph-value-container">
-                        <IonText className="graph-value" style={{ color }}>
+                        <IonText className={`graph-value ${colorClass}`}>
                             {latestValue}{unit}
                         </IonText>
                         <IonChip color={chipColor} className="graph-status-chip">
@@ -232,15 +216,13 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                     </div>
                 </IonCardSubtitle>
             </IonCardHeader>
-
             <IonCardContent>
                 <div className="graph-container">
-                    <canvas ref={canvasRef} id="acquisitions" role="img" aria-label={`${sensorType} data chart`}></canvas>
+                    <canvas ref={canvasRef} role="img" aria-label={`${sensorType} data chart`} />
                 </div>
             </IonCardContent>
         </IonCard>
-    )
-}
-
+    );
+};
 
 export default Graph;

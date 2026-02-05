@@ -2,19 +2,12 @@ import { createContext, FC, ReactNode, useContext, useState, useEffect, useCallb
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { offlineService } from "../services/offline/OfflineService";
 import { actuatorService } from "../services/socket/socket";
+import { API_URL } from "../utils/api";
+import { Device } from "../types/device";
 
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+export type { Device };
+
 const CACHE_KEY_DEVICES = "devices";
-
-export interface Device {
-    _id: string;
-    name: string;
-    ownerId: string;
-    status: "online" | "offline";
-    joinCode: string;
-    members: { userId: string; role: string; joinedAt: string }[];
-    lastSeen?: string;
-}
 
 interface DeviceContextProps {
     devices: Device[];

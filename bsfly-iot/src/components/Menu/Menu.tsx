@@ -8,20 +8,20 @@ import {
     IonMenu,
     IonMenuToggle,
 } from '@ionic/react';
-
+import { FC } from 'react';
 import { useLocation } from 'react-router-dom';
 import { analyticsOutline, analyticsSharp, bugOutline, exitOutline, exitSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, leafOutline, leafSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, sunnyOutline, sunnySharp } from 'ionicons/icons';
 import './Menu.css';
 import { SignOutButton, useUser } from '@clerk/clerk-react';
 
-interface AppPage {
+interface MenuItemProps {
     url: string;
     iosIcon: string;
     mdIcon: string;
     title: string;
 }
 
-const appPages: AppPage[] = [
+const appPages: MenuItemProps[] = [
     {
         title: 'Dashboard',
         url: '/dashboard',
@@ -48,7 +48,7 @@ const appPages: AppPage[] = [
     },
 ];
 
-const morePage: AppPage[] = [
+const morePage: MenuItemProps[] = [
     {
         title: 'Settings',
         url: '/settings',
@@ -69,7 +69,7 @@ const morePage: AppPage[] = [
     }
 ]
 
-const Menu: React.FC = () => {
+const Menu: FC = () => {
     const location = useLocation();
     const { user } = useUser();
 

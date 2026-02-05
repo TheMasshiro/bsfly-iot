@@ -11,27 +11,9 @@ import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
 import { validateMacAddress, validateDeviceName, validateJoinCode, formatMacAddress } from "../../utils/validation";
+import { API_URL } from "../../utils/api";
+import { Device, DeviceMember } from "../../types/device";
 import "./Settings.css";
-
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
-
-interface DeviceMember {
-    userId: string;
-    role: "owner" | "member";
-    joinedAt: string;
-    name?: string;
-    email?: string;
-}
-
-interface Device {
-    _id: string;
-    name: string;
-    ownerId: string;
-    status: "online" | "offline";
-    joinCode: string;
-    members: DeviceMember[];
-    lastSeen?: string;
-}
 
 const Settings: FC = () => {
     const { userId, getToken, isLoaded: authLoaded } = useAuth();

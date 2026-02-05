@@ -2,12 +2,12 @@ import { IonSkeletonText } from '@ionic/react';
 import { FC } from 'react';
 import './LoadingSkeleton.css';
 
-interface Props {
+interface LoadingSkeletonProps {
     variant?: 'card' | 'list-item' | 'text' | 'circle' | 'graph';
     count?: number;
 }
 
-const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
+const LoadingSkeleton: FC<LoadingSkeletonProps> = ({ variant = 'card', count = 1 }) => {
     const items = Array.from({ length: count });
 
     if (variant === 'card') {

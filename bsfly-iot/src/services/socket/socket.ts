@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
+import { API_URL } from "../../utils/api";
 
 type ActuatorCallback = (data: any) => void;
 type ErrorCallback = (error: Error) => void;

@@ -126,7 +126,7 @@ const Welcome: FC = () => {
                     </section>
 
                     <footer className="welcome-footer">
-                        <p>© 2025 Black Soldier Fly IoT</p>
+                        <p>© 2026 Black Soldier Fly IoT</p>
                     </footer>
                 </div>
             </IonContent>

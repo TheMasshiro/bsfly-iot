@@ -1,38 +1,34 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonToggle, ToggleCustomEvent, useIonToast } from "@ionic/react";
-import { FC, useState, useCallback } from "react";
-import "./Controls.css"
+import { FC, useState, useCallback, useMemo } from "react";
+import "./Controls.css";
 
-interface ControlProps {
-    title: string,
-    description: string
+interface ControlsProps {
+    title: string;
+    description: string;
 }
 
-const Controls: FC<ControlProps> = ({ title, description }) => {
+const Controls: FC<ControlsProps> = ({ title, description }) => {
+    const [isTouched, setIsTouched] = useState(false);
+    const [isChecked, setIsChecked] = useState(false);
+    const [present] = useIonToast();
 
-    const [isTouched, setIsTouched] = useState<boolean>();
-    const [isValid, setIsValid] = useState<boolean | undefined>();
-    const [isChecked, setIsChecked] = useState<boolean>();
-
-    const [present] = useIonToast()
-    const presentToast = useCallback((message: string, duration: number) => {
+    const handleToggle = useCallback((event: ToggleCustomEvent) => {
+        const checked = event.detail.checked;
+        setIsTouched(true);
+        setIsChecked(checked);
         present({
-            message: message,
-            duration: duration,
+            message: `${title} turned ${checked ? 'on' : 'off'}`,
+            duration: 700,
             position: "top",
             mode: "ios",
             layout: "stacked",
             swipeGesture: "vertical",
-        })
-    }, [present]);
+        });
+    }, [title, present]);
 
-    const validateToggle = useCallback((event: ToggleCustomEvent<{ checked: boolean }>) => {
-        setIsTouched(true);
-        setIsChecked(event.detail.checked);
-        setIsValid(event.detail.checked);
-        const message = event.detail.checked ? `${title} turned on` : `${title} turned off`;
-        presentToast(message, 700);
-    }, [title, presentToast]);
-
+    const toggleClassName = useMemo(() => 
+        `${isChecked ? 'ion-valid' : 'ion-invalid'} ${isTouched ? 'ion-touched' : ''}`.trim()
+    , [isChecked, isTouched]);
 
     return (
         <IonCard mode="ios" className="controls-margin">
@@ -41,18 +37,18 @@ const Controls: FC<ControlProps> = ({ title, description }) => {
             </IonCardHeader>
             <IonCardContent>
                 <IonToggle 
-                    enableOnOffLabels={true}
-                    className={`${isValid ? 'ion-valid' : ''} ${isValid === false ? 'ion-invalid' : ''} ${isTouched ? 'ion-touched' : ''}`}
+                    enableOnOffLabels
+                    className={toggleClassName}
                     justify="space-between"
                     checked={isChecked}
-                    onIonChange={validateToggle}
+                    onIonChange={handleToggle}
                     aria-label={`Toggle ${title}`}
                 >
                     {description}
                 </IonToggle>
             </IonCardContent>
         </IonCard>
-    )
-}
+    );
+};
 
 export default Controls;

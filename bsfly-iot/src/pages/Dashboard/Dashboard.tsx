@@ -11,9 +11,10 @@ import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
 import Toolbar from '../../components/Toolbar/Toolbar';
 import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, FC } from 'react';
 import { snow, flame, water, rainy } from 'ionicons/icons';
 import { actuatorService } from '../../services/socket/socket';
+import { API_URL } from '../../utils/api';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -49,7 +50,7 @@ export const statusColor = (sensorType: string, value: number, thresholds: Recor
     return getStatus(value, threshold as Threshold);
 }
 
-const Dashboard: React.FC = () => {
+const Dashboard: FC = () => {
     const { stage, setStage } = useLifeCycle()
     const { currentDevice, refreshDevices, loading: deviceLoading, getToken } = useDevice();
     const { addNotification } = useNotification();
@@ -129,7 +130,6 @@ const Dashboard: React.FC = () => {
             return;
         }
         try {
-            const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
             const token = await getToken();
             const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},

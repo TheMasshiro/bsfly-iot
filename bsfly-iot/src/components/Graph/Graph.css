@@ -23,6 +23,22 @@
   font-size: 1.2rem;
 }
 
+.graph-value--high {
+  color: #cb1a27;
+}
+
+.graph-value--warning {
+  color: #ffca22;
+}
+
+.graph-value--low {
+  color: #3dc2ff;
+}
+
+.graph-value--optimal {
+  color: #42d96b;
+}
+
 .graph-status-chip {
   margin: 0;
 }
