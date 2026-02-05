@@ -500,6 +500,20 @@ const Settings: FC = () => {
                                                 }
                                             }}
                                         >
+                                            {!isCurrentUser && !isOwnerMember && (
+                                                <IonItemOptions side="start">
+                                                    <IonItemOption
+                                                        color="primary"
+                                                        onClick={() => {
+                                                            handleCloseSlidingItem(member.userId);
+                                                            setMemberToTransfer(member);
+                                                            setShowTransferSheet(true);
+                                                        }}
+                                                    >
+                                                        <IonIcon slot="icon-only" icon={swapHorizontal} />
+                                                    </IonItemOption>
+                                                </IonItemOptions>
+                                            )}
                                             <IonItem>
                                                 <IonLabel>
                                                     <h2>{member.name || "Unknown User"}</h2>
@@ -511,16 +525,6 @@ const Settings: FC = () => {
                                             </IonItem>
                                             {!isCurrentUser && !isOwnerMember && (
                                                 <IonItemOptions side="end">
-                                                    <IonItemOption
-                                                        color="primary"
-                                                        onClick={() => {
-                                                            handleCloseSlidingItem(member.userId);
-                                                            setMemberToTransfer(member);
-                                                            setShowTransferSheet(true);
-                                                        }}
-                                                    >
-                                                        <IonIcon slot="icon-only" icon={swapHorizontal} />
-                                                    </IonItemOption>
                                                     <IonItemOption
                                                         color="danger"
                                                         onClick={() => {
