@@ -22,6 +22,12 @@
   border-radius: 12px;
   --padding-start: 12px;
   --padding-end: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.settings-page ion-item ion-note[slot="error"] {
+  padding-bottom: 8px;
 }
 
 .settings-page ion-button {
