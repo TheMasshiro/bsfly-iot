@@ -235,8 +235,9 @@ const LifeStages: FC = () => {
     const getActiveStage = (drawerIndex: number) => {
         const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
-        if (timer) return lifeStages[timer.stage];
-        return lifeStages[quadrantStages[key]] || lifeStages["eggs"];
+        if (timer && lifeStages[timer.stage]) return lifeStages[timer.stage];
+        const stageKey = quadrantStages[key] || drawerData[drawerIndex]?.availableStages[0] || "eggs";
+        return lifeStages[stageKey] || lifeStages["eggs"];
     };
 
     const totalDays = useMemo(() => {
