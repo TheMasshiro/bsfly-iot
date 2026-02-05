@@ -129,7 +129,22 @@ router.get("/:deviceId/members", async (req, res) => {
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
-    res.json(device.members);
+
+    const memberIds = device.members.map((m) => m.userId);
+    const users = await User.find({ _id: { $in: memberIds } });
+
+    const membersWithInfo = device.members.map((member) => {
+      const user = users.find((u) => u._id === member.userId);
+      return {
+        userId: member.userId,
+        role: member.role,
+        joinedAt: member.joinedAt,
+        name: user?.name || "Unknown",
+        email: user?.email || "",
+      };
+    });
+
+    res.json(membersWithInfo);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch members" });
   }
@@ -205,6 +220,84 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
     res.json({ status: "online", lastSeen: device.lastSeen });
   } catch (error) {
     res.status(500).json({ error: "Failed to update heartbeat" });
+  }
+});
+
+router.patch("/:deviceId/members/:memberId/role", validateBody(userIdSchema), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { deviceId, memberId } = req.params;
+    const { role } = req.body;
+
+    if (!role || !["owner", "member"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role. Must be 'owner' or 'member'" });
+    }
+
+    const device = await Device.findById(deviceId);
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    if (device.ownerId !== userId) {
+      return res.status(403).json({ error: "Only the owner can change member roles" });
+    }
+
+    const memberIndex = device.members.findIndex((m) => m.userId === memberId);
+    if (memberIndex === -1) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    if (role === "owner") {
+      device.members = device.members.map((m) => ({
+        ...m.toObject(),
+        role: m.userId === memberId ? "owner" : "member",
+      }));
+      device.ownerId = memberId;
+    } else {
+      if (memberId === device.ownerId) {
+        return res.status(400).json({ error: "Cannot demote the owner. Transfer ownership first." });
+      }
+      device.members[memberIndex].role = role;
+    }
+
+    await device.save();
+    res.json({ message: "Member role updated", device });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update member role" });
+  }
+});
+
+router.delete("/:deviceId/members/:memberId", validateBody(userIdSchema), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const { deviceId, memberId } = req.params;
+
+    const device = await Device.findById(deviceId);
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    if (device.ownerId !== userId) {
+      return res.status(403).json({ error: "Only the owner can remove members" });
+    }
+
+    if (memberId === device.ownerId) {
+      return res.status(400).json({ error: "Cannot remove the owner" });
+    }
+
+    const memberIndex = device.members.findIndex((m) => m.userId === memberId);
+    if (memberIndex === -1) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    device.members.splice(memberIndex, 1);
+    await device.save();
+
+    await User.findByIdAndUpdate(memberId, { $pull: { devices: device._id } });
+
+    res.json({ message: "Member removed", device });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove member" });
   }
 });
 

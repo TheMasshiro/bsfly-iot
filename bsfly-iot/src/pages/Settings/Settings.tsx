@@ -1,10 +1,11 @@
 import {
     IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList,
     IonPage, IonButton, IonBadge, IonAlert, IonText, useIonToast, IonChip,
-    IonRefresher, IonRefresherContent, IonNote
+    IonRefresher, IonRefresherContent, IonNote, IonModal, IonButtons, IonTitle,
+    IonToolbar, IonItemSliding, IonItemOptions, IonItemOption, IonActionSheet
 } from "@ionic/react";
-import { hardwareChip, helpCircle, add, logOut, refresh, copy, people } from "ionicons/icons";
-import { FC, useState, useEffect, useCallback } from "react";
+import { hardwareChip, helpCircle, add, logOut, refresh, copy, people, personRemove, swapHorizontal, close, chevronForward } from "ionicons/icons";
+import { FC, useState, useEffect, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
@@ -18,6 +19,8 @@ interface DeviceMember {
     userId: string;
     role: "owner" | "member";
     joinedAt: string;
+    name?: string;
+    email?: string;
 }
 
 interface Device {
@@ -48,6 +51,19 @@ const Settings: FC = () => {
 
     const [showLeaveAlert, setShowLeaveAlert] = useState(false);
     const [deviceToLeave, setDeviceToLeave] = useState<Device | null>(null);
+
+    const [showMembersModal, setShowMembersModal] = useState(false);
+    const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+    const [members, setMembers] = useState<DeviceMember[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    const [showRemoveAlert, setShowRemoveAlert] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState<DeviceMember | null>(null);
+
+    const [showTransferSheet, setShowTransferSheet] = useState(false);
+    const [memberToTransfer, setMemberToTransfer] = useState<DeviceMember | null>(null);
+
+    const slidingRefs = useRef<Map<string, HTMLIonItemSlidingElement>>(new Map());
 
     const fetchDevices = useCallback(async () => {
         if (!user?.id) return;
@@ -226,6 +242,72 @@ const Settings: FC = () => {
         present({ message: "Copied to clipboard!", duration: 1500, color: "success" });
     };
 
+    const openMembersModal = async (device: Device) => {
+        setSelectedDevice(device);
+        setShowMembersModal(true);
+        setMembersLoading(true);
+
+        try {
+            const res = await fetch(`${API_URL}/api/devices/${device._id}/members`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setMembers(data);
+        } catch (error: any) {
+            present({ message: error.message, duration: 2000, color: "danger" });
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
+    const removeMember = async () => {
+        if (!user?.id || !selectedDevice || !memberToRemove) return;
+
+        try {
+            const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToRemove.userId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            present({ message: "Member removed", duration: 2000, color: "success" });
+            setMembers(members.filter(m => m.userId !== memberToRemove.userId));
+            fetchDevices();
+        } catch (error: any) {
+            present({ message: error.message, duration: 2000, color: "danger" });
+        }
+    };
+
+    const transferOwnership = async () => {
+        if (!user?.id || !selectedDevice || !memberToTransfer) return;
+
+        try {
+            const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToTransfer.userId}/role`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id, role: "owner" })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            present({ message: "Ownership transferred", duration: 2000, color: "success" });
+            setShowMembersModal(false);
+            fetchDevices();
+        } catch (error: any) {
+            present({ message: error.message, duration: 2000, color: "danger" });
+        }
+    };
+
+    const handleCloseSlidingItem = async (memberId: string) => {
+        const slidingEl = slidingRefs.current.get(memberId);
+        if (slidingEl) {
+            await slidingEl.close();
+        }
+    };
+
     return (
         <IonPage className="settings-page">
             <IonHeader class="ion-no-border">
@@ -353,6 +435,14 @@ const Settings: FC = () => {
                                         </IonItem>
                                     )}
 
+                                    {isOwner && (
+                                        <IonItem button detail detailIcon={chevronForward} onClick={() => openMembersModal(device)}>
+                                            <IonIcon icon={people} slot="start" />
+                                            <IonLabel>Manage Members</IonLabel>
+                                            <IonBadge slot="end">{device.members.length}</IonBadge>
+                                        </IonItem>
+                                    )}
+
                                     <IonItem lines="none">
                                         <IonButton
                                             color="danger"
@@ -371,6 +461,115 @@ const Settings: FC = () => {
                         })
                     )}
                 </IonList>
+
+                <IonModal isOpen={showMembersModal} onDidDismiss={() => setShowMembersModal(false)}>
+                    <IonHeader>
+                        <IonToolbar>
+                            <IonTitle>Members</IonTitle>
+                            <IonButtons slot="end">
+                                <IonButton onClick={() => setShowMembersModal(false)}>
+                                    <IonIcon icon={close} />
+                                </IonButton>
+                            </IonButtons>
+                        </IonToolbar>
+                    </IonHeader>
+                    <IonContent>
+                        <IonList>
+                            {membersLoading ? (
+                                <div className="skeleton-container">
+                                    <LoadingSkeleton variant="list-item" count={3} />
+                                </div>
+                            ) : members.length === 0 ? (
+                                <IonItem>
+                                    <IonLabel color="medium">No members found</IonLabel>
+                                </IonItem>
+                            ) : (
+                                members.map((member) => {
+                                    const isCurrentUser = member.userId === user?.id;
+                                    const isOwnerMember = member.role === "owner";
+
+                                    return (
+                                        <IonItemSliding
+                                            key={member.userId}
+                                            disabled={isCurrentUser}
+                                            ref={(el) => {
+                                                if (el) {
+                                                    slidingRefs.current.set(member.userId, el);
+                                                } else {
+                                                    slidingRefs.current.delete(member.userId);
+                                                }
+                                            }}
+                                        >
+                                            <IonItem>
+                                                <IonLabel>
+                                                    <h2>{member.name || "Unknown User"}</h2>
+                                                    <p>{member.email}</p>
+                                                </IonLabel>
+                                                <IonChip slot="end" color={isOwnerMember ? "primary" : "medium"}>
+                                                    {isOwnerMember ? "Owner" : "Member"}
+                                                </IonChip>
+                                            </IonItem>
+                                            {!isCurrentUser && !isOwnerMember && (
+                                                <IonItemOptions side="end">
+                                                    <IonItemOption
+                                                        color="primary"
+                                                        onClick={() => {
+                                                            handleCloseSlidingItem(member.userId);
+                                                            setMemberToTransfer(member);
+                                                            setShowTransferSheet(true);
+                                                        }}
+                                                    >
+                                                        <IonIcon slot="icon-only" icon={swapHorizontal} />
+                                                    </IonItemOption>
+                                                    <IonItemOption
+                                                        color="danger"
+                                                        onClick={() => {
+                                                            handleCloseSlidingItem(member.userId);
+                                                            setMemberToRemove(member);
+                                                            setShowRemoveAlert(true);
+                                                        }}
+                                                    >
+                                                        <IonIcon slot="icon-only" icon={personRemove} />
+                                                    </IonItemOption>
+                                                </IonItemOptions>
+                                            )}
+                                        </IonItemSliding>
+                                    );
+                                })
+                            )}
+                        </IonList>
+                    </IonContent>
+                </IonModal>
+
+                <IonAlert
+                    isOpen={showRemoveAlert}
+                    onDidDismiss={() => setShowRemoveAlert(false)}
+                    header="Remove Member?"
+                    message={`Remove ${memberToRemove?.name || "this member"} from the device?`}
+                    buttons={[
+                        { text: "Cancel", role: "cancel" },
+                        {
+                            text: "Remove",
+                            role: "destructive",
+                            handler: removeMember
+                        }
+                    ]}
+                />
+
+                <IonActionSheet
+                    isOpen={showTransferSheet}
+                    onDidDismiss={() => setShowTransferSheet(false)}
+                    header={`Transfer ownership to ${memberToTransfer?.name}?`}
+                    subHeader="You will become a regular member."
+                    buttons={[
+                        {
+                            text: "Transfer Ownership",
+                            role: "destructive",
+                            handler: transferOwnership
+                        },
+                        { text: "Cancel", role: "cancel" }
+                    ]}
+                />
 
                 <IonAlert
                     isOpen={showLeaveAlert}
