@@ -1,14 +1,52 @@
-/* Settings page */
 .settings-page ion-content {
-    --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
 .settings-page ion-list {
-    border-radius: 18px !important;
-    --ion-item-border-radius: 18px;
-    overflow: hidden;
+  border-radius: 18px !important;
+  --ion-item-border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-page ion-item {
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.9);
+}
+
+.settings-page ion-input {
+  --background: rgba(255, 255, 255, 0.05);
+  --color: #fff;
+  --placeholder-color: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  --padding-start: 12px;
+  --padding-end: 12px;
 }
 
 .settings-page ion-button {
-    --border-radius: 16px;
+  --border-radius: 16px;
+}
+
+.settings-page ion-button[color="success"] {
+  --background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
+}
+
+.settings-page ion-button[color="danger"] {
+  --background: linear-gradient(135deg, #ff4757 0%, #c5000f 100%);
+}
+
+.settings-page ion-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-page ion-card-title {
+  color: #fff;
+}
+
+.settings-page ion-card-subtitle {
+  color: rgba(255, 255, 255, 0.6);
 }

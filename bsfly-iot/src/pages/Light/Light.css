@@ -1,9 +1,7 @@
-/* page */
 .timer-page ion-content {
-  --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1014 100%);
 }
 
-/* circular progress */
 .timer-page .circular-progress-container {
   display: grid;
   place-items: center;
@@ -36,15 +34,14 @@
 .timer-page .timer-text {
   font-weight: 700;
   font-size: 2.5rem;
-  color: var(--ion-color-medium);
+  color: rgba(255, 255, 255, 0.5);
   margin-top: 16px;
 }
 
 .timer-page .light-on .timer-text {
-  color: #1a65eb;
+  color: #ff5252;
 }
 
-/* light bulb */
 .timer-page .light-bulb-container {
   display: flex;
   justify-content: center;
@@ -61,40 +58,36 @@
 }
 
 .timer-page .light-off .light-bulb-icon {
-  color: var(--ion-color-medium-shade);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .timer-page .light-on {
-  background: radial-gradient(circle, rgba(255, 82, 82, 0.15) 0%, transparent 70%);
-  box-shadow: 0 0 30px rgba(255, 82, 82, 0.2), 0 0 50px rgba(255, 82, 82, 0.1);
+  background: radial-gradient(circle, rgba(255, 82, 82, 0.2) 0%, transparent 70%);
+  box-shadow: 0 0 40px rgba(255, 82, 82, 0.3);
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .timer-page .light-on .light-bulb-icon {
   color: #ff5252;
-  filter: drop-shadow(0 0 6px rgba(255, 82, 82, 0.5));
+  filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.6));
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 30px rgba(255, 82, 82, 0.2), 0 0 50px rgba(255, 82, 82, 0.1);
+    box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);
   }
   50% {
-    box-shadow: 0 0 40px rgba(255, 82, 82, 0.25), 0 0 60px rgba(255, 82, 82, 0.15);
+    box-shadow: 0 0 50px rgba(255, 82, 82, 0.35);
   }
 }
 
 .timer-page .light-status-text {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--ion-color-medium);
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-top: 8px;
-}
-
-.timer-page .light-on + .timer-text + .light-status-text {
-  color: #1a65eb;
 }
 
 .timer-page .progress-chip {
@@ -105,27 +98,26 @@
   z-index: 10;
 }
 
-/* card */
 .timer-page .timer-card {
-  margin: 0 8px 5px;
+  margin: 0 8px 8px;
   border-radius: 18px;
   cursor: pointer;
   transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* hover */
 .timer-page .timer-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* active */
 .timer-page .timer-card:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* card content */
 .timer-page .timer-card-content {
   display: flex;
   justify-content: space-between;
@@ -133,26 +125,23 @@
   padding: 16px;
 }
 
-/* card states */
 .timer-page .timer-card-primary .timer-value {
-  color: #f6f8fc;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .timer-page .timer-card-selected {
-  outline: 6px solid #1a65eb;
-  outline-offset: -6px;
-  box-shadow: 0 0 0 2px rgba(0, 84, 233, 0.2);
+  border: 2px solid #ff5252;
+  background: rgba(255, 82, 82, 0.1);
 }
 
 .timer-page .timer-card-selected:hover {
-  box-shadow: 0 4px 12px rgba(0, 84, 233, 0.4);
+  background: rgba(255, 82, 82, 0.15);
 }
 
 .timer-page .timer-card-selected .timer-value {
-  color: #1a65eb;
+  color: #ff5252;
 }
 
-/* text */
 .timer-page .timer-info {
   flex: 1;
 }
@@ -160,7 +149,7 @@
 .timer-page .timer-name {
   margin: 0;
   font-size: 0.9rem;
-  color: #f6f8fc;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -171,10 +160,9 @@
   padding-right: 8px;
   font-size: 2.5rem;
   font-weight: bold;
-  color: #000;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-/* radio */
 .timer-page ion-radio::part(container),
 .timer-page ion-radio.radio-checked::part(container) {
   border-color: transparent;

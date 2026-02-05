@@ -1,68 +1,72 @@
-/* About page */
 .about-page ion-content {
-    --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
-/* Hero card */
 .about-page .hero-card {
-    border-radius: 18px;
-    background: linear-gradient(135deg, var(--ion-color-primary-tint) 0%, var(--ion-color-primary) 100%);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
+  border: none;
 }
 
 .about-page .hero-card ion-card-title h1,
 .about-page .hero-card ion-card-subtitle,
 .about-page .hero-card ion-text p {
-    color: #fff !important;
+  color: #fff !important;
 }
 
 .about-page ion-card {
-    border-radius: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* About logo */
 .about-logo {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 16px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
 }
 
 .about-logo-icon {
-    font-size: 40px;
-    color: #fff;
+  font-size: 40px;
+  color: #fff;
 }
 
-/* Accordion group */
 .about-page ion-accordion-group {
-    border-radius: 18px;
-    overflow: hidden;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .about-page ion-accordion {
-    background: var(--ion-card-background);
+  background: transparent;
 }
 
 .about-page ion-accordion ion-item[slot="header"] {
-    --background: var(--ion-card-background);
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.9);
 }
 
 .about-page ion-accordion ion-list {
-    background: var(--ion-card-background);
-    padding: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .about-page ion-accordion ion-list ion-item {
-    --background: var(--ion-card-background);
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.7);
 }
 
-/* Mobile responsiveness */
 @media (max-width: 576px) {
-    .about-page ion-card h1 {
-        font-size: 1.5rem;
-    }
+  .about-page ion-card h1 {
+    font-size: 1.5rem;
+  }
 }

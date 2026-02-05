@@ -1,9 +1,8 @@
-/* page */
 .analytics-page ion-content {
   --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1014 100%);
 }
 
-/* sensor summary card */
 .analytics-page .sensor-quick-switch-card {
   background-color: transparent;
   box-shadow: none !important;
@@ -21,66 +20,75 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border: 1px solid var(--ion-color-light-shade);
-  border-radius: 16px;
-  background: var(--ion-color-light);
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.analytics-page .sensor-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .analytics-page .sensor-quick-icon {
   font-size: 1rem;
-  color: var(--ion-color-medium);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .analytics-page .sensor-quick-value {
   margin: 0;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   --background: transparent;
-  --color: var(--ion-color-medium);
+  --color: rgba(255, 255, 255, 0.8);
   padding: 0 4px;
   height: auto;
 }
 
-/* status colors - subtle */
 .analytics-page .sensor-quick-value.status-success {
-  --color: #42d96b;
-  --background: rgba(66, 217, 107, 0.1);
+  --color: #2dd55b;
+  --background: rgba(45, 213, 91, 0.15);
 }
 
 .analytics-page .sensor-quick-value.status-warning {
-  --color: #ffca22;
-  --background: rgba(255, 202, 34, 0.1);
+  --color: #ffc409;
+  --background: rgba(255, 196, 9, 0.15);
 }
 
 .analytics-page .sensor-quick-value.status-danger {
-  --color: #cb1a27;
-  --background: rgba(203, 26, 39, 0.1);
+  --color: #ff4757;
+  --background: rgba(255, 71, 87, 0.15);
 }
 
 .analytics-page .sensor-quick-value.status-primary {
   --color: #3dc2ff;
-  --background: rgba(61, 194, 255, 0.1);
+  --background: rgba(61, 194, 255, 0.15);
 }
 
-/* segment */
 .analytics-page ion-segment {
   margin: 8px 0;
+  --background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
 }
 
 .analytics-page ion-segment-button {
-  --indicator-color: var(--ion-color-primary);
+  --indicator-color: #2dd55b;
+  --color: rgba(255, 255, 255, 0.6);
+  --color-checked: #2dd55b;
 }
 
-/* legends */
 .analytics-page .legends-row {
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
-  padding: 8px;
+  padding: 10px;
 }
 
 .analytics-page .legends-row ion-chip {
   margin: 0;
   font-size: 0.75rem;
+  --background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }

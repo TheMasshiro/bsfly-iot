@@ -1,8 +1,41 @@
-/* Backup page */
 .backup-page ion-content {
-    --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
 .backup-page ion-card {
-    border-radius: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backup-page ion-card-title {
+  color: #fff;
+}
+
+.backup-page ion-card-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.backup-page ion-button {
+  --border-radius: 16px;
+}
+
+.backup-page ion-button[color="success"] {
+  --background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
+}
+
+.backup-page ion-button[color="primary"] {
+  --background: linear-gradient(135deg, #3dc2ff 0%, #0054e9 100%);
+}
+
+.backup-page ion-button[color="tertiary"] {
+  --background: linear-gradient(135deg, #b388ff 0%, #7c4dff 100%);
+}
+
+.backup-page ion-range {
+  --bar-background: rgba(255, 255, 255, 0.1);
+  --bar-background-active: #2dd55b;
+  --knob-background: #2dd55b;
 }

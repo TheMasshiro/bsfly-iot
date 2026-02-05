@@ -1,9 +1,7 @@
-/* page */
 .dashboard-page ion-content {
-  --padding-bottom: 45px;
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
-/* circular progress */
 .dashboard-page .circular-progress-container {
   display: grid;
   place-items: center;
@@ -42,13 +40,21 @@
   z-index: 10;
 }
 
-/* card */
 .dashboard-page .sensor-card {
   margin: 0 8px 0;
   border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
 }
 
-/* card content */
+.dashboard-page .sensor-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .dashboard-page .sensor-card-content {
   display: flex;
   flex-direction: column;
@@ -56,14 +62,12 @@
   gap: 12px;
 }
 
-/* sensor main row */
 .dashboard-page .sensor-main {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* sensor info */
 .dashboard-page .sensor-info {
   flex: 1;
 }
@@ -71,7 +75,7 @@
 .dashboard-page .sensor-name {
   margin: 0;
   font-size: 0.9rem;
-  color: #f6f8fc;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -82,28 +86,24 @@
   padding-right: 8px;
   font-size: 2.5rem;
   font-weight: bold;
-  color: #000;
 }
 
-/* sensor unit */
 .dashboard-page .sensor-unit {
   font-size: 1.3rem;
-  color: #f6f8fc;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
 }
 
-/* sensor data */
 .dashboard-page .sensor-data {
   display: flex;
   align-items: baseline;
 }
 
-/* quick actions */
 .dashboard-page .quick-actions {
   display: flex;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dashboard-page .quick-action-btn {
@@ -112,18 +112,18 @@
   justify-content: center;
   gap: 6px;
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: none;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #f6f8fc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85rem;
 }
 
 .dashboard-page .quick-action-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .dashboard-page .quick-action-btn:active {
@@ -131,42 +131,35 @@
 }
 
 .dashboard-page .quick-action-btn.active {
-  background: rgba(66, 217, 107, 0.9);
+  background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
   color: #fff;
-}
-
-.dashboard-page .quick-action-btn.active:hover {
-  background: rgba(66, 217, 107, 1);
 }
 
 .dashboard-page .quick-action-btn ion-icon {
   font-size: 1.1rem;
 }
 
-/* success */
 .dashboard-page .sensor-card-success {
-  border-left: 6px solid #42d96b;
+  border-left: 4px solid #2dd55b;
 }
 
 .dashboard-page .sensor-card-success .sensor-value {
-  color: #42d96b;
+  color: #2dd55b;
 }
 
-/* warning */
 .dashboard-page .sensor-card-warning {
-  border-left: 6px solid #ffca22;
+  border-left: 4px solid #ffc409;
 }
 
 .dashboard-page .sensor-card-warning .sensor-value {
-  color: #ffca22;
+  color: #ffc409;
 }
 
-/* danger */
 .dashboard-page .sensor-card-danger {
-  border-left: 6px solid #cb1a27;
+  border-left: 4px solid #ff4757;
 }
 
 .dashboard-page .sensor-card-danger .sensor-value {
-  color: #cb1a27;
+  color: #ff4757;
 }
 
