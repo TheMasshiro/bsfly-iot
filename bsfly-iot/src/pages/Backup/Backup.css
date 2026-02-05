@@ -38,4 +38,51 @@
   --bar-background: rgba(255, 255, 255, 0.1);
   --bar-background-active: #2dd55b;
   --knob-background: #2dd55b;
+  padding: 0 8px;
+}
+
+.backup-page .subtitle-icon {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.backup-page .date-title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.backup-page .date-range-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 8px 0;
+}
+
+.backup-page .export-description {
+  margin: 0 0 24px;
+}
+
+.backup-page .export-buttons {
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+}
+
+.backup-page .export-btn {
+  --border-radius: 12px;
+  height: 56px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.backup-page .export-btn ion-icon {
+  font-size: 24px;
+}
+
+.backup-page .export-btn-csv {
+  --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-primary-shade) 100%);
+  --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.4);
+}
+
+.backup-page .no-device-warning {
+  margin-top: 16px;
 }

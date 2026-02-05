@@ -253,3 +253,20 @@
 .lifestages-page .drawer-actions .timer-display {
   text-align: center;
 }
+
+.lifestages-page .hero-card h1 {
+  margin: 0;
+}
+
+.lifestages-page .hero-card .hero-description {
+  margin: 0 0 12px;
+}
+
+.lifestages-page .footer-text {
+  padding-bottom: 32px;
+}
+
+.lifestages-page .footer-text p {
+  font-size: 12px;
+  margin: 0;
+}

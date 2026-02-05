@@ -57,14 +57,14 @@ const About: FC = () => {
                             <IonIcon icon={bugOutline} className="about-logo-icon" />
                         </div>
                         <IonCardTitle>
-                            <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Black Soldier Fly IoT</h1>
+                            <h1>Black Soldier Fly IoT</h1>
                         </IonCardTitle>
                         <IonCardSubtitle>Smart Monitoring System</IonCardSubtitle>
-                        <p style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>v{APP_VERSION}</p>
+                        <p className="version-text">v{APP_VERSION}</p>
                     </IonCardHeader>
                     <IonCardContent className="ion-text-center">
                         <IonText color="medium">
-                            <p style={{ margin: 0, lineHeight: 1.6 }}>
+                            <p className="description-text">
                                 A comprehensive IoT solution for monitoring and controlling
                                 Black Soldier Fly larvae cultivation environments. Track environmental
                                 conditions, manage actuators, and optimize your BSF farming operations.
@@ -215,9 +215,9 @@ const About: FC = () => {
                     </IonAccordion>
                 </IonAccordionGroup>
 
-                <div className="ion-text-center ion-padding" style={{ paddingBottom: 32 }}>
+                <div className="ion-text-center ion-padding footer-text">
                     <IonText color="medium">
-                        <p style={{ fontSize: 12, margin: 0 }}>
+                        <p>
                             © {new Date().getFullYear()} Black Soldier Fly IoT
                         </p>
                     </IonText>

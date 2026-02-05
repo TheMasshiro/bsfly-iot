@@ -415,13 +415,13 @@ const Backup: FC = () => {
                         <IonCardSubtitle>
                             <IonIcon
                                 icon={calendarOutline}
-                                style={{ verticalAlign: "middle", marginRight: 8 }}
+                                className="subtitle-icon"
                             />
                             Select Backup Date
                         </IonCardSubtitle>
                         <IonCardTitle className="ion-text-center ion-padding-top">
                             <IonText color="primary">
-                                <h1 style={{ margin: 0, fontSize: 28 }}>
+                                <h1 className="date-title">
                                     {formatDate(selectedDate)}
                                 </h1>
                             </IonText>
@@ -448,7 +448,6 @@ const Backup: FC = () => {
                             onIonChange={(e) => setDaysAgo(e.detail.value as number)}
                             pin
                             pinFormatter={(value: number) => `${value}d`}
-                            style={{ padding: "0 8px" }}
                         >
                             <IonLabel slot="start" color="medium">
                                 Today
@@ -458,14 +457,7 @@ const Backup: FC = () => {
                             </IonLabel>
                         </IonRange>
 
-                        <div
-                            className="ion-text-center"
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                padding: "8px 8px 0",
-                            }}
-                        >
+                        <div className="date-range-labels">
                             <IonText color="medium">
                                 <small>{formatDate(today)}</small>
                             </IonText>
@@ -487,7 +479,7 @@ const Backup: FC = () => {
                         <IonCardSubtitle>
                             <IonIcon
                                 icon={cloudUpload}
-                                style={{ verticalAlign: "middle", marginRight: 8 }}
+                                className="subtitle-icon"
                             />
                             Export Options
                         </IonCardSubtitle>
@@ -496,25 +488,20 @@ const Backup: FC = () => {
 
                     <IonCardContent>
                         <IonText color="medium">
-                            <p style={{ margin: "0 0 24px" }}>
+                            <p className="export-description">
                                 Export sensor data from{" "}
                                 <strong>{formatDate(selectedDate)}</strong> to today.
                             </p>
                         </IonText>
 
-                        <div style={{ display: "flex", gap: "12px", flexDirection: "column" }}>
+                        <div className="export-buttons">
                             <IonButton
                                 expand="block"
                                 onClick={handlePDFReport}
                                 size="large"
                                 disabled={loading || !currentDevice}
                                 color="danger"
-                                style={{
-                                    "--border-radius": "12px",
-                                    height: "56px",
-                                    fontSize: "18px",
-                                    fontWeight: "600",
-                                }}
+                                className="export-btn"
                             >
                                 {loading ? (
                                     <IonSpinner name="crescent" />
@@ -523,7 +510,6 @@ const Backup: FC = () => {
                                         <IonIcon
                                             icon={documentTextOutline}
                                             slot="start"
-                                            style={{ fontSize: 24 }}
                                         />
                                         Weekly PDF Report
                                     </>
@@ -535,16 +521,7 @@ const Backup: FC = () => {
                                 onClick={() => handleBackup("csv")}
                                 size="large"
                                 disabled={loading || !currentDevice}
-                                style={{
-                                    "--background":
-                                        "linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-primary-shade) 100%)",
-                                    "--box-shadow":
-                                        "0 4px 16px rgba(var(--ion-color-primary-rgb), 0.4)",
-                                    "--border-radius": "12px",
-                                    height: "56px",
-                                    fontSize: "18px",
-                                    fontWeight: "600",
-                                }}
+                                className="export-btn export-btn-csv"
                             >
                                 {loading ? (
                                     <IonSpinner name="crescent" />
@@ -553,7 +530,6 @@ const Backup: FC = () => {
                                         <IonIcon
                                             icon={downloadOutline}
                                             slot="start"
-                                            style={{ fontSize: 24 }}
                                         />
                                         Export as CSV
                                     </>
@@ -566,12 +542,7 @@ const Backup: FC = () => {
                                 size="large"
                                 disabled={loading || !currentDevice}
                                 color="secondary"
-                                style={{
-                                    "--border-radius": "12px",
-                                    height: "56px",
-                                    fontSize: "18px",
-                                    fontWeight: "600",
-                                }}
+                                className="export-btn"
                             >
                                 {loading ? (
                                     <IonSpinner name="crescent" />
@@ -580,7 +551,6 @@ const Backup: FC = () => {
                                         <IonIcon
                                             icon={documentOutline}
                                             slot="start"
-                                            style={{ fontSize: 24 }}
                                         />
                                         Export as JSON
                                     </>
@@ -590,7 +560,7 @@ const Backup: FC = () => {
 
                         {!currentDevice && (
                             <IonText color="warning" className="ion-text-center">
-                                <p style={{ marginTop: 16 }}>
+                                <p className="no-device-warning">
                                     Please select a device in Settings to export data.
                                 </p>
                             </IonText>

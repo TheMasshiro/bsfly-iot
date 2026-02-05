@@ -263,13 +263,13 @@ const LifeStages: FC = () => {
                                         <IonIcon icon={bugOutline} className="hero-icon" />
                                     </div>
                                     <IonCardTitle>
-                                        <h1 style={{ margin: 0 }}>BSF Life Cycle</h1>
+                                        <h1>BSF Life Cycle</h1>
                                     </IonCardTitle>
                                     <IonCardSubtitle>Complete Growth Timeline</IonCardSubtitle>
                                 </IonCardHeader>
                                 <IonCardContent className="ion-text-center">
                                     <IonText color="medium">
-                                        <p style={{ margin: "0 0 12px" }}>
+                                        <p className="hero-description">
                                             Track lifecycle stages from eggs through larvae to prepupa.
                                             Total cycle: approximately <strong>{totalDays} days</strong>.
                                         </p>
@@ -375,9 +375,9 @@ const LifeStages: FC = () => {
 
                     <IonRow>
                         <IonCol>
-                            <div className="ion-text-center ion-padding" style={{ paddingBottom: 32 }}>
+                            <div className="ion-text-center ion-padding footer-text">
                                 <IonText color="medium">
-                                    <p style={{ fontSize: 12, margin: 0 }}>
+                                    <p>
                                         Timeline based on optimal growing conditions (Barragán-Fonseca et al., 2017)
                                     </p>
                                 </IonText>

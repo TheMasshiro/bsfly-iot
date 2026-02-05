@@ -16,14 +16,14 @@ const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
                 {items.map((_, i) => (
                     <div key={i} className="skeleton-card">
                         <div className="skeleton-card-header">
-                            <IonSkeletonText animated style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+                            <IonSkeletonText animated className="skeleton-icon" />
                             <div className="skeleton-card-title">
-                                <IonSkeletonText animated style={{ width: '60%', height: '16px' }} />
-                                <IonSkeletonText animated style={{ width: '40%', height: '12px' }} />
+                                <IonSkeletonText animated className="skeleton-title-primary" />
+                                <IonSkeletonText animated className="skeleton-title-secondary" />
                             </div>
                         </div>
                         <div className="skeleton-card-value">
-                            <IonSkeletonText animated style={{ width: '50%', height: '32px' }} />
+                            <IonSkeletonText animated className="skeleton-value" />
                         </div>
                     </div>
                 ))}
@@ -36,10 +36,10 @@ const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
             <>
                 {items.map((_, i) => (
                     <div key={i} className="skeleton-list-item">
-                        <IonSkeletonText animated style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                        <IonSkeletonText animated className="skeleton-avatar" />
                         <div className="skeleton-list-content">
-                            <IonSkeletonText animated style={{ width: '70%', height: '16px' }} />
-                            <IonSkeletonText animated style={{ width: '50%', height: '12px' }} />
+                            <IonSkeletonText animated className="skeleton-list-primary" />
+                            <IonSkeletonText animated className="skeleton-list-secondary" />
                         </div>
                     </div>
                 ))}
@@ -50,7 +50,7 @@ const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
     if (variant === 'graph') {
         return (
             <div className="skeleton-graph">
-                <IonSkeletonText animated style={{ width: '100%', height: '200px', borderRadius: '12px' }} />
+                <IonSkeletonText animated className="skeleton-graph-content" />
             </div>
         );
     }
@@ -58,7 +58,7 @@ const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
     if (variant === 'circle') {
         return (
             <div className="skeleton-circle">
-                <IonSkeletonText animated style={{ width: '150px', height: '150px', borderRadius: '50%' }} />
+                <IonSkeletonText animated className="skeleton-circle-content" />
             </div>
         );
     }
@@ -66,7 +66,7 @@ const LoadingSkeleton: FC<Props> = ({ variant = 'card', count = 1 }) => {
     return (
         <>
             {items.map((_, i) => (
-                <IonSkeletonText key={i} animated style={{ width: '100%', height: '16px', marginBottom: '8px' }} />
+                <IonSkeletonText key={i} animated className="skeleton-text" />
             ))}
         </>
     );

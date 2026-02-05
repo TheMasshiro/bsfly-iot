@@ -95,3 +95,18 @@
 #notification-list {
   padding: 0;
 }
+
+.notification-segment {
+  min-width: auto;
+}
+
+.notification-segment ion-segment-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 40px;
+}
+
+.notification-segment ion-segment-button ion-label {
+  font-size: 12px;
+  margin-top: 2px;
+}

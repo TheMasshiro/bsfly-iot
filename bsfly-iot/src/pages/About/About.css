@@ -65,6 +65,31 @@
   --color: rgba(255, 255, 255, 0.7);
 }
 
+.about-page .hero-card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.about-page .hero-card .version-text {
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.about-page .hero-card .description-text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.about-page .footer-text {
+  padding-bottom: 32px;
+}
+
+.about-page .footer-text p {
+  font-size: 12px;
+  margin: 0;
+}
+
 @media (max-width: 576px) {
   .about-page ion-card h1 {
     font-size: 1.5rem;

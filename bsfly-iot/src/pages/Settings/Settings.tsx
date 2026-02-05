@@ -265,7 +265,7 @@ const Settings: FC = () => {
                         {macError && <IonNote slot="error">{macError}</IonNote>}
                     </IonItem>
                     <IonItem lines="none">
-                        <IonButton expand="block" onClick={registerDevice} style={{ width: "100%" }} disabled={!!macError || !!nameError}>
+                        <IonButton expand="block" onClick={registerDevice} className="full-width-btn" disabled={!!macError || !!nameError}>
                             Register Device
                         </IonButton>
                     </IonItem>
@@ -293,7 +293,7 @@ const Settings: FC = () => {
                         {joinCodeError && <IonNote slot="error">{joinCodeError}</IonNote>}
                     </IonItem>
                     <IonItem lines="none">
-                        <IonButton expand="block" onClick={joinDevice} style={{ width: "100%" }} disabled={!!joinCodeError}>
+                        <IonButton expand="block" onClick={joinDevice} className="full-width-btn" disabled={!!joinCodeError}>
                             Join Device
                         </IonButton>
                     </IonItem>
@@ -307,7 +307,7 @@ const Settings: FC = () => {
                     </IonItem>
 
                     {loading ? (
-                        <div style={{ padding: '8px 16px' }}>
+                        <div className="skeleton-container">
                             <LoadingSkeleton variant="list-item" count={2} />
                         </div>
                     ) : devices.length === 0 ? (

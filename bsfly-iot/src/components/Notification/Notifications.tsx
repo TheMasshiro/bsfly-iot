@@ -14,7 +14,7 @@ import {
     IonSegmentButton,
 } from '@ionic/react';
 import './Notifications.css';
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useRef, useState } from 'react';
 import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, trashOutline, warningOutline } from 'ionicons/icons';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -23,6 +23,15 @@ type Drawer = 'all' | 'drawer1' | 'drawer2' | 'drawer3';
 const Notifications: FC = () => {
     const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
     const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotification();
+    const slidingRefs = useRef<Map<string, HTMLIonItemSlidingElement>>(new Map());
+
+    const handleDelete = async (id: string) => {
+        const slidingEl = slidingRefs.current.get(id);
+        if (slidingEl) {
+            await slidingEl.close();
+        }
+        deleteNotification(id);
+    };
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -107,22 +116,22 @@ const Notifications: FC = () => {
                         <IonSegment
                             value={selectedDrawer}
                             onIonChange={(e) => setSelectedDrawer(e.detail.value as Drawer)}
-                            style={{ minWidth: "auto" }}
+                            className="notification-segment"
                         >
-                            <IonSegmentButton value="all" style={{ minWidth: 40 }}>
+                            <IonSegmentButton value="all">
                                 <IonIcon icon={listOutline} size="small" />
                             </IonSegmentButton>
-                            <IonSegmentButton value="drawer1" style={{ minWidth: 50 }}>
+                            <IonSegmentButton value="drawer1">
                                 <IonIcon icon={fileTrayOutline} size="small" />
-                                <IonLabel style={{ fontSize: 12 }}>1</IonLabel>
+                                <IonLabel>1</IonLabel>
                             </IonSegmentButton>
-                            <IonSegmentButton value="drawer2" style={{ minWidth: 50 }}>
+                            <IonSegmentButton value="drawer2">
                                 <IonIcon icon={fileTrayOutline} size="small" />
-                                <IonLabel style={{ fontSize: 12 }}>2</IonLabel>
+                                <IonLabel>2</IonLabel>
                             </IonSegmentButton>
-                            <IonSegmentButton value="drawer3" style={{ minWidth: 50 }}>
+                            <IonSegmentButton value="drawer3">
                                 <IonIcon icon={fileTrayOutline} size="small" />
-                                <IonLabel style={{ fontSize: 12 }}>3</IonLabel>
+                                <IonLabel>3</IonLabel>
                             </IonSegmentButton>
                         </IonSegment>
                     </IonItem>
@@ -137,7 +146,16 @@ const Notifications: FC = () => {
                         </IonItem>
                     ) : (
                         filteredNotifications.map((notification) => (
-                            <IonItemSliding key={notification.id}>
+                            <IonItemSliding
+                                key={notification.id}
+                                ref={(el) => {
+                                    if (el) {
+                                        slidingRefs.current.set(notification.id, el);
+                                    } else {
+                                        slidingRefs.current.delete(notification.id);
+                                    }
+                                }}
+                            >
                                 <IonItem
                                     className={`notification-item notification-${notification.type} ${!notification.read ? 'notification-unread' : ''}`}
                                     lines="none"
@@ -165,8 +183,8 @@ const Notifications: FC = () => {
                                         </IonBadge>
                                     )}
                                 </IonItem>
-                                <IonItemOptions side="end" onIonSwipe={() => deleteNotification(notification.id)}>
-                                    <IonItemOption color="danger" expandable onClick={() => deleteNotification(notification.id)}>
+                                <IonItemOptions side="end" onIonSwipe={() => handleDelete(notification.id)}>
+                                    <IonItemOption color="danger" expandable onClick={() => handleDelete(notification.id)}>
                                         <IonIcon slot="icon-only" icon={trashOutline} />
                                     </IonItemOption>
                                 </IonItemOptions>

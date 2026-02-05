@@ -3,6 +3,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
 import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
+import './Graph.css';
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
@@ -189,7 +190,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                     <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
                 </IonCardHeader>
                 <IonCardContent>
-                    <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="graph-loading">
                         <IonSpinner name="crescent" />
                     </div>
                 </IonCardContent>
@@ -204,7 +205,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                     <IonCardSubtitle>{sensorType.toUpperCase()}</IonCardSubtitle>
                 </IonCardHeader>
                 <IonCardContent>
-                    <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="graph-empty">
                         <IonText color="medium">No data available</IonText>
                     </div>
                 </IonCardContent>
@@ -215,13 +216,13 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     return (
         <IonCard mode="ios">
             <IonCardHeader>
-                <IonCardSubtitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <IonCardSubtitle className="graph-header">
                     <span>{sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase()}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IonText style={{ color, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                    <div className="graph-value-container">
+                        <IonText className="graph-value" style={{ color }}>
                             {latestValue}{unit}
                         </IonText>
-                        <IonChip color={chipColor} style={{ margin: 0 }}>
+                        <IonChip color={chipColor} className="graph-status-chip">
                             {statusText}
                         </IonChip>
                     </div>
@@ -229,7 +230,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             </IonCardHeader>
 
             <IonCardContent>
-                <div style={{ height: '250px' }}>
+                <div className="graph-container">
                     <canvas ref={canvasRef} id="acquisitions" role="img" aria-label={`${sensorType} data chart`}></canvas>
                 </div>
             </IonCardContent>
