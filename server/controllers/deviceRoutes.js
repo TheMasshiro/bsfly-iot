@@ -209,7 +209,6 @@ router.delete("/:deviceId/leave", requireAuth, async (req, res) => {
   }
 });
 
-// Heartbeat endpoint - requires device API key
 router.post("/:deviceId/heartbeat", async (req, res) => {
   try {
     const apiKey = req.headers["x-api-key"];
@@ -233,7 +232,6 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
   }
 });
 
-// Get device API key (owner only)
 router.get("/:deviceId/api-key", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -253,7 +251,6 @@ router.get("/:deviceId/api-key", requireAuth, async (req, res) => {
   }
 });
 
-// Regenerate device API key (owner only)
 router.post("/:deviceId/regenerate-api-key", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;

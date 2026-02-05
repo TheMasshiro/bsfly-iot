@@ -12,7 +12,6 @@ import {
 
 const router = express.Router();
 
-// ESP32 device endpoint - requires device API key
 router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
   try {
     const { deviceId, drawerName, temperature, humidity, moisture, ammonia } = req.body;
@@ -66,7 +65,6 @@ router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
   }
 });
 
-// User endpoints - require user auth and device membership
 router.get("/device/:deviceId", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;

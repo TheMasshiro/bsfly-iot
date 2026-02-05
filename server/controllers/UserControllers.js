@@ -22,7 +22,6 @@ const updateUserSchema = {
   email: { required: false, type: "string", validator: isValidEmail, message: "Invalid email address" },
 };
 
-// Create user (called on first login via Clerk webhook or sync)
 router.post("/", validateBody(createUserSchema), async (req, res) => {
   try {
     const { userId, name, email } = req.body;
@@ -39,7 +38,6 @@ router.post("/", validateBody(createUserSchema), async (req, res) => {
   }
 });
 
-// Get current user profile
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -54,7 +52,6 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 });
 
-// Update current user profile
 router.put("/me", requireAuth, validateBody(updateUserSchema), async (req, res) => {
   try {
     const userId = req.userId;
@@ -79,7 +76,6 @@ router.put("/me", requireAuth, validateBody(updateUserSchema), async (req, res) 
   }
 });
 
-// Delete current user account
 router.delete("/me", requireAuth, authLimiter, async (req, res) => {
   try {
     const userId = req.userId;
@@ -102,7 +98,6 @@ router.delete("/me", requireAuth, authLimiter, async (req, res) => {
   }
 });
 
-// Get current user's device summary
 router.get("/me/devices", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;

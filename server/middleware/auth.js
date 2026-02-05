@@ -1,10 +1,8 @@
 import { clerkMiddleware, getAuth, requireAuth as clerkRequireAuth } from "@clerk/express";
 import Device from "../models/User.Device.js";
 
-// Re-export clerkMiddleware for use in server.js
 export { clerkMiddleware };
 
-// Custom requireAuth that extracts userId for our routes
 export const requireAuth = (req, res, next) => {
   try {
     const auth = getAuth(req);

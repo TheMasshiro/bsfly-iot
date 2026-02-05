@@ -28,7 +28,6 @@ app.use(
 
 app.use(express.json({ limit: "10kb" }));
 
-// Add Clerk middleware to parse auth from requests
 app.use(clerkMiddleware());
 
 app.use("/api", apiLimiter);

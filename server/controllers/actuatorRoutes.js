@@ -6,14 +6,13 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Extract deviceId from actuatorId (format: deviceId:actuatorType or deviceId:drawer:actuatorType)
 const getDeviceIdFromActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return null;
   const parts = actuatorId.split(":");
-  return parts[0] || null;
+  if (parts.length < 7) return null;
+  return parts.slice(0, 6).join(":");
 };
 
-// Verify user is a member of the device that owns the actuator
 const verifyActuatorAccess = async (userId, actuatorId) => {
   const deviceId = getDeviceIdFromActuatorId(actuatorId);
   if (!deviceId) return false;
@@ -24,18 +23,44 @@ const verifyActuatorAccess = async (userId, actuatorId) => {
   return device.members.some((m) => m.userId === userId);
 };
 
-// ESP32 GET endpoint - requires device API key header
-router.get("/:actuatorId", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
-    const { actuatorId } = req.params;
-    const apiKey = req.headers["x-api-key"];
+    const userId = req.userId;
     
-    const deviceId = getDeviceIdFromActuatorId(actuatorId);
-    if (!deviceId) {
-      return res.status(400).json({ error: "Invalid actuator ID format" });
+    const devices = await Device.find({ "members.userId": userId });
+    
+    if (devices.length === 0) {
+      return res.json({});
     }
     
-    // Verify device API key
+    const devicePatterns = devices.map(d => `^${d._id}:`);
+    const pattern = devicePatterns.join("|");
+    
+    const states = await ActuatorState.find({
+      actuatorId: { $regex: pattern },
+    });
+    
+    const stateMap = {};
+    states.forEach((s) => {
+      stateMap[s.actuatorId] = s.state;
+    });
+    
+    res.json(stateMap);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch actuator states" });
+  }
+});
+
+router.get("/poll/since/:timestamp", async (req, res) => {
+  try {
+    const { timestamp } = req.params;
+    const apiKey = req.headers["x-api-key"];
+    const deviceId = req.query.deviceId;
+    
+    if (!deviceId) {
+      return res.status(400).json({ error: "deviceId query parameter required" });
+    }
+    
     const device = await Device.findById(deviceId.toUpperCase());
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
@@ -43,6 +68,65 @@ router.get("/:actuatorId", async (req, res) => {
     
     if (!apiKey || device.apiKey !== apiKey) {
       return res.status(401).json({ error: "Invalid API key" });
+    }
+    
+    const since = new Date(parseInt(timestamp));
+
+    if (isNaN(since.getTime())) {
+      return res.status(400).json({ error: "Invalid timestamp" });
+    }
+    
+    const states = await ActuatorState.find({
+      actuatorId: { $regex: `^${deviceId.toUpperCase()}:` },
+      updatedAt: { $gt: since },
+    });
+    
+    const stateMap = {};
+    states.forEach((s) => {
+      stateMap[s.actuatorId] = s.state;
+    });
+    
+    res.json({
+      states: stateMap,
+      serverTime: Date.now(),
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to poll actuator states" });
+  }
+});
+
+router.get("/:actuatorId", async (req, res) => {
+  try {
+    const { actuatorId } = req.params;
+    const apiKey = req.headers["x-api-key"];
+    const authHeader = req.headers.authorization;
+    
+    const deviceId = getDeviceIdFromActuatorId(actuatorId);
+    if (!deviceId) {
+      return res.status(400).json({ error: "Invalid actuator ID format" });
+    }
+    
+    const device = await Device.findById(deviceId.toUpperCase());
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+    
+    if (apiKey) {
+      if (device.apiKey !== apiKey) {
+        return res.status(401).json({ error: "Invalid API key" });
+      }
+    } else if (authHeader && authHeader.startsWith("Bearer ")) {
+      const { getAuth } = await import("@clerk/express");
+      const auth = getAuth(req);
+      if (!auth || !auth.userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const hasAccess = device.members.some((m) => m.userId === auth.userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+    } else {
+      return res.status(401).json({ error: "Authentication required" });
     }
     
     const state = await ActuatorState.findOne({ actuatorId });
@@ -55,7 +139,6 @@ router.get("/:actuatorId", async (req, res) => {
   }
 });
 
-// Frontend POST endpoint - requires user auth
 router.post("/:actuatorId", requireAuth, async (req, res) => {
   try {
     const { actuatorId } = req.params;
@@ -83,84 +166,6 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
     res.json({ actuatorId, state: updated.state });
   } catch (error) {
     res.status(500).json({ error: "Failed to update actuator state" });
-  }
-});
-
-// ESP32 polling endpoint - requires device API key header
-router.get("/poll/since/:timestamp", async (req, res) => {
-  try {
-    const { timestamp } = req.params;
-    const apiKey = req.headers["x-api-key"];
-    const deviceId = req.query.deviceId;
-    
-    if (!deviceId) {
-      return res.status(400).json({ error: "deviceId query parameter required" });
-    }
-    
-    // Verify device API key
-    const device = await Device.findById(deviceId.toUpperCase());
-    if (!device) {
-      return res.status(404).json({ error: "Device not found" });
-    }
-    
-    if (!apiKey || device.apiKey !== apiKey) {
-      return res.status(401).json({ error: "Invalid API key" });
-    }
-    
-    const since = new Date(parseInt(timestamp));
-
-    if (isNaN(since.getTime())) {
-      return res.status(400).json({ error: "Invalid timestamp" });
-    }
-    
-    // Only return actuator states for this device
-    const states = await ActuatorState.find({
-      actuatorId: { $regex: `^${deviceId.toUpperCase()}:` },
-      updatedAt: { $gt: since },
-    });
-    
-    const stateMap = {};
-    states.forEach((s) => {
-      stateMap[s.actuatorId] = s.state;
-    });
-    
-    res.json({
-      states: stateMap,
-      serverTime: Date.now(),
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to poll actuator states" });
-  }
-});
-
-// Frontend endpoint to get all actuator states for user's devices
-router.get("/", requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    
-    // Get all devices the user is a member of
-    const devices = await Device.find({ "members.userId": userId });
-    
-    if (devices.length === 0) {
-      return res.json({});
-    }
-    
-    // Build regex pattern for all user's devices
-    const devicePatterns = devices.map(d => `^${d._id}:`);
-    const pattern = devicePatterns.join("|");
-    
-    const states = await ActuatorState.find({
-      actuatorId: { $regex: pattern },
-    });
-    
-    const stateMap = {};
-    states.forEach((s) => {
-      stateMap[s.actuatorId] = s.state;
-    });
-    
-    res.json(stateMap);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch actuator states" });
   }
 });
 

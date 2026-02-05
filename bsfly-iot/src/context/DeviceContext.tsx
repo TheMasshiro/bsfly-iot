@@ -36,7 +36,6 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const fetchedRef = useRef(false);
     const userIdRef = useRef<string | null>(null);
 
-    // Set the token getter for the actuator service
     useEffect(() => {
         actuatorService.setTokenGetter(getToken);
     }, [getToken]);

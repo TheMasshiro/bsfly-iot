@@ -58,7 +58,7 @@ class ActuatorService {
           });
         }
 
-        this.retryCount = 0; // Reset on success
+        this.retryCount = 0;
       } catch (error) {
         this.retryCount++;
         if (this.retryCount >= this.maxRetries) {
@@ -125,7 +125,7 @@ class ActuatorService {
           throw new Error(`HTTP ${response.status}`);
         }
         
-        return; // Success
+        return;
       } catch (error) {
         lastError = error as Error;
         if (i < retries - 1) {
