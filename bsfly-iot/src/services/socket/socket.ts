@@ -9,7 +9,6 @@ class ActuatorService {
   private listeners: Map<string, Set<ActuatorCallback>> = new Map();
   private errorListeners: Set<ErrorCallback> = new Set();
   private pollInterval: number | null = null;
-  private lastPollTime: number = 0;
   private isPolling: boolean = false;
   private retryCount: number = 0;
   private maxRetries: number = 3;
@@ -34,7 +33,6 @@ class ActuatorService {
   startPolling(intervalMs: number = 5000) {
     if (this.pollInterval) return;
 
-    this.lastPollTime = Date.now();
     this.isPolling = true;
     this.retryCount = 0;
 
@@ -44,7 +42,7 @@ class ActuatorService {
       try {
         const headers = await this.getAuthHeaders();
         const response = await fetch(
-          `${API_URL}/api/actuators/poll/since/${this.lastPollTime}`,
+          `${API_URL}/api/actuators`,
           { headers }
         );
         
@@ -52,15 +50,14 @@ class ActuatorService {
           throw new Error(`HTTP ${response.status}`);
         }
         
-        const data = await response.json();
+        const states = await response.json();
 
-        if (data.states && Object.keys(data.states).length > 0) {
-          Object.entries(data.states).forEach(([actuatorId, state]) => {
+        if (states && Object.keys(states).length > 0) {
+          Object.entries(states).forEach(([actuatorId, state]) => {
             this.notifyListeners(actuatorId, state);
           });
         }
 
-        this.lastPollTime = data.serverTime || Date.now();
         this.retryCount = 0; // Reset on success
       } catch (error) {
         this.retryCount++;

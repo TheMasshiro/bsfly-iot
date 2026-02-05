@@ -25,7 +25,7 @@ Chart.register(annotationPlugin);
 const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimit, unit }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<Chart | null>(null);
-    const { currentDevice } = useDevice();
+    const { currentDevice, getToken } = useDevice();
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [present] = useIonToast();
@@ -49,8 +49,12 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             }
 
             try {
+                const token = await getToken();
                 const response = await fetch(
-                    `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`
+                    `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`,
+                    {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    }
                 );
 
                 if (!response.ok) throw new Error('Failed to fetch');
@@ -87,7 +91,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         fetchData();
         const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
-    }, [currentDevice, sensorType, present]);
+    }, [currentDevice, sensorType, present, getToken]);
     
     const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
     
