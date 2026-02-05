@@ -103,6 +103,13 @@
   padding: 0;
 }
 
+#notification-list > ion-item {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+}
+
 .notification-segment {
   width: 100%;
   --background: transparent;
