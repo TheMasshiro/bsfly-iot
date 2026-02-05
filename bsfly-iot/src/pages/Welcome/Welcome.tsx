@@ -3,7 +3,6 @@ import {
     IonPage,
     IonContent,
     IonButton,
-    IonText,
     IonGrid,
     IonRow,
     IonCol,
@@ -36,7 +35,7 @@ const features = [
 
 const benefits = [
     { icon: flashOutline, text: "Real-time" },
-    { icon: shieldCheckmarkOutline, text: "Smart alerts" },
+    { icon: shieldCheckmarkOutline, text: "Alerts" },
     { icon: analyticsOutline, text: "Analytics" }
 ];
 
@@ -127,7 +126,7 @@ const Welcome: FC = () => {
                     </section>
 
                     <footer className="welcome-footer">
-                        <p>© 2025 BSFly IoT • Smart Farming Solutions</p>
+                        <p>© 2025 Black Soldier Fly IoT</p>
                     </footer>
                 </div>
             </IonContent>
