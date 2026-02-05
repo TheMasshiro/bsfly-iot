@@ -78,6 +78,11 @@
   --indicator-color: #2dd55b;
   --color: rgba(255, 255, 255, 0.6);
   --color-checked: #2dd55b;
+  --background-checked: rgba(45, 213, 91, 0.15);
+}
+
+.analytics-page ion-segment-button::part(indicator-background) {
+  background: #2dd55b;
 }
 
 .analytics-page .legends-row {

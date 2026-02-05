@@ -21,7 +21,7 @@ import {
     IonText,
     useIonToast,
 } from "@ionic/react";
-import { bugOutline, eggOutline, gridOutline, leafOutline, playOutline, stopOutline } from "ionicons/icons";
+import { bugOutline, eggOutline, leafOutline, playOutline, stopOutline } from "ionicons/icons";
 import { FC, useState, useEffect, useMemo, useCallback } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import Countdown from "react-countdown";
@@ -64,7 +64,6 @@ const lifeStages: Record<string, LifeStage> = {
 interface DrawerInfo {
     drawer: string;
     description: string;
-    quadrants: number;
     availableStages: string[];
 }
 
@@ -72,19 +71,16 @@ const drawerData: DrawerInfo[] = [
     {
         drawer: "Drawer 1",
         description: "Egg incubation and early larvae feeding phase",
-        quadrants: 2,
         availableStages: ["eggs", "larvae"],
     },
     {
         drawer: "Drawer 2",
         description: "Continued larvae growth and development",
-        quadrants: 2,
         availableStages: ["eggs", "larvae"],
     },
     {
         drawer: "Drawer 3",
         description: "Prepupal and pupal metamorphosis phase",
-        quadrants: 0,
         availableStages: ["prepupa"],
     },
 ];
@@ -146,9 +142,7 @@ const LifeStages: FC = () => {
         if (Object.keys(quadrantStages).length === 0) {
             const defaults: Record<string, string> = {};
             drawerData.forEach((drawer, di) => {
-                for (let q = 0; q < drawer.quadrants; q++) {
-                    defaults[`${di}-${q}`] = drawer.availableStages[0];
-                }
+                defaults[`${di}`] = drawer.availableStages[0];
             });
             setQuadrantStages(defaults);
         }
@@ -159,16 +153,16 @@ const LifeStages: FC = () => {
         actuatorService.emit(lifecycleActuatorId, { timers, stages });
     }, [deviceId, lifecycleActuatorId]);
 
-    const getTimerKey = (drawerIndex: number, quadrantIndex: number) => `${drawerIndex}-${quadrantIndex}`;
+    const getTimerKey = (drawerIndex: number) => `${drawerIndex}`;
 
-    const handleStageChange = (drawerIndex: number, quadrantIndex: number, stageKey: string) => {
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+    const handleStageChange = (drawerIndex: number, stageKey: string) => {
+        const key = getTimerKey(drawerIndex);
         const newStages = { ...quadrantStages, [key]: stageKey };
         setQuadrantStages(newStages);
         syncToBackend(activeTimers, newStages);
     };
 
-    const handleStart = (drawerIndex: number, quadrantIndex: number) => {
+    const handleStart = (drawerIndex: number) => {
         if (!deviceId) {
             present({
                 message: "No device selected. Go to Settings to add a device.",
@@ -180,13 +174,12 @@ const LifeStages: FC = () => {
             return;
         }
 
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+        const key = getTimerKey(drawerIndex);
         const stageKey = quadrantStages[key];
         const stage = lifeStages[stageKey] || lifeStages[drawerData[drawerIndex].availableStages[0]];
         if (!stage) return;
         const duration = stage.days * MILLISECONDS_PER_DAY;
         const drawer = drawerData[drawerIndex];
-        const hasQuadrants = drawer.quadrants > 0;
 
         const newTimers = {
             ...activeTimers,
@@ -196,9 +189,7 @@ const LifeStages: FC = () => {
         syncToBackend(newTimers, quadrantStages);
 
         present({
-            message: hasQuadrants 
-                ? `${drawer.drawer} Q${quadrantIndex + 1} - ${stage.name} timer started (${stage.days} days)`
-                : `${drawer.drawer} - ${stage.name} timer started (${stage.days} days)`,
+            message: `${drawer.drawer} - ${stage.name} timer started (${stage.days} days)`,
             duration: 2000,
             position: "top",
             mode: "ios",
@@ -206,12 +197,11 @@ const LifeStages: FC = () => {
         });
     };
 
-    const handleStop = (drawerIndex: number, quadrantIndex: number) => {
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+    const handleStop = (drawerIndex: number) => {
+        const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
         const stageName = timer ? lifeStages[timer.stage]?.name : "Timer";
         const drawer = drawerData[drawerIndex];
-        const hasQuadrants = drawer.quadrants > 0;
 
         const newTimers = {
             ...activeTimers,
@@ -221,31 +211,29 @@ const LifeStages: FC = () => {
         syncToBackend(newTimers, quadrantStages);
 
         present({
-            message: hasQuadrants
-                ? `${drawer.drawer} Q${quadrantIndex + 1} - ${stageName} timer stopped`
-                : `${drawer.drawer} - ${stageName} timer stopped`,
+            message: `${drawer.drawer} - ${stageName} timer stopped`,
             duration: 2000,
             position: "top",
             mode: "ios",
         });
     };
 
-    const getEndTime = (drawerIndex: number, quadrantIndex: number) => {
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+    const getEndTime = (drawerIndex: number) => {
+        const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
         if (!timer) return null;
         return timer.startTime + timer.duration;
     };
 
-    const isTimerActive = (drawerIndex: number, quadrantIndex: number) => {
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+    const isTimerActive = (drawerIndex: number) => {
+        const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
         if (!timer) return false;
         return Date.now() < timer.startTime + timer.duration;
     };
 
-    const getActiveStage = (drawerIndex: number, quadrantIndex: number) => {
-        const key = getTimerKey(drawerIndex, quadrantIndex);
+    const getActiveStage = (drawerIndex: number) => {
+        const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
         if (timer) return lifeStages[timer.stage];
         return lifeStages[quadrantStages[key]] || lifeStages["eggs"];
@@ -305,69 +293,11 @@ const LifeStages: FC = () => {
                     </IonRow>
 
                     {drawerData.map((drawer, drawerIndex) => {
-                        const stage = lifeStages[drawer.availableStages[0]];
-                        
-                        if (drawer.quadrants === 0) {
-                            const timerActive = isTimerActive(drawerIndex, 0);
-                            const endTime = getEndTime(drawerIndex, 0);
-                            
-                            return (
-                                <IonRow key={drawerIndex}>
-                                    <IonCol>
-                                        <IonCard className="drawer-card">
-                                            <IonCardHeader>
-                                                <IonCardTitle>{drawer.drawer}</IonCardTitle>
-                                                <IonCardSubtitle>{drawer.description}</IonCardSubtitle>
-                                            </IonCardHeader>
-                                            <IonCardContent>
-                                                <div className={`drawer-single stage-${stage.color}`}>
-                                                    <div className="drawer-stage-info">
-                                                        <IonIcon icon={stage.icon} className="stage-icon" color={stage.color} />
-                                                        <span className="stage-name">{stage.name}</span>
-                                                        <span className="stage-days">{stage.days} days</span>
-                                                    </div>
-
-                                                    <div className="drawer-actions">
-                                                        {timerActive && endTime ? (
-                                                            <>
-                                                                <div className="timer-display">
-                                                                    <IonText color="primary">
-                                                                        <Countdown
-                                                                            key={endTime}
-                                                                            date={endTime}
-                                                                            renderer={countdownRenderer}
-                                                                        />
-                                                                    </IonText>
-                                                                </div>
-                                                                <IonButton
-                                                                    color="danger"
-                                                                    size="small"
-                                                                    expand="block"
-                                                                    onClick={() => handleStop(drawerIndex, 0)}
-                                                                >
-                                                                    <IonIcon slot="start" icon={stopOutline} />
-                                                                    Stop
-                                                                </IonButton>
-                                                            </>
-                                                        ) : (
-                                                            <IonButton
-                                                                color={stage.color}
-                                                                size="small"
-                                                                expand="block"
-                                                                onClick={() => handleStart(drawerIndex, 0)}
-                                                            >
-                                                                <IonIcon slot="start" icon={playOutline} />
-                                                                Start Timer
-                                                            </IonButton>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </IonCardContent>
-                                        </IonCard>
-                                    </IonCol>
-                                </IonRow>
-                            );
-                        }
+                        const key = getTimerKey(drawerIndex);
+                        const timerActive = isTimerActive(drawerIndex);
+                        const endTime = getEndTime(drawerIndex);
+                        const activeStage = getActiveStage(drawerIndex);
+                        const selectedStageKey = quadrantStages[key] || drawer.availableStages[0];
                         
                         return (
                             <IonRow key={drawerIndex}>
@@ -378,79 +308,62 @@ const LifeStages: FC = () => {
                                             <IonCardSubtitle>{drawer.description}</IonCardSubtitle>
                                         </IonCardHeader>
                                         <IonCardContent>
-                                            <div className="quadrant-grid">
-                                                {Array.from({ length: drawer.quadrants }).map((_, quadrantIndex) => {
-                                                    const key = getTimerKey(drawerIndex, quadrantIndex);
-                                                    const timerActive = isTimerActive(drawerIndex, quadrantIndex);
-                                                    const endTime = getEndTime(drawerIndex, quadrantIndex);
-                                                    const activeStage = getActiveStage(drawerIndex, quadrantIndex);
-                                                    const selectedStageKey = quadrantStages[key] || drawer.availableStages[0];
+                                            <div className={`drawer-single stage-${activeStage.color}`}>
+                                                {drawer.availableStages.length > 1 && !timerActive && (
+                                                    <IonSegment
+                                                        value={selectedStageKey}
+                                                        onIonChange={(e) => handleStageChange(drawerIndex, e.detail.value as string)}
+                                                        className="stage-segment"
+                                                    >
+                                                        {drawer.availableStages.map((stageKey) => (
+                                                            <IonSegmentButton key={stageKey} value={stageKey}>
+                                                                <IonIcon icon={lifeStages[stageKey].icon} />
+                                                                <IonLabel>{lifeStages[stageKey].name}</IonLabel>
+                                                            </IonSegmentButton>
+                                                        ))}
+                                                    </IonSegment>
+                                                )}
 
-                                                    return (
-                                                        <div key={quadrantIndex} className={`quadrant-item quadrant-${activeStage.color}`}>
-                                                            <div className="quadrant-header">
-                                                                <IonIcon icon={gridOutline} className="quadrant-icon" />
-                                                                <span className="quadrant-label">Quadrant {quadrantIndex + 1}</span>
+                                                <div className="drawer-stage-info">
+                                                    <IonIcon icon={activeStage.icon} className="stage-icon" color={activeStage.color} />
+                                                    <span className="stage-name">{activeStage.name}</span>
+                                                    <span className="stage-days">{activeStage.days} days</span>
+                                                </div>
+
+                                                <div className="drawer-actions">
+                                                    {timerActive && endTime ? (
+                                                        <>
+                                                            <div className="timer-display">
+                                                                <IonText color="primary">
+                                                                    <Countdown
+                                                                        key={endTime}
+                                                                        date={endTime}
+                                                                        renderer={countdownRenderer}
+                                                                    />
+                                                                </IonText>
                                                             </div>
-
-                                                            {drawer.availableStages.length > 1 && !timerActive && (
-                                                                <IonSegment
-                                                                    value={selectedStageKey}
-                                                                    onIonChange={(e) => handleStageChange(drawerIndex, quadrantIndex, e.detail.value as string)}
-                                                                    className="stage-segment"
-                                                                >
-                                                                    {drawer.availableStages.map((stageKey) => (
-                                                                        <IonSegmentButton key={stageKey} value={stageKey}>
-                                                                            <IonIcon icon={lifeStages[stageKey].icon} />
-                                                                            <IonLabel>{lifeStages[stageKey].name}</IonLabel>
-                                                                        </IonSegmentButton>
-                                                                    ))}
-                                                                </IonSegment>
-                                                            )}
-
-                                                            <div className="quadrant-stage-info">
-                                                                <IonIcon icon={activeStage.icon} className="stage-icon" color={activeStage.color} />
-                                                                <span className="stage-name">{activeStage.name}</span>
-                                                                <span className="stage-days">{activeStage.days} days</span>
-                                                            </div>
-
-                                                            <div className="quadrant-actions">
-                                                                {timerActive && endTime ? (
-                                                                    <>
-                                                                        <div className="timer-display">
-                                                                            <IonText color="primary">
-                                                                                <Countdown
-                                                                                    key={endTime}
-                                                                                    date={endTime}
-                                                                                    renderer={countdownRenderer}
-                                                                                />
-                                                                            </IonText>
-                                                                        </div>
-                                                                        <IonButton
-                                                                            color="danger"
-                                                                            size="small"
-                                                                            expand="block"
-                                                                            onClick={() => handleStop(drawerIndex, quadrantIndex)}
-                                                                        >
-                                                                            <IonIcon slot="start" icon={stopOutline} />
-                                                                            Stop
-                                                                        </IonButton>
-                                                                    </>
-                                                                ) : (
-                                                                    <IonButton
-                                                                        color={activeStage.color}
-                                                                        size="small"
-                                                                        expand="block"
-                                                                        onClick={() => handleStart(drawerIndex, quadrantIndex)}
-                                                                    >
-                                                                        <IonIcon slot="start" icon={playOutline} />
-                                                                        Start Timer
-                                                                    </IonButton>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                            <IonButton
+                                                                color="danger"
+                                                                size="small"
+                                                                expand="block"
+                                                                onClick={() => handleStop(drawerIndex)}
+                                                            >
+                                                                <IonIcon slot="start" icon={stopOutline} />
+                                                                Stop
+                                                            </IonButton>
+                                                        </>
+                                                    ) : (
+                                                        <IonButton
+                                                            color={activeStage.color}
+                                                            size="small"
+                                                            expand="block"
+                                                            onClick={() => handleStart(drawerIndex)}
+                                                        >
+                                                            <IonIcon slot="start" icon={playOutline} />
+                                                            Start Timer
+                                                        </IonButton>
+                                                    )}
+                                                </div>
                                             </div>
                                         </IonCardContent>
                                     </IonCard>

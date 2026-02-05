@@ -94,81 +94,23 @@
   }
 }
 
-.lifestages-page .quadrant-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-@media (max-width: 576px) {
-  .lifestages-page .quadrant-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-.lifestages-page .quadrant-item {
-  padding: 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-left: 4px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.lifestages-page .quadrant-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-@media (max-width: 576px) {
-  .lifestages-page .quadrant-item {
-    padding: 12px;
-    gap: 10px;
-  }
-}
-
-.lifestages-page .quadrant-warning {
-  border-left-color: #ffc409;
-}
-
-.lifestages-page .quadrant-success {
-  border-left-color: #2dd55b;
-}
-
-.lifestages-page .quadrant-tertiary {
-  border-left-color: #b388ff;
-}
-
-.lifestages-page .quadrant-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lifestages-page .quadrant-icon {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.lifestages-page .quadrant-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-}
-
 .lifestages-page .stage-segment {
   --background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
+  margin-bottom: 16px;
 }
 
 .lifestages-page .stage-segment ion-segment-button {
   --indicator-color: #2dd55b;
   --color: rgba(255, 255, 255, 0.5);
   --color-checked: #2dd55b;
+  --background-checked: rgba(45, 213, 91, 0.15);
   font-size: 0.8rem;
   min-height: 40px;
+}
+
+.lifestages-page .stage-segment ion-segment-button::part(indicator-background) {
+  background: #2dd55b;
 }
 
 @media (max-width: 576px) {
@@ -184,53 +126,6 @@
 
 .lifestages-page .stage-segment ion-segment-button ion-label {
   font-size: 0.75rem;
-}
-
-.lifestages-page .quadrant-stage-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.lifestages-page .quadrant-stage-info .stage-icon {
-  font-size: 28px;
-  flex-shrink: 0;
-}
-
-.lifestages-page .quadrant-stage-info .stage-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  flex: 1;
-}
-
-.lifestages-page .quadrant-stage-info .stage-days {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-}
-
-@media (max-width: 576px) {
-  .lifestages-page .quadrant-stage-info .stage-icon {
-    font-size: 24px;
-  }
-
-  .lifestages-page .quadrant-stage-info .stage-name {
-    font-size: 0.9rem;
-  }
-
-  .lifestages-page .quadrant-stage-info .stage-days {
-    font-size: 0.8rem;
-  }
-}
-
-.lifestages-page .quadrant-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .lifestages-page .timer-display {
@@ -268,6 +163,10 @@
   --background: linear-gradient(135deg, #ffc409 0%, #e09a00 100%);
 }
 
+.lifestages-page ion-button[color="tertiary"] {
+  --background: linear-gradient(135deg, #b388ff 0%, #7c4dff 100%);
+}
+
 .lifestages-page .drawer-single {
   padding: 16px;
   border-radius: 12px;
@@ -279,6 +178,14 @@
   .lifestages-page .drawer-single {
     padding: 12px;
   }
+}
+
+.lifestages-page .drawer-single.stage-warning {
+  border-left-color: #ffc409;
+}
+
+.lifestages-page .drawer-single.stage-success {
+  border-left-color: #2dd55b;
 }
 
 .lifestages-page .drawer-single.stage-tertiary {
