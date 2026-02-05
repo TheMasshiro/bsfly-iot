@@ -34,7 +34,7 @@ interface Device {
 }
 
 const Settings: FC = () => {
-    const { userId, getToken } = useAuth();
+    const { userId, getToken, isLoaded: authLoaded } = useAuth();
     const [present] = useIonToast();
     const { refreshDevices } = useDevice();
 
@@ -66,7 +66,7 @@ const Settings: FC = () => {
     const slidingRefs = useRef<Map<string, HTMLIonItemSlidingElement>>(new Map());
 
     const fetchDevices = useCallback(async () => {
-        if (!userId) return;
+        if (!authLoaded || !userId) return;
         try {
             const token = await getToken();
             const res = await fetch(`${API_URL}/api/devices/user/me`, {
@@ -78,11 +78,13 @@ const Settings: FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [userId, getToken]);
+    }, [userId, getToken, authLoaded]);
 
     useEffect(() => {
-        fetchDevices();
-    }, [fetchDevices]);
+        if (authLoaded) {
+            fetchDevices();
+        }
+    }, [fetchDevices, authLoaded]);
 
     const handleRefresh = async (event: CustomEvent) => {
         await Promise.all([fetchDevices(), refreshDevices()]);
