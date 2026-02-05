@@ -1,10 +1,12 @@
 import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import Menu from './components/Menu/Menu';
 import DeviceMenu from './components/DeviceMenu/DeviceMenu';
 import Notifications from './components/Notification/Notifications';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import LoadingSkeleton from './components/LoadingSkeleton/LoadingSkeleton';
 
 import '@ionic/react/css/core.css';
 
@@ -22,20 +24,27 @@ import '@ionic/react/css/display.css';
 import '@ionic/react/css/palettes/dark.always.css';
 
 import './theme/variables.css';
-import Dashboard from './pages/Dashboard/Dashboard';
 import { LifeCycleProvider } from './context/LifeCycleContext';
 import { DeviceProvider } from './context/DeviceContext';
 import { NotificationProvider } from './context/NotificationContext';
-import Light from './pages/Light/Light';
-import Analytics from './pages/Analytics/Analytics';
-import Settings from './pages/Settings/Settings';
-import About from './pages/About/About';
-import Backup from './pages/Backup/Backup';
-import LifeStages from './pages/LifeStage/LifeStages';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
-import Welcome from './pages/Welcome/Welcome';
+
+const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
+const Light = lazy(() => import('./pages/Light/Light'));
+const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
+const Settings = lazy(() => import('./pages/Settings/Settings'));
+const About = lazy(() => import('./pages/About/About'));
+const Backup = lazy(() => import('./pages/Backup/Backup'));
+const LifeStages = lazy(() => import('./pages/LifeStage/LifeStages'));
+const Welcome = lazy(() => import('./pages/Welcome/Welcome'));
 
 setupIonicReact();
+
+const PageLoader = () => (
+    <div style={{ padding: '20px' }}>
+        <LoadingSkeleton variant="card" count={2} />
+    </div>
+);
 
 const App: React.FC = () => {
     return (
@@ -55,13 +64,27 @@ const App: React.FC = () => {
                                     <Route exact path="/welcome">
                                         <Redirect to="/dashboard" />
                                     </Route>
-                                    <Route path="/dashboard" exact={true} component={Dashboard} />
-                                    <Route path="/light" exact={true} component={Light} />
-                                    <Route path="/analytics" exact={true} component={Analytics} />
-                                    <Route path="/lifestages" exact={true} component={LifeStages} />
-                                    <Route path="/settings" exact={true} component={Settings} />
-                                    <Route path="/about" exact={true} component={About} />
-                                    <Route path="/data/backup" exact={true} component={Backup} />
+                                    <Route path="/dashboard" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Dashboard /></Suspense>
+                                    </Route>
+                                    <Route path="/light" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Light /></Suspense>
+                                    </Route>
+                                    <Route path="/analytics" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Analytics /></Suspense>
+                                    </Route>
+                                    <Route path="/lifestages" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><LifeStages /></Suspense>
+                                    </Route>
+                                    <Route path="/settings" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+                                    </Route>
+                                    <Route path="/about" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><About /></Suspense>
+                                    </Route>
+                                    <Route path="/data/backup" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Backup /></Suspense>
+                                    </Route>
                                 </IonRouterOutlet>
                             </IonSplitPane>
                             <DeviceMenu />
@@ -69,7 +92,9 @@ const App: React.FC = () => {
                         </SignedIn>
 
                         <SignedOut>
-                            <Route exact path="/welcome" component={Welcome} />
+                            <Route exact path="/welcome">
+                                <Suspense fallback={<PageLoader />}><Welcome /></Suspense>
+                            </Route>
                             <Route path="/(dashboard|light|analytics|lifestages|settings|about|data/backup)">
                                 <Redirect to="/welcome" />
                             </Route>
