@@ -22,7 +22,7 @@ import {
     useIonToast,
 } from "@ionic/react";
 import { bugOutline, eggOutline, leafOutline, playOutline, stopOutline } from "ionicons/icons";
-import { FC, useState, useEffect, useMemo, useCallback } from "react";
+import { FC, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import Countdown from "react-countdown";
 import { actuatorService } from "../../services/socket/socket";
@@ -104,6 +104,7 @@ const LifeStages: FC = () => {
     const [quadrantStages, setQuadrantStages] = useState<Record<string, string>>({});
     const { currentDevice, refreshDevices } = useDevice();
     const deviceId = currentDevice?._id;
+    const lastUserActionRef = useRef<number>(0);
 
     const lifecycleActuatorId = deviceId ? `${deviceId}:lifecycle` : 'lifecycle';
 
@@ -122,6 +123,7 @@ const LifeStages: FC = () => {
         fetchLifecycleState();
 
         const onLifecycleResponse = (state: { timers: typeof activeTimers; stages: typeof quadrantStages }) => {
+            if (Date.now() - lastUserActionRef.current < 3000) return;
             if (state.timers) setActiveTimers(state.timers);
             if (state.stages) setQuadrantStages(state.stages);
         };
@@ -156,6 +158,7 @@ const LifeStages: FC = () => {
     const getTimerKey = (drawerIndex: number) => `${drawerIndex}`;
 
     const handleStageChange = (drawerIndex: number, stageKey: string) => {
+        lastUserActionRef.current = Date.now();
         const key = getTimerKey(drawerIndex);
         const newStages = { ...quadrantStages, [key]: stageKey };
         setQuadrantStages(newStages);
@@ -163,6 +166,7 @@ const LifeStages: FC = () => {
     };
 
     const handleStart = (drawerIndex: number) => {
+        lastUserActionRef.current = Date.now();
         if (!deviceId) {
             present({
                 message: "No device selected. Go to Settings to add a device.",
@@ -198,6 +202,7 @@ const LifeStages: FC = () => {
     };
 
     const handleStop = (drawerIndex: number) => {
+        lastUserActionRef.current = Date.now();
         const key = getTimerKey(drawerIndex);
         const timer = activeTimers[key];
         const stageName = timer ? lifeStages[timer.stage]?.name : "Timer";
