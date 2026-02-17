@@ -8,8 +8,7 @@ import Graph from '../../components/Graph/Graph';
 import Segments from '../../components/Segments/Segments';
 import "./Analytics.css"
 import Toolbar from '../../components/Toolbar/Toolbar';
-
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
+import { api, withToken } from '../../utils/api';
 
 interface SensorValues {
     temperature: number | null;
@@ -36,13 +35,8 @@ const Analytics: FC = () => {
         if (!currentDevice) return;
         try {
             const token = await getToken();
-            const response = await fetch(`${API_URL}/api/sensors/device/${currentDevice._id}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setSensorValues(data);
-            }
+            const { data } = await api.get(`/api/sensors/device/${currentDevice._id}`, withToken(token));
+            setSensorValues(data);
         } catch {
             const now = Date.now();
             if (now - lastErrorRef.current > 30000) {

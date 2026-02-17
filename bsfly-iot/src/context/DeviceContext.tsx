@@ -2,7 +2,7 @@ import { createContext, FC, ReactNode, useContext, useState, useEffect, useCallb
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { offlineService } from "../services/offline/OfflineService";
 import { actuatorService } from "../services/socket/socket";
-import { API_URL } from "../utils/api";
+import { api, withToken } from "../utils/api";
 import { Device } from "../types/device";
 
 export type { Device };
@@ -58,10 +58,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/user/me`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const data = await res.json();
+            const { data } = await api.get("/api/devices/user/me", withToken(token));
             const deviceList = Array.isArray(data) ? data : [];
             setDevices(deviceList);
             offlineService.set(`${CACHE_KEY_DEVICES}_${user.id}`, deviceList);

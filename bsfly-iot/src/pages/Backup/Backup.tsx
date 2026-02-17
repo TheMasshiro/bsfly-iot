@@ -21,9 +21,8 @@ import { FC, useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import { useDevice } from "../../context/DeviceContext";
+import { api, withToken } from "../../utils/api";
 import "./Backup.css";
-
-const API_URL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 interface SensorReading {
     timestamp: string;
@@ -72,16 +71,12 @@ const Backup: FC = () => {
         }
 
         const token = await getToken();
-        const response = await fetch(
-            `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
-            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        const { data } = await api.get(
+            `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
+            withToken(token)
         );
 
-        if (!response.ok) {
-            throw new Error("Failed to fetch sensor data");
-        }
-
-        return response.json();
+        return data;
     };
 
     const generateCSV = (data: DayReading[]): string => {
@@ -332,16 +327,10 @@ const Backup: FC = () => {
             weekAgo.setDate(weekAgo.getDate() - 7);
             
             const token = await getToken();
-            const response = await fetch(
-                `${API_URL}/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`,
-                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            const { data } = await api.get(
+                `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`,
+                withToken(token)
             );
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch sensor data");
-            }
-
-            const data: DayReading[] = await response.json();
 
             if (!data || data.length === 0) {
                 present({ message: "No sensor data found for the last 7 days", duration: 2000, color: "warning" });
@@ -355,7 +344,7 @@ const Backup: FC = () => {
 
             present({ message: "Weekly PDF report generated", duration: 2000, color: "success" });
         } catch (error: any) {
-            present({ message: error.message || "Failed to generate report", duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.message || error.message || "Failed to generate report", duration: 2000, color: "danger" });
         } finally {
             setLoading(false);
         }

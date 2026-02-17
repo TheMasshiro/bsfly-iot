@@ -1,4 +1,5 @@
-import { API_URL } from "../../utils/api";
+import { api, API_URL } from "../../utils/api";
+import axios, { AxiosRequestConfig } from "axios";
 
 type ActuatorCallback = (data: any) => void;
 type ErrorCallback = (error: Error) => void;
@@ -19,15 +20,15 @@ class ActuatorService {
     this.tokenGetter = getter;
   }
 
-  private async getAuthHeaders(): Promise<HeadersInit> {
-    const headers: HeadersInit = { "Content-Type": "application/json" };
+  private async getAxiosConfig(): Promise<AxiosRequestConfig> {
+    const config: AxiosRequestConfig = {};
     if (this.tokenGetter) {
       const token = await this.tokenGetter();
       if (token) {
-        (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+        config.headers = { Authorization: `Bearer ${token}` };
       }
     }
-    return headers;
+    return config;
   }
 
   startPolling(intervalMs: number = 5000) {
@@ -40,17 +41,8 @@ class ActuatorService {
       if (!this.isPolling) return;
 
       try {
-        const headers = await this.getAuthHeaders();
-        const response = await fetch(
-          `${API_URL}/api/actuators`,
-          { headers }
-        );
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const states = await response.json();
+        const config = await this.getAxiosConfig();
+        const { data: states } = await api.get("/api/actuators", config);
 
         if (states && Object.keys(states).length > 0) {
           Object.entries(states).forEach(([actuatorId, state]) => {
@@ -109,40 +101,35 @@ class ActuatorService {
     this.errorListeners.forEach((cb) => cb(error));
   }
 
-  async emit(actuatorId: string, state: any, retries: number = 3): Promise<void> {
+  async emit(
+    actuatorId: string,
+    state: any,
+    retries: number = 3
+  ): Promise<void> {
     let lastError: Error | null = null;
-    
+
     for (let i = 0; i < retries; i++) {
       try {
-        const headers = await this.getAuthHeaders();
-        const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ state }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
+        const config = await this.getAxiosConfig();
+        await api.post(`/api/actuators/${actuatorId}`, { state }, config);
         return;
       } catch (error) {
         lastError = error as Error;
         if (i < retries - 1) {
-          await new Promise(resolve => setTimeout(resolve, this.retryDelay * (i + 1)));
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.retryDelay * (i + 1))
+          );
         }
       }
     }
-    
+
     throw lastError || new Error("Failed to update actuator");
   }
 
   async getState(actuatorId: string): Promise<any> {
     try {
-      const headers = await this.getAuthHeaders();
-      const response = await fetch(`${API_URL}/api/actuators/${actuatorId}`, { headers });
-      if (!response.ok) return null;
-      const data = await response.json();
+      const config = await this.getAxiosConfig();
+      const { data } = await api.get(`/api/actuators/${actuatorId}`, config);
       return data.state;
     } catch {
       return null;
@@ -151,10 +138,9 @@ class ActuatorService {
 
   async getAllStates(): Promise<StateMap> {
     try {
-      const headers = await this.getAuthHeaders();
-      const response = await fetch(`${API_URL}/api/actuators`, { headers });
-      if (!response.ok) return {};
-      return await response.json();
+      const config = await this.getAxiosConfig();
+      const { data } = await api.get("/api/actuators", config);
+      return data;
     } catch {
       return {};
     }
@@ -162,8 +148,8 @@ class ActuatorService {
 
   async checkConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_URL}/`, { method: "GET" });
-      return response.ok;
+      await axios.get(`${API_URL}/`);
+      return true;
     } catch {
       return false;
     }

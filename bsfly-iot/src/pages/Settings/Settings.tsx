@@ -11,7 +11,7 @@ import { useDevice } from "../../context/DeviceContext";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
 import { validateMacAddress, validateDeviceName, validateJoinCode, formatMacAddress } from "../../utils/validation";
-import { API_URL } from "../../utils/api";
+import { api, withToken } from "../../utils/api";
 import { Device, DeviceMember } from "../../types/device";
 import "./Settings.css";
 
@@ -51,10 +51,7 @@ const Settings: FC = () => {
         if (!authLoaded || !userId) return;
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/user/me`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const data = await res.json();
+            const { data } = await api.get("/api/devices/user/me", withToken(token));
             setDevices(Array.isArray(data) ? data : []);
         } catch {
         } finally {
@@ -124,20 +121,10 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/register`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    macAddress: macAddress.toUpperCase(),
-                    name: deviceName
-                })
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.post("/api/devices/register", {
+                macAddress: macAddress.toUpperCase(),
+                name: deviceName
+            }, withToken(token));
 
             present({ message: "Device registered successfully!", duration: 2000, color: "success" });
             setMacAddress("");
@@ -146,7 +133,7 @@ const Settings: FC = () => {
             setNameError(undefined);
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 
@@ -166,24 +153,14 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/join`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({ joinCode })
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.post("/api/devices/join", { joinCode }, withToken(token));
 
             present({ message: "Joined device successfully!", duration: 2000, color: "success" });
             setJoinCode("");
             setJoinCodeError(undefined);
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 
@@ -192,16 +169,7 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/${device._id}/leave`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                }
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.delete(`/api/devices/${device._id}/leave`, withToken(token));
 
             present({
                 message: device.ownerId === userId ? "Device deleted" : "Left device",
@@ -210,7 +178,7 @@ const Settings: FC = () => {
             });
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 
@@ -219,21 +187,12 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/${device._id}/regenerate-code`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                }
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.post(`/api/devices/${device._id}/regenerate-code`, {}, withToken(token));
 
             present({ message: "Join code regenerated!", duration: 2000, color: "success" });
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 
@@ -249,14 +208,10 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/${device._id}/members`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            const { data } = await api.get(`/api/devices/${device._id}/members`, withToken(token));
             setMembers(data);
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         } finally {
             setMembersLoading(false);
         }
@@ -267,22 +222,13 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToRemove.userId}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                }
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.delete(`/api/devices/${selectedDevice._id}/members/${memberToRemove.userId}`, withToken(token));
 
             present({ message: "Member removed", duration: 2000, color: "success" });
             setMembers(members.filter(m => m.userId !== memberToRemove.userId));
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 
@@ -291,23 +237,13 @@ const Settings: FC = () => {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API_URL}/api/devices/${selectedDevice._id}/members/${memberToTransfer.userId}/role`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({ role: "owner" })
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            await api.patch(`/api/devices/${selectedDevice._id}/members/${memberToTransfer.userId}/role`, { role: "owner" }, withToken(token));
 
             present({ message: "Ownership transferred", duration: 2000, color: "success" });
             setShowMembersModal(false);
             fetchDevices();
         } catch (error: any) {
-            present({ message: error.message, duration: 2000, color: "danger" });
+            present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
         }
     };
 

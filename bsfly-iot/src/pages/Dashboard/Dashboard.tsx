@@ -14,7 +14,7 @@ import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
 import { useState, useMemo, useCallback, useEffect, useRef, FC } from 'react';
 import { snow, flame, water, rainy } from 'ionicons/icons';
 import { actuatorService } from '../../services/socket/socket';
-import { API_URL } from '../../utils/api';
+import { api, withToken } from '../../utils/api';
 
 const sensorTypeMap: Record<string, string> = {
     "temperature": "temperature",
@@ -131,10 +131,7 @@ const Dashboard: FC = () => {
         }
         try {
             const token = await getToken();
-            const response = await fetch(`${API_URL}/api/sensors/device/${deviceId}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const data = await response.json();
+            const { data } = await api.get(`/api/sensors/device/${deviceId}`, withToken(token));
             setSensorData(data);
         } catch {
             present({

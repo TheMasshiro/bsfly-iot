@@ -3,7 +3,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
 import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
-import { API_URL } from '../../utils/api';
+import { api, withToken } from '../../utils/api';
 import './Graph.css';
 
 interface GraphProps {
@@ -51,14 +51,11 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
 
         try {
             const token = await getToken();
-            const response = await fetch(
-                `${API_URL}/api/sensors/device/${currentDevice._id}/hourly`,
-                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            const { data } = await api.get(
+                `/api/sensors/device/${currentDevice._id}/hourly`,
+                withToken(token)
             );
 
-            if (!response.ok) throw new Error('Failed to fetch');
-
-            const data = await response.json();
             const points: ChartDataPoint[] = data
                 .filter((h: any) => h[sensorKey] !== null)
                 .map((h: any) => ({
