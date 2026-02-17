@@ -32,7 +32,7 @@ import { SignedIn, SignedOut } from '@clerk/clerk-react';
 const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
 const Light = lazy(() => import('./pages/Light/Light'));
 const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
-const Settings = lazy(() => import('./pages/Settings/Settings'));
+const Devices = lazy(() => import('./pages/Devices/Devices'));
 const About = lazy(() => import('./pages/About/About'));
 const Backup = lazy(() => import('./pages/Backup/Backup'));
 const LifeStages = lazy(() => import('./pages/LifeStage/LifeStages'));
@@ -76,8 +76,8 @@ const App: React.FC = () => {
                                     <Route path="/lifestages" exact={true}>
                                         <Suspense fallback={<PageLoader />}><LifeStages /></Suspense>
                                     </Route>
-                                    <Route path="/settings" exact={true}>
-                                        <Suspense fallback={<PageLoader />}><Settings /></Suspense>
+                                    <Route path="/devices" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Devices /></Suspense>
                                     </Route>
                                     <Route path="/about" exact={true}>
                                         <Suspense fallback={<PageLoader />}><About /></Suspense>
@@ -95,7 +95,7 @@ const App: React.FC = () => {
                             <Route exact path="/welcome">
                                 <Suspense fallback={<PageLoader />}><Welcome /></Suspense>
                             </Route>
-                            <Route path="/(dashboard|light|analytics|lifestages|settings|about|data/backup)">
+                            <Route path="/(dashboard|light|analytics|lifestages|devices|about|data/backup)">
                                 <Redirect to="/welcome" />
                             </Route>
                             <Route exact path="/">

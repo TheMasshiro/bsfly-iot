@@ -10,7 +10,7 @@ import {
 } from '@ionic/react';
 import { FC } from 'react';
 import { useLocation } from 'react-router-dom';
-import { analyticsOutline, analyticsSharp, bugOutline, exitOutline, exitSharp, gridOutline, gridSharp, informationCircleOutline, informationCircleSharp, leafOutline, leafSharp, saveOutline, saveSharp, settingsOutline, settingsSharp, sunnyOutline, sunnySharp } from 'ionicons/icons';
+import { analyticsOutline, analyticsSharp, bugOutline, exitOutline, exitSharp, gridOutline, gridSharp, hardwareChipOutline, hardwareChipSharp, informationCircleOutline, informationCircleSharp, leafOutline, leafSharp, saveOutline, saveSharp, sunnyOutline, sunnySharp } from 'ionicons/icons';
 import './Menu.css';
 import { SignOutButton, useUser } from '@clerk/clerk-react';
 
@@ -50,10 +50,10 @@ const appPages: MenuItemProps[] = [
 
 const morePage: MenuItemProps[] = [
     {
-        title: 'Settings',
-        url: '/settings',
-        iosIcon: settingsOutline,
-        mdIcon: settingsSharp
+        title: 'Devices',
+        url: '/devices',
+        iosIcon: hardwareChipOutline,
+        mdIcon: hardwareChipSharp
     },
     {
         title: 'Backup',

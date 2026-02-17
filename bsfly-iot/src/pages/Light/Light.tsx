@@ -65,7 +65,7 @@ const Light: React.FC = () => {
     const handleTimeChange = useCallback((newTime: number) => {
         if (!deviceId) {
             present({
-                message: "No device selected. Go to Settings to add a device.",
+                message: "No device selected. Go to Devices to add a device.",
                 duration: 2000,
                 position: 'top',
                 mode: 'ios',

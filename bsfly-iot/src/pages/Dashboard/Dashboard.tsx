@@ -317,7 +317,7 @@ const Dashboard: FC = () => {
     const handleQuickAction = useCallback(async (actionName: string) => {
         if (!deviceId) {
             present({
-                message: "No device selected. Go to Settings to add a device.",
+                message: "No device selected. Go to Devices to add a device.",
                 duration: 2000,
                 position: "top",
                 mode: "ios",

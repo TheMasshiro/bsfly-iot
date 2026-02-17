@@ -169,7 +169,7 @@ const LifeStages: FC = () => {
         lastUserActionRef.current = Date.now();
         if (!deviceId) {
             present({
-                message: "No device selected. Go to Settings to add a device.",
+                message: "No device selected. Go to Devices to add a device.",
                 duration: 2000,
                 position: "top",
                 mode: "ios",

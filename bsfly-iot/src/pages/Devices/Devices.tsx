@@ -13,9 +13,9 @@ import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
 import { validateMacAddress, validateDeviceName, validateJoinCode, formatMacAddress } from "../../utils/validation";
 import { api, withToken } from "../../utils/api";
 import { Device, DeviceMember } from "../../types/device";
-import "./Settings.css";
+import "./Devices.css";
 
-const Settings: FC = () => {
+const Devices: FC = () => {
     const { userId, getToken, isLoaded: authLoaded } = useAuth();
     const [present] = useIonToast();
     const { refreshDevices } = useDevice();
@@ -255,9 +255,9 @@ const Settings: FC = () => {
     };
 
     return (
-        <IonPage className="settings-page">
+        <IonPage className="devices-page">
             <IonHeader class="ion-no-border">
-                <Toolbar header={"Settings"} />
+                <Toolbar header={"Devices"} />
             </IonHeader>
 
             <IonContent fullscreen>
@@ -546,4 +546,4 @@ const Settings: FC = () => {
     );
 };
 
-export default Settings;
+export default Devices;

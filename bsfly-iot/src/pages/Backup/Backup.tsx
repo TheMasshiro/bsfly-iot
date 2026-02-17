@@ -554,7 +554,7 @@ const Backup: FC = () => {
                         {!currentDevice && (
                             <IonText color="warning" className="ion-text-center">
                                 <p className="no-device-warning">
-                                    Please select a device in Settings to export data.
+                                    Please select a device in Devices to export data.
                                 </p>
                             </IonText>
                         )}

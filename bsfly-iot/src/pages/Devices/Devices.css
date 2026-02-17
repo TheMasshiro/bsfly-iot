@@ -1,8 +1,8 @@
-.settings-page ion-content {
+.devices-page ion-content {
   --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
 }
 
-.settings-page ion-list {
+.devices-page ion-list {
   border-radius: 18px !important;
   --ion-item-border-radius: 18px;
   overflow: hidden;
@@ -10,12 +10,12 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.settings-page ion-item {
+.devices-page ion-item {
   --background: transparent;
   --color: rgba(255, 255, 255, 0.9);
 }
 
-.settings-page ion-input {
+.devices-page ion-input {
   --background: rgba(255, 255, 255, 0.05);
   --color: #fff;
   --placeholder-color: rgba(255, 255, 255, 0.4);
@@ -26,55 +26,55 @@
   margin-bottom: 8px;
 }
 
-.settings-page ion-item ion-note[slot="error"] {
+.devices-page ion-item ion-note[slot="error"] {
   padding-bottom: 8px;
 }
 
-.settings-page ion-button {
+.devices-page ion-button {
   --border-radius: 16px;
 }
 
-.settings-page ion-button[color="success"] {
+.devices-page ion-button[color="success"] {
   --background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
 }
 
-.settings-page ion-button[color="danger"] {
+.devices-page ion-button[color="danger"] {
   --background: linear-gradient(135deg, #ff4757 0%, #c5000f 100%);
 }
 
-.settings-page ion-card {
+.devices-page ion-card {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.settings-page ion-card-title {
+.devices-page ion-card-title {
   color: #fff;
 }
 
-.settings-page ion-card-subtitle {
+.devices-page ion-card-subtitle {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.settings-page .full-width-btn {
+.devices-page .full-width-btn {
   width: 100%;
 }
 
-.settings-page .skeleton-container {
+.devices-page .skeleton-container {
   padding: 8px 16px;
 }
 
-.settings-page ion-modal ion-item-sliding {
+.devices-page ion-modal ion-item-sliding {
   margin: 0;
 }
 
-.settings-page ion-modal ion-item-options {
+.devices-page ion-modal ion-item-options {
   display: flex;
   align-items: stretch;
 }
 
-.settings-page ion-modal ion-item-option {
+.devices-page ion-modal ion-item-option {
   display: flex;
   align-items: center;
   justify-content: center;
