@@ -12,7 +12,7 @@ String DEVICE_ID_CLEAN;
 
 #define LIGHT_PIN 19
 #define DHT_PIN 5
-#define DHT_TYPE DHT11
+#define DHT_TYPE DHT22
 
 #define POLL_INTERVAL 2000
 #define SENSOR_INTERVAL 35000

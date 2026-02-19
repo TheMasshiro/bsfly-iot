@@ -337,12 +337,25 @@ const Dashboard: FC = () => {
             return;
         }
 
+        const MUTUALLY_EXCLUSIVE: Record<string, string[]> = {
+            "Fan": ["Heater"],
+            "Heater": ["Fan"],
+        };
+
         const newState = !actuatorStates[stage][actionName];
         const actuatorId = getActuatorId(deviceId, stage, actionName);
 
+        const exclusions = MUTUALLY_EXCLUSIVE[actionName] || [];
+        const updatedStage = { ...actuatorStates[stage], [actionName]: newState };
+        if (newState) {
+            exclusions.forEach(ex => {
+                updatedStage[ex] = false;
+            });
+        }
+
         setActuatorStates(prev => ({
             ...prev,
-            [stage]: { ...prev[stage], [actionName]: newState }
+            [stage]: updatedStage
         }));
 
         try {
