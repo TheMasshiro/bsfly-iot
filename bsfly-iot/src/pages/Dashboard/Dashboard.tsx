@@ -340,6 +340,8 @@ const Dashboard: FC = () => {
         const MUTUALLY_EXCLUSIVE: Record<string, string[]> = {
             "Fan": ["Heater"],
             "Heater": ["Fan"],
+            "Humidifier": ["Dehumidifier"],
+            "Dehumidifier": ["Humidifier"],
         };
 
         const newState = !actuatorStates[stage][actionName];

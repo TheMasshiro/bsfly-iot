@@ -159,6 +159,8 @@ router.get("/:actuatorId", async (req, res) => {
 const MUTUALLY_EXCLUSIVE = {
   fan: ["heater"],
   heater: ["fan"],
+  humidifier: ["dehumidifier"],
+  dehumidifier: ["humidifier"],
 };
 
 router.post("/:actuatorId", requireAuth, async (req, res) => {
