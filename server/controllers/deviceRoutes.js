@@ -59,7 +59,12 @@ router.post("/register", requireAuth, deviceLimiter, validateBody(registerSchema
 
     await User.findByIdAndUpdate(userId, { $addToSet: { devices: device._id } });
 
-    res.status(201).json(device);
+    res.status(201).json({
+      deviceId: device._id,
+      macAddress: device.macAddress,
+      name: device.name,
+      joinCode: device.joinCode,
+    });
   } catch (error) {
     console.error("Register device error:", error);
     res.status(500).json({ error: "Failed to register device" });
@@ -86,7 +91,12 @@ router.post("/join", requireAuth, validateBody(joinSchema), async (req, res) => 
 
     await User.findByIdAndUpdate(userId, { $addToSet: { devices: device._id } });
 
-    res.json({ message: "Successfully joined device", device });
+    res.json({
+      message: "Successfully joined device",
+      deviceId: device._id,
+      macAddress: device.macAddress,
+      name: device.name,
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to join device" });
   }
@@ -96,7 +106,13 @@ router.get("/user/me", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
     const devices = await Device.find({ "members.userId": userId });
-    res.json(devices);
+    res.json(devices.map((d) => ({
+      deviceId: d._id,
+      macAddress: d.macAddress,
+      name: d.name,
+      status: d.status,
+      lastSeen: d.lastSeen,
+    })));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch devices" });
   }
@@ -115,7 +131,15 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    res.json(device);
+    res.json({
+      deviceId: device._id,
+      macAddress: device.macAddress,
+      name: device.name,
+      status: device.status,
+      lastSeen: device.lastSeen,
+      joinCode: device.joinCode,
+      ownerId: device.ownerId,
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch device" });
   }
@@ -328,7 +352,7 @@ router.patch("/:deviceId/members/:memberId/role", requireAuth, async (req, res) 
     }
 
     await device.save();
-    res.json({ message: "Member role updated", device });
+    res.json({ message: "Member role updated", deviceId: device._id, macAddress: device.macAddress });
   } catch (error) {
     res.status(500).json({ error: "Failed to update member role" });
   }
@@ -362,7 +386,7 @@ router.delete("/:deviceId/members/:memberId", requireAuth, async (req, res) => {
 
     await User.findByIdAndUpdate(memberId, { $pull: { devices: device._id } });
 
-    res.json({ message: "Member removed", device });
+    res.json({ message: "Member removed", deviceId: device._id, macAddress: device.macAddress });
   } catch (error) {
     res.status(500).json({ error: "Failed to remove member" });
   }
