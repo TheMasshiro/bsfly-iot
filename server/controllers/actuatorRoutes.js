@@ -141,8 +141,6 @@ router.get("/:actuatorId", async (req, res) => {
       if (!hasAccess) {
         return res.status(403).json({ error: "Access denied" });
       }
-    } else {
-      return res.status(401).json({ error: "Authentication required" });
     }
 
     const actuatorSuffix = actuatorId.replace(deviceId, "");
