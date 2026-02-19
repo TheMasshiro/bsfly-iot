@@ -112,6 +112,9 @@ router.get("/user/me", requireAuth, async (req, res) => {
       name: d.name,
       status: d.status,
       lastSeen: d.lastSeen,
+      joinCode: d.joinCode,
+      ownerId: d.ownerId,
+      members: d.members,
     })));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch devices" });
@@ -139,6 +142,7 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
       lastSeen: device.lastSeen,
       joinCode: device.joinCode,
       ownerId: device.ownerId,
+      members: device.members,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch device" });
