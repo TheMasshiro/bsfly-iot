@@ -156,6 +156,11 @@ router.get("/:actuatorId", async (req, res) => {
   }
 });
 
+const MUTUALLY_EXCLUSIVE = {
+  fan: ["heater"],
+  heater: ["fan"],
+};
+
 router.post("/:actuatorId", requireAuth, async (req, res) => {
   try {
     const { actuatorId } = req.params;
@@ -181,6 +186,24 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
       { actuatorId, state, updatedAt: new Date() },
       { upsert: true, new: true }
     );
+
+    if (state === true) {
+      const parts = actuatorId.split(":");
+      const actuatorType = parts[parts.length - 1];
+      const baseId = parts.slice(0, -1).join(":");
+
+      const exclusions = MUTUALLY_EXCLUSIVE[actuatorType];
+      if (exclusions) {
+        for (const excludeType of exclusions) {
+          const excludeId = `${baseId}:${excludeType}`;
+          await ActuatorState.findOneAndUpdate(
+            { actuatorId: excludeId },
+            { actuatorId: excludeId, state: false, updatedAt: new Date() },
+            { upsert: true }
+          );
+        }
+      }
+    }
 
     res.json({ actuatorId, state: updated.state });
   } catch (error) {
