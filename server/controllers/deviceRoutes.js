@@ -60,10 +60,13 @@ router.post("/register", requireAuth, deviceLimiter, validateBody(registerSchema
     await User.findByIdAndUpdate(userId, { $addToSet: { devices: device._id } });
 
     res.status(201).json({
-      deviceId: device._id,
+      _id: device._id,
       macAddress: device.macAddress,
       name: device.name,
       joinCode: device.joinCode,
+      status: device.status,
+      ownerId: device.ownerId,
+      members: device.members,
     });
   } catch (error) {
     console.error("Register device error:", error);
@@ -93,9 +96,13 @@ router.post("/join", requireAuth, validateBody(joinSchema), async (req, res) => 
 
     res.json({
       message: "Successfully joined device",
-      deviceId: device._id,
+      _id: device._id,
       macAddress: device.macAddress,
       name: device.name,
+      status: device.status,
+      ownerId: device.ownerId,
+      members: device.members,
+      joinCode: device.joinCode,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to join device" });
@@ -107,7 +114,7 @@ router.get("/user/me", requireAuth, async (req, res) => {
     const userId = req.userId;
     const devices = await Device.find({ "members.userId": userId });
     res.json(devices.map((d) => ({
-      deviceId: d._id,
+      _id: d._id,
       macAddress: d.macAddress,
       name: d.name,
       status: d.status,
@@ -135,7 +142,7 @@ router.get("/:deviceId", requireAuth, async (req, res) => {
     }
 
     res.json({
-      deviceId: device._id,
+      _id: device._id,
       macAddress: device.macAddress,
       name: device.name,
       status: device.status,
@@ -240,13 +247,23 @@ router.delete("/:deviceId/leave", requireAuth, async (req, res) => {
 router.post("/:deviceId/heartbeat", async (req, res) => {
   try {
     const apiKey = req.headers["x-api-key"];
-    const device = await Device.findById(req.params.deviceId);
+    const deviceIdParam = req.params.deviceId;
+    
+    let device;
+    if (deviceIdParam.includes(":")) {
+      device = await Device.findOne({ macAddress: deviceIdParam.toUpperCase() });
+    } else {
+      device = await Device.findById(deviceIdParam).catch(() => null);
+      if (!device) {
+        device = await Device.findOne({ macAddress: deviceIdParam.toUpperCase() });
+      }
+    }
 
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    if (!apiKey || device.apiKey !== apiKey) {
+    if (apiKey && device.apiKey !== apiKey) {
       return res.status(401).json({ error: "Invalid API key" });
     }
 
@@ -356,7 +373,7 @@ router.patch("/:deviceId/members/:memberId/role", requireAuth, async (req, res) 
     }
 
     await device.save();
-    res.json({ message: "Member role updated", deviceId: device._id, macAddress: device.macAddress });
+    res.json({ message: "Member role updated", _id: device._id, macAddress: device.macAddress });
   } catch (error) {
     res.status(500).json({ error: "Failed to update member role" });
   }
@@ -390,7 +407,7 @@ router.delete("/:deviceId/members/:memberId", requireAuth, async (req, res) => {
 
     await User.findByIdAndUpdate(memberId, { $pull: { devices: device._id } });
 
-    res.json({ message: "Member removed", deviceId: device._id, macAddress: device.macAddress });
+    res.json({ message: "Member removed", _id: device._id, macAddress: device.macAddress });
   } catch (error) {
     res.status(500).json({ error: "Failed to remove member" });
   }

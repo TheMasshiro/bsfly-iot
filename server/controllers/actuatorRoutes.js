@@ -10,14 +10,26 @@ const getDeviceIdFromActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return null;
   const parts = actuatorId.split(":");
   if (parts.length < 2) return null;
+  if (parts.length >= 7 && parts[5].length === 2) {
+    return parts.slice(0, 6).join(":");
+  }
   return parts[0];
+};
+
+const findDeviceByIdOrMac = async (deviceId) => {
+  if (deviceId.includes(":")) {
+    return Device.findOne({ macAddress: deviceId.toUpperCase() });
+  }
+  const device = await Device.findById(deviceId).catch(() => null);
+  if (device) return device;
+  return Device.findOne({ macAddress: deviceId.toUpperCase() });
 };
 
 const verifyActuatorAccess = async (userId, actuatorId) => {
   const deviceId = getDeviceIdFromActuatorId(actuatorId);
   if (!deviceId) return false;
 
-  const device = await Device.findById(deviceId);
+  const device = await findDeviceByIdOrMac(deviceId);
   if (!device) return false;
 
   return device.members.some((m) => m.userId === userId);
@@ -110,7 +122,7 @@ router.get("/:actuatorId", async (req, res) => {
       return res.status(400).json({ error: "Invalid actuator ID format" });
     }
 
-    const device = await Device.findById(deviceId);
+    const device = await findDeviceByIdOrMac(deviceId);
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
@@ -133,7 +145,10 @@ router.get("/:actuatorId", async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const state = await ActuatorState.findOne({ actuatorId });
+    const actuatorSuffix = actuatorId.replace(deviceId, "");
+    const normalizedActuatorId = `${device._id}${actuatorSuffix}`;
+
+    const state = await ActuatorState.findOne({ actuatorId: normalizedActuatorId });
     if (!state) {
       return res.json({ actuatorId, state: null });
     }

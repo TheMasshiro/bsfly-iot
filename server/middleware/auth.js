@@ -22,11 +22,7 @@ export const requireAuth = (req, res, next) => {
 export const requireDeviceAuth = async (req, res, next) => {
   try {
     const apiKey = req.headers["x-api-key"];
-    const macAddress = req.body?.macAddress;
-
-    if (!apiKey) {
-      return res.status(401).json({ error: "API key required" });
-    }
+    const macAddress = req.body?.macAddress || req.body?.deviceId;
 
     if (!macAddress) {
       return res.status(400).json({ error: "MAC address required" });
@@ -38,11 +34,12 @@ export const requireDeviceAuth = async (req, res, next) => {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    if (device.apiKey !== apiKey) {
+    if (apiKey && device.apiKey !== apiKey) {
       return res.status(401).json({ error: "Invalid API key" });
     }
 
     req.device = device;
+    req.body.macAddress = macAddress.toUpperCase();
     next();
   } catch (error) {
     console.error("Device auth error:", error.message);
