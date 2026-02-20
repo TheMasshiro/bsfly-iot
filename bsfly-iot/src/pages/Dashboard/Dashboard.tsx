@@ -5,7 +5,7 @@ import 'react-circular-progressbar/dist/styles.css';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { useDevice } from '../../context/DeviceContext';
 import { useNotification } from '../../context/NotificationContext';
-import { sensorsData, controlsData } from '../../assets/assets';
+import { sensorsData, controlsData, drawerActuatorMap } from '../../assets/assets';
 import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
 import { calculateQuality } from '../../utils/calculateQuality';
 import Segments from '../../components/Segments/Segments';
@@ -42,6 +42,20 @@ const getActuatorId = (deviceId: string | undefined, stage: string, actionName: 
     };
     const actuator = actionMap[actionName] || actionName.toLowerCase();
     return deviceId ? `${deviceId}:drawer${drawerNum}:${actuator}` : `drawer${drawerNum}:${actuator}`;
+};
+
+const getActuatorIds = (deviceId: string | undefined, stage: string, actionName: string): string[] => {
+    const stageKey = stage as keyof typeof drawerActuatorMap;
+    const mapping = drawerActuatorMap[stageKey];
+    if (!mapping) return [getActuatorId(deviceId, stage, actionName)];
+    
+    const actionKey = actionName as keyof typeof mapping;
+    const actuators = mapping[actionKey];
+    if (!actuators) return [getActuatorId(deviceId, stage, actionName)];
+    
+    return actuators.map((act: string) => 
+        deviceId ? `${deviceId}:${act}` : act
+    );
 };
 
 export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
@@ -345,7 +359,7 @@ const Dashboard: FC = () => {
         };
 
         const newState = !actuatorStates[stage][actionName];
-        const actuatorId = getActuatorId(deviceId, stage, actionName);
+        const actuatorIds = getActuatorIds(deviceId, stage, actionName);
 
         const exclusions = MUTUALLY_EXCLUSIVE[actionName] || [];
         const updatedStage = { ...actuatorStates[stage], [actionName]: newState };
@@ -361,7 +375,7 @@ const Dashboard: FC = () => {
         }));
 
         try {
-            await actuatorService.emit(actuatorId, newState);
+            await Promise.all(actuatorIds.map(id => actuatorService.emit(id, newState)));
             present({
                 message: `${actionName} ${newState ? 'enabled' : 'disabled'}`,
                 duration: 1500,

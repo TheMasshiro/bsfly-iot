@@ -3,6 +3,10 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
+#include <Wire.h>
+#include <Adafruit_ADS1X15.h>
+#include <Adafruit_MCP23X17.h>
+#include <Adafruit_SSD1306.h>
 
 // ==================== CONFIGURATION ====================
 const char* BACKEND_URL = "https://backend-bsfly.vercel.app";
@@ -10,16 +14,74 @@ const char* BACKEND_URL = "https://backend-bsfly.vercel.app";
 String DEVICE_ID;
 String DEVICE_ID_CLEAN;
 
-#define LIGHT_PIN 19
-#define DHT_PIN 5
+// ==================== I2C BUS ====================
+#define I2C_SDA 21
+#define I2C_SCL 22
+
+// ==================== SPI BUS (microSD) ====================
+#define SPI_SCK 18
+#define SPI_MISO 19
+#define SPI_MOSI 23
+#define SPI_CS_SD 5
+
+// ==================== CD74HC4067 ANALOG MUX ====================
+#define MUX_SIG 35
+#define MUX_S0 16
+#define MUX_S1 17
+#define MUX_S2 25
+#define MUX_S3 26
+
+// ==================== DHT22 SENSORS ====================
+#define DHT_A_PIN 27
+#define DHT_B_PIN 13
+#define DHT_C_PIN 33
 #define DHT_TYPE DHT22
 
+// ==================== I2C DEVICE ADDRESSES ====================
+#define ADS1115_ADDR_1 0x48
+#define ADS1115_ADDR_2 0x49
+#define MCP23017_ADDR 0x20
+#define TCA9548A_ADDR 0x70
+
+// ==================== TCA9548A CHANNELS ====================
+#define TCA_CH_OLED1 0
+#define TCA_CH_OLED2 1
+
+// ==================== MCP23017 PINS ====================
+#define MCP_HUMIDIFIER1 0
+#define MCP_HUMIDIFIER2 1
+#define MCP_HEATER 2
+#define MCP_FAN1 3
+#define MCP_FAN2 4
+#define MCP_FAN3 5
+#define MCP_FAN4 6
+#define MCP_HUMIDIFIER3 8
+#define MCP_FAN5 9
+
+// ==================== ADS1115 CHANNELS ====================
+#define ADS_SOIL1 0
+#define ADS_SOIL2 1
+#define ADS_SOIL3 2
+#define ADS_MQ137 3
+
+// ==================== CD74HC4067 CHANNELS ====================
+#define MUX_CH_SOIL1 0
+#define MUX_CH_SOIL2 1
+#define MUX_CH_SOIL3 2
+
+// ==================== TIMING ====================
 #define POLL_INTERVAL 2000
 #define SENSOR_INTERVAL 35000
 #define HEARTBEAT_INTERVAL 30000
 
 // ==================== GLOBALS ====================
-DHT dht(DHT_PIN, DHT_TYPE);
+DHT dhtA(DHT_A_PIN, DHT_TYPE);
+DHT dhtB(DHT_B_PIN, DHT_TYPE);
+DHT dhtC(DHT_C_PIN, DHT_TYPE);
+
+Adafruit_ADS1115 ads1;
+Adafruit_ADS1115 ads2;
+Adafruit_MCP23X17 mcp;
 
 unsigned long lastPollTime = 0;
 unsigned long lastSensorTime = 0;
@@ -31,10 +93,25 @@ bool lightState = false;
 void setup() {
   Serial.begin(115200);
 
-  pinMode(LIGHT_PIN, OUTPUT);
-  digitalWrite(LIGHT_PIN, LOW);
+  Wire.begin(I2C_SDA, I2C_SCL);
 
-  dht.begin();
+  pinMode(MUX_S0, OUTPUT);
+  pinMode(MUX_S1, OUTPUT);
+  pinMode(MUX_S2, OUTPUT);
+  pinMode(MUX_S3, OUTPUT);
+
+  dhtA.begin();
+  dhtB.begin();
+  dhtC.begin();
+
+  ads1.begin(ADS1115_ADDR_1);
+  ads2.begin(ADS1115_ADDR_2);
+
+  mcp.begin_I2C(MCP23017_ADDR);
+  for (int i = 0; i < 16; i++) {
+    mcp.pinMode(i, OUTPUT);
+    mcp.digitalWrite(i, LOW);
+  }
 
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
@@ -110,7 +187,6 @@ void pollActuators() {
         bool newState = doc["state"].as<bool>();
         if (newState != lightState) {
           lightState = newState;
-          digitalWrite(LIGHT_PIN, lightState ? HIGH : LOW);
           Serial.print("Light: ");
           Serial.println(lightState ? "ON" : "OFF");
         }
@@ -119,7 +195,6 @@ void pollActuators() {
         bool newState = timeSeconds > 0;
         if (newState != lightState) {
           lightState = newState;
-          digitalWrite(LIGHT_PIN, lightState ? HIGH : LOW);
           Serial.print("Light (timer): ");
           Serial.println(lightState ? "ON" : "OFF");
         }
@@ -132,16 +207,22 @@ void pollActuators() {
 
   http.end();
 
-  pollDrawerActuator("drawer1", "fan");
-  pollDrawerActuator("drawer1", "heater");
-  pollDrawerActuator("drawer1", "humidifier");
+  pollActuator("humidifier1");
+  pollActuator("humidifier2");
+  pollActuator("humidifier3");
+  pollActuator("heater");
+  pollActuator("fan1");
+  pollActuator("fan2");
+  pollActuator("fan3");
+  pollActuator("fan4");
+  pollActuator("fan5");
 }
 
-void pollDrawerActuator(const char* drawer, const char* actuator) {
+void pollActuator(const char* actuator) {
   HTTPClient http;
   http.setTimeout(5000);
 
-  String url = String(BACKEND_URL) + "/api/actuators/" + DEVICE_ID + ":" + drawer + ":" + actuator;
+  String url = String(BACKEND_URL) + "/api/actuators/" + DEVICE_ID + ":" + actuator;
 
   http.begin(url);
   int httpCode = http.GET();
@@ -154,8 +235,7 @@ void pollDrawerActuator(const char* drawer, const char* actuator) {
 
     if (!error && doc.containsKey("state")) {
       bool state = doc["state"].as<bool>();
-      Serial.print(drawer);
-      Serial.print(":");
+      applyActuatorState(actuator, state);
       Serial.print(actuator);
       Serial.print(" = ");
       Serial.println(state ? "ON" : "OFF");
@@ -165,6 +245,18 @@ void pollDrawerActuator(const char* drawer, const char* actuator) {
   http.end();
 }
 
+void applyActuatorState(const char* actuator, bool state) {
+  if (strcmp(actuator, "humidifier1") == 0) setHumidifier1(state);
+  else if (strcmp(actuator, "humidifier2") == 0) setHumidifier2(state);
+  else if (strcmp(actuator, "humidifier3") == 0) setHumidifier3(state);
+  else if (strcmp(actuator, "heater") == 0) setHeater(state);
+  else if (strcmp(actuator, "fan1") == 0) setFan1(state);
+  else if (strcmp(actuator, "fan2") == 0) setFan2(state);
+  else if (strcmp(actuator, "fan3") == 0) setFan3(state);
+  else if (strcmp(actuator, "fan4") == 0) setFan4(state);
+  else if (strcmp(actuator, "fan5") == 0) setFan5(state);
+}
+
 // ==================== SENSOR DATA ====================
 void sendSensorData() {
   if (WiFi.status() != WL_CONNECTED) {
@@ -172,17 +264,13 @@ void sendSensorData() {
     return;
   }
 
-  float humidity = NAN;
-  float temperature = NAN;
+  float humidity = dhtA.readHumidity();
+  float temperature = dhtA.readTemperature();
   
-  for (int attempt = 0; attempt < 3; attempt++) {
-    humidity = dht.readHumidity();
-    temperature = dht.readTemperature();
-    
-    if (!isnan(humidity) && !isnan(temperature)) {
-      break;
-    }
+  for (int attempt = 0; attempt < 3 && (isnan(humidity) || isnan(temperature)); attempt++) {
     delay(500);
+    humidity = dhtA.readHumidity();
+    temperature = dhtA.readTemperature();
   }
 
   if (isnan(humidity) || isnan(temperature)) {
@@ -280,3 +368,54 @@ void setActuatorState(const char* actuatorType, bool state) {
 
   http.end();
 }
+
+// ==================== MUX HELPERS ====================
+void selectMuxChannel(uint8_t channel) {
+  digitalWrite(MUX_S0, channel & 0x01);
+  digitalWrite(MUX_S1, (channel >> 1) & 0x01);
+  digitalWrite(MUX_S2, (channel >> 2) & 0x01);
+  digitalWrite(MUX_S3, (channel >> 3) & 0x01);
+  delayMicroseconds(100);
+}
+
+int readMuxAnalog(uint8_t channel) {
+  selectMuxChannel(channel);
+  return analogRead(MUX_SIG);
+}
+
+// ==================== TCA9548A HELPER ====================
+void selectTcaChannel(uint8_t channel) {
+  Wire.beginTransmission(TCA9548A_ADDR);
+  Wire.write(1 << channel);
+  Wire.endTransmission();
+}
+
+// ==================== ADS1115 HELPERS ====================
+int16_t readAds1Channel(uint8_t channel) {
+  return ads1.readADC_SingleEnded(channel);
+}
+
+int16_t readAds2Channel(uint8_t channel) {
+  return ads2.readADC_SingleEnded(channel);
+}
+
+// ==================== MCP23017 HELPERS ====================
+void setMcpActuator(uint8_t pin, bool state) {
+  mcp.digitalWrite(pin, state ? HIGH : LOW);
+}
+
+void setHumidifier1(bool state) { setMcpActuator(MCP_HUMIDIFIER1, state); }
+void setHumidifier2(bool state) { setMcpActuator(MCP_HUMIDIFIER2, state); }
+void setHumidifier3(bool state) { setMcpActuator(MCP_HUMIDIFIER3, state); }
+void setHeater(bool state) { setMcpActuator(MCP_HEATER, state); }
+void setFan1(bool state) { setMcpActuator(MCP_FAN1, state); }
+void setFan2(bool state) { setMcpActuator(MCP_FAN2, state); }
+void setFan3(bool state) { setMcpActuator(MCP_FAN3, state); }
+void setFan4(bool state) { setMcpActuator(MCP_FAN4, state); }
+void setFan5(bool state) { setMcpActuator(MCP_FAN5, state); }
+
+// ==================== SENSOR READERS ====================
+int readSoil1() { return readAds1Channel(ADS_SOIL1); }
+int readSoil2() { return readAds1Channel(ADS_SOIL2); }
+int readSoil3() { return readAds1Channel(ADS_SOIL3); }
+int readMQ137() { return readAds1Channel(ADS_MQ137); }

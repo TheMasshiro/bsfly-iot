@@ -59,19 +59,19 @@ export const controlsData = [
   {
     sensor: "Temperature",
     name: "Fan",
-    description: "Reduces Temperature",
+    description: "Reduces Temperature (controls Fan 1-4 for Drawer 1+2, Fan 5 for Drawer 3)",
     available: true,
   },
   {
     sensor: "Temperature",
     name: "Heater",
-    description: "Increases Temperature",
+    description: "Increases Temperature (Drawer 1+2 only)",
     available: true,
   },
   {
     sensor: "Humidity",
     name: "Humidifier",
-    description: "Increases Humidity",
+    description: "Increases Humidity (Humidifier 1-2 for Drawer 1+2, Humidifier 3 for Drawer 3)",
     available: true,
   },
   {
@@ -94,3 +94,20 @@ export const controlsData = [
     available: false,
   },
 ];
+
+export const drawerActuatorMap = {
+  "Drawer 1": {
+    Fan: ["fan1", "fan2", "fan3", "fan4"],
+    Heater: ["heater"],
+    Humidifier: ["humidifier1", "humidifier2"],
+  },
+  "Drawer 2": {
+    Fan: ["fan1", "fan2", "fan3", "fan4"],
+    Heater: ["heater"],
+    Humidifier: ["humidifier1", "humidifier2"],
+  },
+  "Drawer 3": {
+    Fan: ["fan5"],
+    Humidifier: ["humidifier3"],
+  },
+} as const;
