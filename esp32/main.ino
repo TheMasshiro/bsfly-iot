@@ -264,26 +264,68 @@ void sendSensorData() {
     return;
   }
 
-  float humidity = dhtA.readHumidity();
-  float temperature = dhtA.readTemperature();
-  
+  sendDrawer12SensorData();
+  sendDrawer3SensorData();
+}
+
+void sendDrawer12SensorData() {
+  float humidityA = dhtA.readHumidity();
+  float temperatureA = dhtA.readTemperature();
+  float humidityB = dhtB.readHumidity();
+  float temperatureB = dhtB.readTemperature();
+
+  float humidity = NAN;
+  float temperature = NAN;
+
+  if (!isnan(humidityA) && !isnan(humidityB)) {
+    humidity = (humidityA + humidityB) / 2.0;
+  } else if (!isnan(humidityA)) {
+    humidity = humidityA;
+  } else if (!isnan(humidityB)) {
+    humidity = humidityB;
+  }
+
+  if (!isnan(temperatureA) && !isnan(temperatureB)) {
+    temperature = (temperatureA + temperatureB) / 2.0;
+  } else if (!isnan(temperatureA)) {
+    temperature = temperatureA;
+  } else if (!isnan(temperatureB)) {
+    temperature = temperatureB;
+  }
+
+  int soil1Raw = readSoil1();
+  int soil2Raw = readSoil2();
+  int soil3Raw = readSoil3();
+  int moisture = (soil1Raw + soil2Raw + soil3Raw) / 3;
+  moisture = map(moisture, 0, 26000, 0, 100);
+  moisture = constrain(moisture, 0, 100);
+
+  int ammoniaRaw = readMQ137();
+  int ammonia = map(ammoniaRaw, 0, 26000, 0, 100);
+  ammonia = constrain(ammonia, 0, 100);
+
+  if (!isnan(humidity) && !isnan(temperature)) {
+    sendSensorReading("Drawer 1", temperature, humidity, moisture, ammonia);
+    sendSensorReading("Drawer 2", temperature, humidity, moisture, ammonia);
+  }
+}
+
+void sendDrawer3SensorData() {
+  float humidity = dhtC.readHumidity();
+  float temperature = dhtC.readTemperature();
+
   for (int attempt = 0; attempt < 3 && (isnan(humidity) || isnan(temperature)); attempt++) {
     delay(500);
-    humidity = dhtA.readHumidity();
-    temperature = dhtA.readTemperature();
+    humidity = dhtC.readHumidity();
+    temperature = dhtC.readTemperature();
   }
 
-  if (isnan(humidity) || isnan(temperature)) {
-    Serial.println("DHT read failed after 3 attempts");
-    return;
+  if (!isnan(humidity) && !isnan(temperature)) {
+    sendSensorReading("Drawer 3", temperature, humidity, -1, -1);
   }
+}
 
-  Serial.print("Temp: ");
-  Serial.print(temperature);
-  Serial.print("°C, Humidity: ");
-  Serial.print(humidity);
-  Serial.println("%");
-
+void sendSensorReading(const char* drawerName, float temperature, float humidity, int moisture, int ammonia) {
   HTTPClient http;
   http.setTimeout(5000);
   String sensorUrl = String(BACKEND_URL) + "/api/sensor";
@@ -292,9 +334,12 @@ void sendSensorData() {
   http.addHeader("Content-Type", "application/json");
 
   JsonDocument doc;
-  doc["deviceId"] = DEVICE_ID;
+  doc["macAddress"] = DEVICE_ID;
+  doc["drawerName"] = drawerName;
   doc["temperature"] = temperature;
   doc["humidity"] = humidity;
+  if (moisture >= 0) doc["moisture"] = moisture;
+  if (ammonia >= 0) doc["ammonia"] = ammonia;
 
   String payload;
   serializeJson(doc, payload);
@@ -302,9 +347,11 @@ void sendSensorData() {
   int httpCode = http.POST(payload);
 
   if (httpCode == 200 || httpCode == 201) {
-    Serial.println("Sensor data sent successfully");
+    Serial.print(drawerName);
+    Serial.println(" sensor data sent");
   } else {
-    Serial.print("Sensor send failed, code: ");
+    Serial.print(drawerName);
+    Serial.print(" sensor send failed: ");
     Serial.println(httpCode);
   }
 

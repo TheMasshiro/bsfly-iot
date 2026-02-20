@@ -35,7 +35,7 @@ const Analytics: FC = () => {
         if (!currentDevice) return;
         try {
             const token = await getToken();
-            const { data } = await api.get(`/api/sensors/device/${currentDevice._id}`, withToken(token));
+            const { data } = await api.get(`/api/sensors/device/${currentDevice._id}?drawer=${encodeURIComponent(stage)}`, withToken(token));
             setSensorValues(data);
         } catch {
             const now = Date.now();
@@ -50,7 +50,7 @@ const Analytics: FC = () => {
                 });
             }
         }
-    }, [currentDevice, present, getToken]);
+    }, [currentDevice, stage, present, getToken]);
 
     useEffect(() => {
         fetchCurrentValues();

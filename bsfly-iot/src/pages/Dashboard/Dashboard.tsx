@@ -145,7 +145,7 @@ const Dashboard: FC = () => {
         }
         try {
             const token = await getToken();
-            const { data } = await api.get(`/api/sensors/device/${deviceId}`, withToken(token));
+            const { data } = await api.get(`/api/sensors/device/${deviceId}?drawer=${encodeURIComponent(stage)}`, withToken(token));
             setSensorData(data);
         } catch {
             present({
@@ -158,14 +158,15 @@ const Dashboard: FC = () => {
         } finally {
             setSensorLoading(false);
         }
-    }, [deviceId, present, getToken]);
+    }, [deviceId, stage, present, getToken]);
 
     useEffect(() => {
         if (!deviceId) return;
+        setSensorLoading(true);
         fetchSensorData();
         const interval = setInterval(fetchSensorData, 10000);
         return () => clearInterval(interval);
-    }, [deviceId, fetchSensorData]);
+    }, [deviceId, stage, fetchSensorData]);
 
     const handleRefresh = async (event: CustomEvent) => {
         await Promise.all([fetchSensorData(), refreshDevices()]);

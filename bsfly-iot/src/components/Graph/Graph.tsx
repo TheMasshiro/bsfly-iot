@@ -3,6 +3,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
 import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
+import { useLifeCycle } from '../../context/LifeCycleContext';
 import { api, withToken } from '../../utils/api';
 import './Graph.css';
 
@@ -32,6 +33,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<Chart | null>(null);
     const { currentDevice, getToken } = useDevice();
+    const { stage } = useLifeCycle();
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [present] = useIonToast();
@@ -52,7 +54,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         try {
             const token = await getToken();
             const { data } = await api.get(
-                `/api/sensors/device/${currentDevice._id}/hourly`,
+                `/api/sensors/device/${currentDevice._id}/hourly?drawer=${encodeURIComponent(stage)}`,
                 withToken(token)
             );
 
@@ -80,9 +82,10 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         } finally {
             setLoading(false);
         }
-    }, [currentDevice, sensorKey, sensorType, present, getToken]);
+    }, [currentDevice, stage, sensorKey, sensorType, present, getToken]);
 
     useEffect(() => {
+        setLoading(true);
         fetchData();
         const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);

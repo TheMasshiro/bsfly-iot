@@ -74,8 +74,14 @@ router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
 router.get("/device/:deviceId", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;
+    const { drawer } = req.query;
 
-    const drawers = await Drawer.find({ deviceId });
+    const drawerQuery = { deviceId };
+    if (drawer) {
+      drawerQuery.name = drawer;
+    }
+
+    const drawers = await Drawer.find(drawerQuery);
     
     if (drawers.length === 0) {
       return res.json({
@@ -196,8 +202,14 @@ router.get("/drawer/:drawerId", requireAuth, async (req, res) => {
 router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, async (req, res) => {
   try {
     const { deviceId } = req.params;
+    const { drawer } = req.query;
 
-    const drawers = await Drawer.find({ deviceId });
+    const drawerQuery = { deviceId };
+    if (drawer) {
+      drawerQuery.name = drawer;
+    }
+
+    const drawers = await Drawer.find(drawerQuery);
 
     if (drawers.length === 0) {
       return res.json([]);
