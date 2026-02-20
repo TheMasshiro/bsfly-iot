@@ -38,6 +38,8 @@ const BACKEND_PORT = process.env.PORT || 5000;
 
 app.get("/", (_req, res) => res.send("REST API Working"));
 
+app.get("/api/time", (_req, res) => res.json({ now: Date.now() }));
+
 app.use("/api/users", userRoutes);
 
 app.use("/api/actuators", actuatorRoutes);

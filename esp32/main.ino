@@ -192,7 +192,17 @@ void pollActuators() {
         }
       } else if (doc["state"].is<JsonObject>()) {
         int timeSeconds = doc["state"]["time"].as<int>();
-        bool newState = timeSeconds > 0;
+        unsigned long startTimeMs = doc["state"]["startTime"].as<unsigned long>();
+        
+        bool newState = false;
+        if (timeSeconds > 0 && startTimeMs > 0) {
+          unsigned long serverNow = getServerTime();
+          if (serverNow > 0) {
+            unsigned long endTime = startTimeMs + ((unsigned long)timeSeconds * 1000UL);
+            newState = serverNow < endTime;
+          }
+        }
+        
         if (newState != lightState) {
           lightState = newState;
           Serial.print("Light (timer): ");
@@ -414,6 +424,26 @@ void setActuatorState(const char* actuatorType, bool state) {
   }
 
   http.end();
+}
+
+// ==================== TIME HELPER ====================
+unsigned long getServerTime() {
+  HTTPClient http;
+  http.setTimeout(2000);
+  http.begin(String(BACKEND_URL) + "/api/time");
+  int httpCode = http.GET();
+  unsigned long serverTime = 0;
+  
+  if (httpCode == 200) {
+    String payload = http.getString();
+    JsonDocument doc;
+    if (!deserializeJson(doc, payload)) {
+      serverTime = doc["now"].as<unsigned long>();
+    }
+  }
+  
+  http.end();
+  return serverTime;
 }
 
 // ==================== MUX HELPERS ====================

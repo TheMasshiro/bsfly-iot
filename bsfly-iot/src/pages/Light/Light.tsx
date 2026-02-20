@@ -31,6 +31,18 @@ const Light: React.FC = () => {
 
     const lightActuatorId = deviceId ? `${deviceId}:light` : 'light';
 
+    const handleCountdownComplete = useCallback(() => {
+        if (!deviceId) return;
+        setTime(0);
+        actuatorService.emit(lightActuatorId, { time: 0, startTime: Date.now() });
+        present({
+            message: "Light timer completed - Light Off",
+            duration: 2000,
+            position: 'top',
+            mode: 'ios',
+        });
+    }, [deviceId, lightActuatorId, present]);
+
     const fetchLightState = useCallback(async () => {
         if (!deviceId) return;
         const state = await actuatorService.getState(lightActuatorId);
@@ -136,6 +148,7 @@ const Light: React.FC = () => {
                                                         key={startTime}
                                                         date={countdownDate}
                                                         renderer={renderer}
+                                                        onComplete={handleCountdownComplete}
                                                     />
                                                 ) : "Off"}
                                             </IonText>
