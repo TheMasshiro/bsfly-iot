@@ -14,11 +14,13 @@ import {
     IonLabel,
     IonPage,
     IonRange,
+    IonSegment,
+    IonSegmentButton,
     IonText,
     IonSpinner,
     useIonToast,
 } from "@ionic/react";
-import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline, hardwareChipOutline, cloudDownloadOutline, syncOutline, trashOutline } from "ionicons/icons";
+import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline, hardwareChipOutline, cloudDownloadOutline, syncOutline, trashOutline, layersOutline } from "ionicons/icons";
 import { FC, useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import Toolbar from "../../components/Toolbar/Toolbar";
@@ -42,12 +44,15 @@ interface DayReading {
 
 const Backup: FC = () => {
     const [daysAgo, setDaysAgo] = useState<number>(0);
+    const [selectedDrawer, setSelectedDrawer] = useState<string>("all");
     const [loading, setLoading] = useState(false);
     const [sdLoading, setSdLoading] = useState(false);
     const [present] = useIonToast();
     const { currentDevice, getToken } = useDevice();
     const [espIp, setEspIp] = useState<string>("");
     const [sdStatus, setSdStatus] = useState<{ storedCount: number; sdAvailable: boolean } | null>(null);
+
+    const drawerOptions = ["all", "Drawer 1", "Drawer 2", "Drawer 3"];
 
     const today = useMemo(() => new Date(), []);
 
@@ -76,10 +81,11 @@ const Backup: FC = () => {
         }
 
         const token = await getToken();
-        const { data } = await api.get(
-            `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
-            withToken(token)
-        );
+        let url = `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`;
+        if (selectedDrawer !== "all") {
+            url += `&drawer=${encodeURIComponent(selectedDrawer)}`;
+        }
+        const { data } = await api.get(url, withToken(token));
 
         return data;
     };
@@ -110,6 +116,7 @@ const Backup: FC = () => {
         const exportData = {
             device: currentDevice?.name || "Unknown",
             deviceId: currentDevice?._id || "",
+            drawer: selectedDrawer === "all" ? "All Drawers" : selectedDrawer,
             exportDate: new Date().toISOString(),
             dateRange: {
                 from: formatDateISO(selectedDate),
@@ -185,7 +192,8 @@ const Backup: FC = () => {
 
         doc.setFontSize(20);
         doc.setFont("helvetica", "bold");
-        doc.text("BSF Weekly Report", pageWidth / 2, y, { align: "center" });
+        const title = selectedDrawer === "all" ? "BSF Weekly Report" : `BSF Weekly Report - ${selectedDrawer}`;
+        doc.text(title, pageWidth / 2, y, { align: "center" });
         y += 10;
 
         doc.setFontSize(12);
@@ -332,10 +340,11 @@ const Backup: FC = () => {
             weekAgo.setDate(weekAgo.getDate() - 7);
             
             const token = await getToken();
-            const { data } = await api.get(
-                `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`,
-                withToken(token)
-            );
+            let url = `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(weekAgo)}&to=${formatDateISO(today)}`;
+            if (selectedDrawer !== "all") {
+                url += `&drawer=${encodeURIComponent(selectedDrawer)}`;
+            }
+            const { data } = await api.get(url, withToken(token));
 
             if (!data || data.length === 0) {
                 present({ message: "No sensor data found for the last 7 days", duration: 2000, color: "warning" });
@@ -344,8 +353,9 @@ const Backup: FC = () => {
 
             const doc = generatePDFReport(data, weekAgo);
             const deviceName = currentDevice.name.replace(/[^a-z0-9]/gi, "_");
+            const drawerSuffix = selectedDrawer === "all" ? "" : `_${selectedDrawer.replace(/\s+/g, "")}`;
             const weekStr = formatDateISO(weekAgo);
-            doc.save(`${deviceName}_weekly_report_${weekStr}.pdf`);
+            doc.save(`${deviceName}${drawerSuffix}_weekly_report_${weekStr}.pdf`);
 
             present({ message: "Weekly PDF report generated", duration: 2000, color: "success" });
         } catch (error: any) {
@@ -383,14 +393,15 @@ const Backup: FC = () => {
             }
 
             const deviceName = currentDevice.name.replace(/[^a-z0-9]/gi, "_");
+            const drawerSuffix = selectedDrawer === "all" ? "" : `_${selectedDrawer.replace(/\s+/g, "")}`;
             const dateStr = formatDateISO(selectedDate);
 
             if (format === "csv") {
                 const csv = generateCSV(data);
-                downloadFile(csv, `${deviceName}_backup_${dateStr}.csv`, "text/csv");
+                downloadFile(csv, `${deviceName}${drawerSuffix}_backup_${dateStr}.csv`, "text/csv");
             } else {
                 const json = generateJSON(data);
-                downloadFile(json, `${deviceName}_backup_${dateStr}.json`, "application/json");
+                downloadFile(json, `${deviceName}${drawerSuffix}_backup_${dateStr}.json`, "application/json");
             }
 
             present({ message: `Backup exported as ${format.toUpperCase()}`, duration: 2000, color: "success" });
@@ -558,6 +569,28 @@ const Backup: FC = () => {
                     <IonCardHeader>
                         <IonCardSubtitle>
                             <IonIcon
+                                icon={layersOutline}
+                                className="subtitle-icon"
+                            />
+                            Select Drawer
+                        </IonCardSubtitle>
+                    </IonCardHeader>
+
+                    <IonCardContent>
+                        <IonSegment value={selectedDrawer} onIonChange={(e) => setSelectedDrawer(e.detail.value as string)}>
+                            {drawerOptions.map((drawer) => (
+                                <IonSegmentButton key={drawer} value={drawer}>
+                                    <IonLabel>{drawer === "all" ? "All" : drawer.replace("Drawer ", "D")}</IonLabel>
+                                </IonSegmentButton>
+                            ))}
+                        </IonSegment>
+                    </IonCardContent>
+                </IonCard>
+
+                <IonCard className="ion-margin">
+                    <IonCardHeader>
+                        <IonCardSubtitle>
+                            <IonIcon
                                 icon={cloudUpload}
                                 className="subtitle-icon"
                             />
@@ -570,7 +603,8 @@ const Backup: FC = () => {
                         <IonText color="medium">
                             <p className="export-description">
                                 Export sensor data from{" "}
-                                <strong>{formatDate(selectedDate)}</strong> to today.
+                                <strong>{formatDate(selectedDate)}</strong> to today
+                                {selectedDrawer !== "all" && <> for <strong>{selectedDrawer}</strong></>}.
                             </p>
                         </IonText>
 
