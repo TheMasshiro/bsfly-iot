@@ -164,7 +164,17 @@ router.get("/device/:deviceId/history", requireAuth, requireDeviceMembership, as
       date: { $gte: fromDate, $lte: toDate },
     }).sort({ date: 1 });
 
-    res.json(readings);
+    const drawerMap = {};
+    drawers.forEach((d) => {
+      drawerMap[d._id.toString()] = d.name;
+    });
+
+    const result = readings.map((r) => ({
+      ...r.toObject(),
+      drawerId: drawerMap[r.drawerId.toString()] || r.drawerId,
+    }));
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch sensor history" });
   }

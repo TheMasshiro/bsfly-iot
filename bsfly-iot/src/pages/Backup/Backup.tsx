@@ -132,6 +132,7 @@ const Backup: FC = () => {
 
     interface DailyAverage {
         date: string;
+        drawer: string;
         temperature: { avg: number; min: number; max: number; count: number };
         humidity: { avg: number; min: number; max: number; count: number };
         moisture: { avg: number; min: number; max: number; count: number };
@@ -146,10 +147,11 @@ const Backup: FC = () => {
         data.forEach((day) => {
             day.readings.forEach((reading) => {
                 const dateKey = new Date(reading.timestamp).toISOString().split('T')[0];
-                if (!dailyMap.has(dateKey)) {
-                    dailyMap.set(dateKey, { temp: [], hum: [], moist: [], amm: [] });
+                const key = `${day.drawerId}|${dateKey}`;
+                if (!dailyMap.has(key)) {
+                    dailyMap.set(key, { temp: [], hum: [], moist: [], amm: [] });
                 }
-                const entry = dailyMap.get(dateKey)!;
+                const entry = dailyMap.get(key)!;
                 if (reading.temperature !== undefined) entry.temp.push(reading.temperature);
                 if (reading.humidity !== undefined) entry.hum.push(reading.humidity);
                 if (reading.moisture !== undefined) entry.moist.push(reading.moisture);
@@ -170,13 +172,17 @@ const Backup: FC = () => {
 
         return Array.from(dailyMap.entries())
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([date, values]) => ({
-                date,
-                temperature: calcStats(values.temp),
-                humidity: calcStats(values.hum),
-                moisture: calcStats(values.moist),
-                ammonia: calcStats(values.amm),
-            }));
+            .map(([key, values]) => {
+                const [drawer, date] = key.split('|');
+                return {
+                    date,
+                    drawer,
+                    temperature: calcStats(values.temp),
+                    humidity: calcStats(values.hum),
+                    moisture: calcStats(values.moist),
+                    ammonia: calcStats(values.amm),
+                };
+            });
     };
 
     const generatePDFReport = (data: DayReading[], startDate: Date) => {
@@ -278,8 +284,8 @@ const Backup: FC = () => {
         y += 10;
 
         doc.setFontSize(9);
-        const dailyHeaders = ["Date", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
-        const dailyColWidths = [35, 30, 35, 35, 35];
+        const dailyHeaders = ["Drawer", "Date", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const dailyColWidths = [30, 30, 25, 30, 30, 30];
 
         let x = startX;
         doc.setFont("helvetica", "bold");
@@ -300,6 +306,7 @@ const Backup: FC = () => {
 
             x = startX;
             const rowData = [
+                day.drawer.replace("Drawer ", "D"),
                 day.date,
                 day.temperature.count > 0 ? day.temperature.avg.toString() : "-",
                 day.humidity.count > 0 ? day.humidity.avg.toString() : "-",
