@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include <HTTPClient.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <Wire.h>
@@ -115,6 +116,8 @@ unsigned long lastSdSyncTime = 0;
 
 bool lightState = false;
 
+WebServer server(80);
+
 // ==================== SETUP ====================
 void setup() {
   Serial.begin(115200);
@@ -181,12 +184,15 @@ void setup() {
     Serial.println(DEVICE_ID_CLEAN);
   }
 
+  setupWebServer();
   sendHeartbeat();
 }
 
 // ==================== MAIN LOOP ====================
 void loop() {
   unsigned long currentTime = millis();
+
+  server.handleClient();
 
   if (currentTime - lastPollTime >= POLL_INTERVAL) {
     pollActuators();
@@ -740,4 +746,127 @@ void autoControlDrawer3(float temperature, float humidity) {
   Serial.print(" Hum="); Serial.println(humidity);
   Serial.print("  Fan="); Serial.print(fanOn ? "ON" : "OFF");
   Serial.print(" Humidifier="); Serial.println(humidifierOn ? "ON" : "OFF");
+}
+
+// ==================== WEB SERVER ====================
+void setupWebServer() {
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/status", HTTP_GET, handleStatus);
+  server.on("/sdcard/data", HTTP_GET, handleGetSdData);
+  server.on("/sdcard/clear", HTTP_POST, handleClearSdData);
+  server.on("/sdcard/sync", HTTP_POST, handleSyncSdData);
+  server.enableCORS(true);
+  server.begin();
+  Serial.print("Web server started at http://");
+  Serial.println(WiFi.localIP());
+}
+
+void handleRoot() {
+  String html = "<!DOCTYPE html><html><head><title>BSFly IoT</title>";
+  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += "<style>body{font-family:sans-serif;padding:20px;max-width:600px;margin:0 auto}";
+  html += "h1{color:#333}.card{background:#f5f5f5;padding:15px;margin:10px 0;border-radius:8px}";
+  html += "button{background:#007bff;color:white;border:none;padding:10px 20px;border-radius:5px;margin:5px;cursor:pointer}";
+  html += "button:hover{background:#0056b3}.danger{background:#dc3545}.danger:hover{background:#c82333}</style></head>";
+  html += "<body><h1>BSFly IoT Device</h1>";
+  html += "<div class='card'><strong>Device ID:</strong> " + DEVICE_ID + "</div>";
+  html += "<div class='card'><strong>IP Address:</strong> " + WiFi.localIP().toString() + "</div>";
+  html += "<div class='card'><strong>SD Card:</strong> " + String(sdAvailable ? "Available" : "Not found") + "</div>";
+  html += "<div class='card'><strong>Stored Readings:</strong> " + String(getStoredDataCount()) + "</div>";
+  html += "<h2>Actions</h2>";
+  html += "<button onclick=\"fetch('/sdcard/sync',{method:'POST'}).then(r=>r.json()).then(d=>alert(d.message))\">Sync to Cloud</button>";
+  html += "<button onclick=\"window.location='/sdcard/data'\">Download Data</button>";
+  html += "<button class='danger' onclick=\"if(confirm('Clear all stored data?'))fetch('/sdcard/clear',{method:'POST'}).then(r=>r.json()).then(d=>alert(d.message))\">Clear Data</button>";
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleStatus() {
+  JsonDocument doc;
+  doc["deviceId"] = DEVICE_ID;
+  doc["ip"] = WiFi.localIP().toString();
+  doc["sdAvailable"] = sdAvailable;
+  doc["storedCount"] = getStoredDataCount();
+  doc["wifiConnected"] = WiFi.status() == WL_CONNECTED;
+  doc["uptime"] = millis() / 1000;
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+void handleGetSdData() {
+  if (!sdAvailable) {
+    server.send(503, "application/json", "{\"error\":\"SD card not available\"}");
+    return;
+  }
+
+  if (!SD.exists(SD_DATA_FILE)) {
+    server.send(200, "application/json", "{\"readings\":[]}");
+    return;
+  }
+
+  File file = SD.open(SD_DATA_FILE, FILE_READ);
+  if (!file) {
+    server.send(500, "application/json", "{\"error\":\"Failed to open file\"}");
+    return;
+  }
+
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "application/json", "");
+  server.sendContent("{\"deviceId\":\"" + DEVICE_ID + "\",\"readings\":[");
+
+  bool first = true;
+  while (file.available()) {
+    String line = file.readStringUntil('\n');
+    line.trim();
+    if (line.length() > 0) {
+      if (!first) server.sendContent(",");
+      server.sendContent(line);
+      first = false;
+    }
+  }
+
+  server.sendContent("]}");
+  file.close();
+}
+
+void handleClearSdData() {
+  if (!sdAvailable) {
+    server.send(503, "application/json", "{\"error\":\"SD card not available\"}");
+    return;
+  }
+
+  if (SD.exists(SD_DATA_FILE)) {
+    SD.remove(SD_DATA_FILE);
+  }
+
+  server.send(200, "application/json", "{\"message\":\"Data cleared\",\"success\":true}");
+}
+
+void handleSyncSdData() {
+  if (!sdAvailable) {
+    server.send(503, "application/json", "{\"error\":\"SD card not available\"}");
+    return;
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    server.send(503, "application/json", "{\"error\":\"WiFi not connected\"}");
+    return;
+  }
+
+  int beforeCount = getStoredDataCount();
+  uploadStoredData();
+  int afterCount = getStoredDataCount();
+  int uploaded = beforeCount - afterCount;
+
+  JsonDocument doc;
+  doc["message"] = "Sync complete";
+  doc["uploaded"] = uploaded;
+  doc["remaining"] = afterCount;
+  doc["success"] = true;
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
 }

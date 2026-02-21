@@ -9,6 +9,8 @@ import {
     IonContent,
     IonHeader,
     IonIcon,
+    IonInput,
+    IonItem,
     IonLabel,
     IonPage,
     IonRange,
@@ -16,7 +18,7 @@ import {
     IonSpinner,
     useIonToast,
 } from "@ionic/react";
-import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline } from "ionicons/icons";
+import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline, hardwareChipOutline, cloudDownloadOutline, syncOutline, trashOutline } from "ionicons/icons";
 import { FC, useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import Toolbar from "../../components/Toolbar/Toolbar";
@@ -41,8 +43,11 @@ interface DayReading {
 const Backup: FC = () => {
     const [daysAgo, setDaysAgo] = useState<number>(0);
     const [loading, setLoading] = useState(false);
+    const [sdLoading, setSdLoading] = useState(false);
     const [present] = useIonToast();
     const { currentDevice, getToken } = useDevice();
+    const [espIp, setEspIp] = useState<string>("");
+    const [sdStatus, setSdStatus] = useState<{ storedCount: number; sdAvailable: boolean } | null>(null);
 
     const today = useMemo(() => new Date(), []);
 
@@ -396,6 +401,88 @@ const Backup: FC = () => {
         }
     };
 
+    const checkSdStatus = async () => {
+        if (!espIp) {
+            present({ message: "Please enter ESP32 IP address", duration: 2000, color: "warning" });
+            return;
+        }
+
+        setSdLoading(true);
+        try {
+            const response = await fetch(`http://${espIp}/status`, { method: "GET" });
+            const data = await response.json();
+            setSdStatus({ storedCount: data.storedCount, sdAvailable: data.sdAvailable });
+            present({ message: `Found ${data.storedCount} stored readings`, duration: 2000, color: "success" });
+        } catch {
+            present({ message: "Cannot connect to ESP32. Check IP and ensure you're on the same network.", duration: 3000, color: "danger" });
+            setSdStatus(null);
+        } finally {
+            setSdLoading(false);
+        }
+    };
+
+    const downloadSdData = async () => {
+        if (!espIp) return;
+
+        setSdLoading(true);
+        try {
+            const response = await fetch(`http://${espIp}/sdcard/data`);
+            const data = await response.json();
+
+            if (data.readings && data.readings.length > 0) {
+                const content = JSON.stringify(data, null, 2);
+                const blob = new Blob([content], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `esp32_offline_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                present({ message: `Downloaded ${data.readings.length} readings`, duration: 2000, color: "success" });
+            } else {
+                present({ message: "No offline data stored", duration: 2000, color: "warning" });
+            }
+        } catch {
+            present({ message: "Failed to download data", duration: 2000, color: "danger" });
+        } finally {
+            setSdLoading(false);
+        }
+    };
+
+    const syncSdToCloud = async () => {
+        if (!espIp) return;
+
+        setSdLoading(true);
+        try {
+            const response = await fetch(`http://${espIp}/sdcard/sync`, { method: "POST" });
+            const data = await response.json();
+            present({ message: `Uploaded ${data.uploaded} readings to cloud`, duration: 2000, color: "success" });
+            setSdStatus(prev => prev ? { ...prev, storedCount: data.remaining } : null);
+        } catch {
+            present({ message: "Failed to sync data", duration: 2000, color: "danger" });
+        } finally {
+            setSdLoading(false);
+        }
+    };
+
+    const clearSdData = async () => {
+        if (!espIp) return;
+
+        setSdLoading(true);
+        try {
+            const response = await fetch(`http://${espIp}/sdcard/clear`, { method: "POST" });
+            await response.json();
+            present({ message: "SD card data cleared", duration: 2000, color: "success" });
+            setSdStatus(prev => prev ? { ...prev, storedCount: 0 } : null);
+        } catch {
+            present({ message: "Failed to clear data", duration: 2000, color: "danger" });
+        } finally {
+            setSdLoading(false);
+        }
+    };
+
     return (
         <IonPage className="backup-page">
             <IonHeader class="ion-no-border">
@@ -558,6 +645,112 @@ const Backup: FC = () => {
                                 </p>
                             </IonText>
                         )}
+                    </IonCardContent>
+                </IonCard>
+
+                <IonCard className="ion-margin">
+                    <IonCardHeader>
+                        <IonCardSubtitle>
+                            <IonIcon
+                                icon={hardwareChipOutline}
+                                className="subtitle-icon"
+                            />
+                            ESP32 SD Card
+                        </IonCardSubtitle>
+                        <IonCardTitle>Extract Offline Data</IonCardTitle>
+                    </IonCardHeader>
+
+                    <IonCardContent>
+                        <IonText color="medium">
+                            <p className="export-description">
+                                Connect to your ESP32 directly to extract data stored while offline.
+                                Make sure your phone is on the same WiFi network as the ESP32.
+                            </p>
+                        </IonText>
+
+                        <IonItem className="ion-margin-top">
+                            <IonInput
+                                label="ESP32 IP Address"
+                                labelPlacement="stacked"
+                                placeholder="e.g., 192.168.1.100"
+                                value={espIp}
+                                onIonInput={(e) => setEspIp(e.detail.value || "")}
+                            />
+                            <IonButton
+                                slot="end"
+                                fill="clear"
+                                onClick={checkSdStatus}
+                                disabled={sdLoading || !espIp}
+                            >
+                                {sdLoading ? <IonSpinner name="crescent" /> : "Connect"}
+                            </IonButton>
+                        </IonItem>
+
+                        {sdStatus && (
+                            <div className="sd-status ion-margin-top">
+                                <IonChip color={sdStatus.sdAvailable ? "success" : "danger"}>
+                                    <IonLabel>SD Card: {sdStatus.sdAvailable ? "Available" : "Not Found"}</IonLabel>
+                                </IonChip>
+                                <IonChip color={sdStatus.storedCount > 0 ? "warning" : "medium"}>
+                                    <IonLabel>{sdStatus.storedCount} Stored Readings</IonLabel>
+                                </IonChip>
+                            </div>
+                        )}
+
+                        <div className="export-buttons">
+                            <IonButton
+                                expand="block"
+                                onClick={syncSdToCloud}
+                                size="large"
+                                disabled={sdLoading || !espIp || !sdStatus?.sdAvailable}
+                                color="success"
+                                className="export-btn"
+                            >
+                                {sdLoading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={syncOutline} slot="start" />
+                                        Sync to Cloud
+                                    </>
+                                )}
+                            </IonButton>
+
+                            <IonButton
+                                expand="block"
+                                onClick={downloadSdData}
+                                size="large"
+                                disabled={sdLoading || !espIp || !sdStatus?.sdAvailable}
+                                className="export-btn"
+                            >
+                                {sdLoading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={cloudDownloadOutline} slot="start" />
+                                        Download JSON
+                                    </>
+                                )}
+                            </IonButton>
+
+                            <IonButton
+                                expand="block"
+                                onClick={clearSdData}
+                                size="large"
+                                disabled={sdLoading || !espIp || !sdStatus?.sdAvailable}
+                                color="danger"
+                                className="export-btn"
+                            >
+                                {sdLoading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={trashOutline} slot="start" />
+                                        Clear SD Data
+                                    </>
+                                )}
+                            </IonButton>
+                        </div>
                     </IonCardContent>
                 </IonCard>
             </IonContent>
