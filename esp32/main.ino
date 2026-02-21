@@ -7,6 +7,8 @@
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_SSD1306.h>
+#include <SD.h>
+#include <SPI.h>
 
 // ==================== CONFIGURATION ====================
 const char* BACKEND_URL = "https://backend-bsfly.vercel.app";
@@ -73,6 +75,24 @@ String DEVICE_ID_CLEAN;
 #define POLL_INTERVAL 2000
 #define SENSOR_INTERVAL 35000
 #define HEARTBEAT_INTERVAL 30000
+#define SD_SYNC_INTERVAL 60000
+#define SD_DATA_FILE "/sensor_data.json"
+
+// ==================== OFFLINE THRESHOLDS ====================
+#define TEMP_MIN 25.0
+#define TEMP_MAX 35.0
+#define TEMP_OPTIMAL_LOW 28.0
+#define TEMP_OPTIMAL_HIGH 32.0
+
+#define HUMIDITY_MIN 50.0
+#define HUMIDITY_MAX 80.0
+#define HUMIDITY_OPTIMAL_LOW 60.0
+#define HUMIDITY_OPTIMAL_HIGH 70.0
+
+#define MOISTURE_MIN 40
+#define MOISTURE_MAX 70
+#define MOISTURE_OPTIMAL_LOW 50
+#define MOISTURE_OPTIMAL_HIGH 60
 
 // ==================== GLOBALS ====================
 DHT dhtA(DHT_A_PIN, DHT_TYPE);
@@ -86,10 +106,12 @@ Adafruit_MCP23X17 mcp;
 bool ads1Available = false;
 bool ads2Available = false;
 bool mcpAvailable = false;
+bool sdAvailable = false;
 
 unsigned long lastPollTime = 0;
 unsigned long lastSensorTime = 0;
 unsigned long lastHeartbeatTime = 0;
+unsigned long lastSdSyncTime = 0;
 
 bool lightState = false;
 
@@ -98,6 +120,14 @@ void setup() {
   Serial.begin(115200);
 
   Wire.begin(I2C_SDA, I2C_SCL);
+
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS_SD);
+  sdAvailable = SD.begin(SPI_CS_SD);
+  if (sdAvailable) {
+    Serial.println("SD card initialized");
+  } else {
+    Serial.println("SD card not found");
+  }
 
   pinMode(MUX_S0, OUTPUT);
   pinMode(MUX_S1, OUTPUT);
@@ -171,6 +201,11 @@ void loop() {
   if (currentTime - lastHeartbeatTime >= HEARTBEAT_INTERVAL) {
     sendHeartbeat();
     lastHeartbeatTime = currentTime;
+  }
+
+  if (currentTime - lastSdSyncTime >= SD_SYNC_INTERVAL) {
+    uploadStoredData();
+    lastSdSyncTime = currentTime;
   }
 
   delay(100);
@@ -284,16 +319,11 @@ void applyActuatorState(const char* actuator, bool state) {
 
 // ==================== SENSOR DATA ====================
 void sendSensorData() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi disconnected, skipping sensor send");
-    return;
-  }
-
-  sendDrawer12SensorData();
-  sendDrawer3SensorData();
+  collectAndProcessDrawer12();
+  collectAndProcessDrawer3();
 }
 
-void sendDrawer12SensorData() {
+void collectAndProcessDrawer12() {
   float humidityA = dhtA.readHumidity();
   float temperatureA = dhtA.readTemperature();
   float humidityB = dhtB.readHumidity();
@@ -330,12 +360,16 @@ void sendDrawer12SensorData() {
   ammonia = constrain(ammonia, 0, 100);
 
   if (!isnan(humidity) && !isnan(temperature)) {
-    sendSensorReading("Drawer 1", temperature, humidity, moisture, ammonia);
-    sendSensorReading("Drawer 2", temperature, humidity, moisture, ammonia);
+    sendOrStoreSensorReading("Drawer 1", temperature, humidity, moisture, ammonia);
+    sendOrStoreSensorReading("Drawer 2", temperature, humidity, moisture, ammonia);
+    
+    if (WiFi.status() != WL_CONNECTED) {
+      autoControlDrawer12(temperature, humidity, moisture);
+    }
   }
 }
 
-void sendDrawer3SensorData() {
+void collectAndProcessDrawer3() {
   float humidity = dhtC.readHumidity();
   float temperature = dhtC.readTemperature();
 
@@ -346,11 +380,28 @@ void sendDrawer3SensorData() {
   }
 
   if (!isnan(humidity) && !isnan(temperature)) {
-    sendSensorReading("Drawer 3", temperature, humidity, -1, -1);
+    sendOrStoreSensorReading("Drawer 3", temperature, humidity, -1, -1);
+    
+    if (WiFi.status() != WL_CONNECTED) {
+      autoControlDrawer3(temperature, humidity);
+    }
   }
 }
 
-void sendSensorReading(const char* drawerName, float temperature, float humidity, int moisture, int ammonia) {
+void sendOrStoreSensorReading(const char* drawerName, float temperature, float humidity, int moisture, int ammonia) {
+  if (WiFi.status() == WL_CONNECTED) {
+    bool success = sendSensorReading(drawerName, temperature, humidity, moisture, ammonia);
+    if (!success && sdAvailable) {
+      storeSensorToSD(drawerName, temperature, humidity, moisture, ammonia);
+    }
+  } else if (sdAvailable) {
+    storeSensorToSD(drawerName, temperature, humidity, moisture, ammonia);
+    Serial.print("Stored offline: ");
+    Serial.println(drawerName);
+  }
+}
+
+bool sendSensorReading(const char* drawerName, float temperature, float humidity, int moisture, int ammonia) {
   HTTPClient http;
   http.setTimeout(5000);
   String sensorUrl = String(BACKEND_URL) + "/api/sensor";
@@ -370,17 +421,18 @@ void sendSensorReading(const char* drawerName, float temperature, float humidity
   serializeJson(doc, payload);
 
   int httpCode = http.POST(payload);
+  http.end();
 
   if (httpCode == 200 || httpCode == 201) {
     Serial.print(drawerName);
     Serial.println(" sensor data sent");
+    return true;
   } else {
     Serial.print(drawerName);
     Serial.print(" sensor send failed: ");
     Serial.println(httpCode);
+    return false;
   }
-
-  http.end();
 }
 
 // ==================== HEARTBEAT ====================
@@ -514,3 +566,178 @@ int readSoil1() { return readAds1Channel(ADS_SOIL1); }
 int readSoil2() { return readAds1Channel(ADS_SOIL2); }
 int readSoil3() { return readAds1Channel(ADS_SOIL3); }
 int readMQ137() { return readAds1Channel(ADS_MQ137); }
+
+// ==================== SD CARD STORAGE ====================
+void storeSensorToSD(const char* drawerName, float temperature, float humidity, int moisture, int ammonia) {
+  if (!sdAvailable) return;
+
+  File file = SD.open(SD_DATA_FILE, FILE_APPEND);
+  if (!file) {
+    Serial.println("Failed to open SD file for writing");
+    return;
+  }
+
+  JsonDocument doc;
+  doc["macAddress"] = DEVICE_ID;
+  doc["drawerName"] = drawerName;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  if (moisture >= 0) doc["moisture"] = moisture;
+  if (ammonia >= 0) doc["ammonia"] = ammonia;
+  doc["timestamp"] = millis();
+
+  String line;
+  serializeJson(doc, line);
+  file.println(line);
+  file.close();
+}
+
+void uploadStoredData() {
+  if (!sdAvailable || WiFi.status() != WL_CONNECTED) return;
+  if (!SD.exists(SD_DATA_FILE)) return;
+
+  File file = SD.open(SD_DATA_FILE, FILE_READ);
+  if (!file) return;
+
+  String tempPath = "/temp_data.json";
+  File tempFile = SD.open(tempPath, FILE_WRITE);
+  
+  int uploaded = 0;
+  int failed = 0;
+
+  while (file.available()) {
+    String line = file.readStringUntil('\n');
+    line.trim();
+    if (line.length() == 0) continue;
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, line);
+    if (error) continue;
+
+    HTTPClient http;
+    http.setTimeout(5000);
+    http.begin(String(BACKEND_URL) + "/api/sensor");
+    http.addHeader("Content-Type", "application/json");
+
+    int httpCode = http.POST(line);
+    http.end();
+
+    if (httpCode == 200 || httpCode == 201) {
+      uploaded++;
+    } else {
+      if (tempFile) tempFile.println(line);
+      failed++;
+    }
+  }
+
+  file.close();
+  if (tempFile) tempFile.close();
+
+  SD.remove(SD_DATA_FILE);
+  if (failed > 0 && SD.exists(tempPath)) {
+    SD.rename(tempPath, SD_DATA_FILE);
+  } else {
+    SD.remove(tempPath);
+  }
+
+  if (uploaded > 0) {
+    Serial.print("Uploaded ");
+    Serial.print(uploaded);
+    Serial.println(" stored readings");
+  }
+  if (failed > 0) {
+    Serial.print("Failed to upload ");
+    Serial.print(failed);
+    Serial.println(" readings (kept for retry)");
+  }
+}
+
+int getStoredDataCount() {
+  if (!sdAvailable || !SD.exists(SD_DATA_FILE)) return 0;
+
+  File file = SD.open(SD_DATA_FILE, FILE_READ);
+  if (!file) return 0;
+
+  int count = 0;
+  while (file.available()) {
+    String line = file.readStringUntil('\n');
+    if (line.length() > 0) count++;
+  }
+  file.close();
+  return count;
+}
+
+// ==================== OFFLINE AUTO CONTROL ====================
+void autoControlDrawer12(float temperature, float humidity, int moisture) {
+  bool fanOn = false;
+  bool heaterOn = false;
+  bool humidifierOn = false;
+
+  if (temperature > TEMP_OPTIMAL_HIGH) {
+    fanOn = true;
+    heaterOn = false;
+  } else if (temperature < TEMP_OPTIMAL_LOW) {
+    heaterOn = true;
+    fanOn = false;
+  }
+
+  if (temperature > TEMP_MAX) {
+    fanOn = true;
+    heaterOn = false;
+  } else if (temperature < TEMP_MIN) {
+    heaterOn = true;
+    fanOn = false;
+  }
+
+  if (humidity < HUMIDITY_OPTIMAL_LOW || humidity < HUMIDITY_MIN) {
+    humidifierOn = true;
+  } else if (humidity > HUMIDITY_OPTIMAL_HIGH || humidity > HUMIDITY_MAX) {
+    humidifierOn = false;
+    fanOn = true;
+  }
+
+  if (moisture < MOISTURE_OPTIMAL_LOW || moisture < MOISTURE_MIN) {
+    humidifierOn = true;
+  }
+
+  setFan1(fanOn);
+  setFan2(fanOn);
+  setFan3(fanOn);
+  setFan4(fanOn);
+  setHeater(heaterOn);
+  setHumidifier1(humidifierOn);
+  setHumidifier2(humidifierOn);
+
+  Serial.println("Auto control D1/D2:");
+  Serial.print("  Temp="); Serial.print(temperature);
+  Serial.print(" Hum="); Serial.print(humidity);
+  Serial.print(" Moist="); Serial.println(moisture);
+  Serial.print("  Fan="); Serial.print(fanOn ? "ON" : "OFF");
+  Serial.print(" Heater="); Serial.print(heaterOn ? "ON" : "OFF");
+  Serial.print(" Humidifier="); Serial.println(humidifierOn ? "ON" : "OFF");
+}
+
+void autoControlDrawer3(float temperature, float humidity) {
+  bool fanOn = false;
+  bool humidifierOn = false;
+
+  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX) {
+    fanOn = true;
+  }
+
+  if (humidity < HUMIDITY_OPTIMAL_LOW || humidity < HUMIDITY_MIN) {
+    humidifierOn = true;
+  } else if (humidity > HUMIDITY_OPTIMAL_HIGH || humidity > HUMIDITY_MAX) {
+    humidifierOn = false;
+    fanOn = true;
+  }
+
+  setFan5(fanOn);
+  setHumidifier3(humidifierOn);
+
+  Serial.println("Auto control D3:");
+  Serial.print("  Temp="); Serial.print(temperature);
+  Serial.print(" Hum="); Serial.println(humidity);
+  Serial.print("  Fan="); Serial.print(fanOn ? "ON" : "OFF");
+  Serial.print(" Humidifier="); Serial.println(humidifierOn ? "ON" : "OFF");
+}
