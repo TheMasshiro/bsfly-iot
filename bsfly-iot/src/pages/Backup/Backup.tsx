@@ -91,13 +91,14 @@ const Backup: FC = () => {
     };
 
     const generateCSV = (data: DayReading[]): string => {
-        const headers = ["Date", "Time", "Temperature (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const headers = ["Drawer", "Date", "Time", "Temperature (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
         const rows: string[] = [headers.join(",")];
 
         data.forEach((day) => {
             day.readings.forEach((reading) => {
                 const date = new Date(reading.timestamp);
                 const row = [
+                    day.drawerId,
                     formatDateISO(date),
                     date.toLocaleTimeString(),
                     reading.temperature ?? "",
@@ -116,7 +117,6 @@ const Backup: FC = () => {
         const exportData = {
             device: currentDevice?.name || "Unknown",
             deviceId: currentDevice?._id || "",
-            drawer: selectedDrawer === "all" ? "All Drawers" : selectedDrawer,
             exportDate: new Date().toISOString(),
             dateRange: {
                 from: formatDateISO(selectedDate),
@@ -124,6 +124,7 @@ const Backup: FC = () => {
             },
             readings: data.flatMap((day) =>
                 day.readings.map((reading) => ({
+                    drawer: day.drawerId,
                     timestamp: reading.timestamp,
                     temperature: reading.temperature,
                     humidity: reading.humidity,
