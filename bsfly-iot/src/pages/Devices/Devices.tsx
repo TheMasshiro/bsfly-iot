@@ -350,7 +350,7 @@ const Devices: FC = () => {
                                     <IonItem lines="none">
                                         <IonLabel>
                                             <h2>{device.name}</h2>
-                                            <p>{device._id}</p>
+                                            <p>{device.macAddress}</p>
                                             <p>
                                                 <IonChip color={device.status === "online" ? "success" : "medium"}>
                                                     {device.status === "online" ? "Online" : "Offline"}
