@@ -9,7 +9,7 @@
 | SPI SCK | GPIO18 |
 | SPI MISO | GPIO19 |
 | SPI MOSI | GPIO23 |
-| SPI CS (microSD) | GPIO5 |
+| SPI CS (microSD) | GPIO15 |
 
 ## Global Multiplexer Wiring
 

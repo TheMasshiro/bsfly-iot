@@ -25,7 +25,7 @@ String DEVICE_ID_CLEAN;
 #define SPI_SCK 18
 #define SPI_MISO 19
 #define SPI_MOSI 23
-#define SPI_CS_SD 5
+#define SPI_CS_SD 15
 
 // ==================== CD74HC4067 ANALOG MUX ====================
 #define MUX_SIG 35
@@ -121,15 +121,38 @@ WebServer server(80);
 // ==================== SETUP ====================
 void setup() {
   Serial.begin(115200);
+  delay(1000);
 
   Wire.begin(I2C_SDA, I2C_SCL);
 
+  pinMode(SPI_CS_SD, OUTPUT);
+  digitalWrite(SPI_CS_SD, HIGH);
+  
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS_SD);
-  sdAvailable = SD.begin(SPI_CS_SD);
+  
+  delay(100);
+  
+  sdAvailable = SD.begin(SPI_CS_SD, SPI, 4000000);
   if (sdAvailable) {
-    Serial.println("SD card initialized");
+    uint8_t cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+      Serial.println("No SD card attached");
+      sdAvailable = false;
+    } else {
+      Serial.print("SD card type: ");
+      if (cardType == CARD_MMC) Serial.println("MMC");
+      else if (cardType == CARD_SD) Serial.println("SDSC");
+      else if (cardType == CARD_SDHC) Serial.println("SDHC");
+      else Serial.println("UNKNOWN");
+      
+      uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+      Serial.printf("SD card size: %lluMB\n", cardSize);
+    }
   } else {
-    Serial.println("SD card not found");
+    Serial.println("SD card mount failed. Check:");
+    Serial.println("  - Wiring: SCK=18, MISO=19, MOSI=23, CS=5");
+    Serial.println("  - Card formatted as FAT32");
+    Serial.println("  - Card inserted properly");
   }
 
   pinMode(MUX_S0, OUTPUT);
