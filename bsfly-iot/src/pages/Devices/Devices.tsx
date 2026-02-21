@@ -297,7 +297,7 @@ const Devices: FC = () => {
                             Register Device
                         </IonButton>
                     </IonItem>
-                    <IonItem button href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md" target="_blank">
+                    <IonItem button href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md#how-to-get-esp32-mac-address" target="_blank">
                         <IonIcon icon={helpCircle} slot="start" />
                         <IonLabel color="medium">How to get ESP32 MAC Address?</IonLabel>
                     </IonItem>
