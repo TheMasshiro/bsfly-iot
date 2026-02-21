@@ -83,6 +83,10 @@ Adafruit_ADS1115 ads1;
 Adafruit_ADS1115 ads2;
 Adafruit_MCP23X17 mcp;
 
+bool ads1Available = false;
+bool ads2Available = false;
+bool mcpAvailable = false;
+
 unsigned long lastPollTime = 0;
 unsigned long lastSensorTime = 0;
 unsigned long lastHeartbeatTime = 0;
@@ -104,13 +108,24 @@ void setup() {
   dhtB.begin();
   dhtC.begin();
 
-  ads1.begin(ADS1115_ADDR_1);
-  ads2.begin(ADS1115_ADDR_2);
+  ads1Available = ads1.begin(ADS1115_ADDR_1);
+  if (!ads1Available) {
+    Serial.println("ADS1115 #1 not found");
+  }
 
-  mcp.begin_I2C(MCP23017_ADDR);
-  for (int i = 0; i < 16; i++) {
-    mcp.pinMode(i, OUTPUT);
-    mcp.digitalWrite(i, LOW);
+  ads2Available = ads2.begin(ADS1115_ADDR_2);
+  if (!ads2Available) {
+    Serial.println("ADS1115 #2 not found");
+  }
+
+  mcpAvailable = mcp.begin_I2C(MCP23017_ADDR);
+  if (mcpAvailable) {
+    for (int i = 0; i < 16; i++) {
+      mcp.pinMode(i, OUTPUT);
+      mcp.digitalWrite(i, LOW);
+    }
+  } else {
+    Serial.println("MCP23017 not found");
   }
 
   WiFiManager wm;
@@ -469,15 +484,18 @@ void selectTcaChannel(uint8_t channel) {
 
 // ==================== ADS1115 HELPERS ====================
 int16_t readAds1Channel(uint8_t channel) {
+  if (!ads1Available) return 0;
   return ads1.readADC_SingleEnded(channel);
 }
 
 int16_t readAds2Channel(uint8_t channel) {
+  if (!ads2Available) return 0;
   return ads2.readADC_SingleEnded(channel);
 }
 
 // ==================== MCP23017 HELPERS ====================
 void setMcpActuator(uint8_t pin, bool state) {
+  if (!mcpAvailable) return;
   mcp.digitalWrite(pin, state ? HIGH : LOW);
 }
 
