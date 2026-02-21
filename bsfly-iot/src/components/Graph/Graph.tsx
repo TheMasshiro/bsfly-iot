@@ -208,7 +208,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                     <span>{displayTitle}</span>
                     <div className="graph-value-container">
                         <IonText className={`graph-value ${colorClass}`}>
-                            {latestValue}{unit}
+                            {typeof latestValue === 'number' ? latestValue.toFixed(2) : latestValue}{unit}
                         </IonText>
                         <IonChip color={chipColor} className="graph-status-chip">
                             {statusText}
