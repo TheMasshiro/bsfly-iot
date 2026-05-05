@@ -2224,7 +2224,7 @@ void handleHardwarePage(AsyncWebServerRequest *request)
   html += "loadCalibStatus();";
   html += "</script>";
   html += "</div>";
-  html += "<div class='card'><h2>What this page does</h2><ul><li>Shows device status and IP address.</li><li>Accepts ElegantOTA firmware uploads from a browser.</li><li>Reboots the controller after the update finishes.</li></ul></div>";
+  html += "<div class='card'><h2>What this page does</h2><ul><li>Shows the device IP address and OTA controls.</li><li>Accepts ElegantOTA firmware uploads from a browser.</li><li>Reboots the controller after the update finishes.</li></ul></div>";
   html += "</body></html>";
   request->send(200, "text/html", html);
 }

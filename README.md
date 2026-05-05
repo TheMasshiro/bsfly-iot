@@ -148,7 +148,6 @@ When ESP32 is connected to WiFi, it runs a local web server:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | / | Web interface for SD card management |
-| GET | /status | Device status JSON |
 | GET | /sdcard/data | Download stored offline data |
 | POST | /sdcard/sync | Upload offline data to cloud |
 | POST | /sdcard/clear | Clear SD card data |

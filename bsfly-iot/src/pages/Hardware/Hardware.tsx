@@ -7,9 +7,11 @@ import {
     IonCardTitle,
     IonChip,
     IonContent,
+    IonItem,
     IonHeader,
     IonIcon,
     IonLabel,
+    IonList,
     IonPage,
     IonText,
     IonToolbar,
@@ -19,6 +21,7 @@ import {
 import {
     cloudUploadOutline,
     hardwareChipOutline,
+    refreshOutline,
     serverOutline,
 } from "ionicons/icons";
 import { FC, useState } from "react";
@@ -26,7 +29,8 @@ import Toolbar from "../../components/Toolbar/Toolbar";
 import PagePurpose from "../../components/PagePurpose/PagePurpose";
 import { CalibrationSkeleton } from "../../components/LoadingSkeleton/HardwareSkeleton";
 import { useDevice } from "../../context/DeviceContext";
-import { useDeviceCalibration } from "../../hooks/useHardwareStatus";
+import { useDeviceCalibration } from "../../hooks/useDeviceCalibration";
+import DataIndicator from "../../components/DataIndicator/DataIndicator";
 import { api, withToken } from "../../utils/api";
 import { STORAGE_KEYS } from "../../config/storage";
 import { CalibrateResponse } from "../../types/hardware";
@@ -150,7 +154,7 @@ const Hardware: FC = () => {
                                     <IonIcon icon={cloudUploadOutline} slot="start" />
                                     Open OTA Page
                                 </IonButton>
-                                <IonButton expand="block" color="danger" onClick={rebootDevice} disabled={!currentDevice || currentDevice.status === "offline" || status.loading}>
+                                <IonButton expand="block" color="danger" onClick={rebootDevice} disabled={!currentDevice || currentDevice.status === "offline" || calibration.loading}>
                                     <IonIcon icon={refreshOutline} slot="start" />
                                     Reboot Device
                                 </IonButton>
