@@ -1,0 +1,8 @@
+{
+  "name": "bsfly-iot",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite",
+  "id": "f00ac272"
+}

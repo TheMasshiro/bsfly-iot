@@ -1,0 +1,114 @@
+import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
+import { IonReactRouter } from '@ionic/react-router';
+import { Redirect, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import LoadingSkeleton from './components/LoadingSkeleton/LoadingSkeleton';
+
+import '@ionic/react/css/core.css';
+
+import '@ionic/react/css/normalize.css';
+import '@ionic/react/css/structure.css';
+import '@ionic/react/css/typography.css';
+
+import '@ionic/react/css/padding.css';
+import '@ionic/react/css/float-elements.css';
+import '@ionic/react/css/text-alignment.css';
+import '@ionic/react/css/text-transformation.css';
+import '@ionic/react/css/flex-utils.css';
+import '@ionic/react/css/display.css';
+
+import '@ionic/react/css/palettes/dark.always.css';
+
+import './theme/variables.css';
+import { LifeCycleProvider } from './context/LifeCycleContext';
+import { DeviceProvider } from './context/DeviceContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
+
+const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
+const Light = lazy(() => import('./pages/Light/Light'));
+const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
+const Devices = lazy(() => import('./pages/Devices/Devices'));
+const Hardware = lazy(() => import('./pages/Hardware/Hardware'));
+const About = lazy(() => import('./pages/About/About'));
+const Backup = lazy(() => import('./pages/Backup/Backup'));
+const Welcome = lazy(() => import('./pages/Welcome/Welcome'));
+const Menu = lazy(() => import('./components/Menu/Menu'));
+const DeviceMenu = lazy(() => import('./components/DeviceMenu/DeviceMenu'));
+const Notifications = lazy(() => import('./components/Notification/Notifications'));
+
+setupIonicReact();
+
+const PageLoader = () => (
+    <div style={{ padding: '20px' }}>
+        <LoadingSkeleton variant="card" count={2} />
+    </div>
+);
+
+const App: React.FC = () => {
+    return (
+        <IonApp>
+            <ErrorBoundary>
+            <LifeCycleProvider>
+                <DeviceProvider>
+                    <NotificationProvider>
+                        <IonReactRouter>
+                        <SignedIn>
+                            <IonSplitPane contentId="main">
+                                <Suspense fallback={null}><Menu /></Suspense>
+                                <IonRouterOutlet id="main">
+                                    <Route path="/" exact={true}>
+                                        <Redirect to="/dashboard" />
+                                    </Route>
+                                    <Route exact path="/welcome">
+                                        <Redirect to="/dashboard" />
+                                    </Route>
+                                    <Route path="/dashboard" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Dashboard /></Suspense>
+                                    </Route>
+                                    <Route path="/light" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Light /></Suspense>
+                                    </Route>
+                                    <Route path="/analytics" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Analytics /></Suspense>
+                                    </Route>
+                                    <Route path="/devices" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Devices /></Suspense>
+                                    </Route>
+                                    <Route path="/hardware" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Hardware /></Suspense>
+                                    </Route>
+                                    <Route path="/about" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><About /></Suspense>
+                                    </Route>
+                                    <Route path="/data/backup" exact={true}>
+                                        <Suspense fallback={<PageLoader />}><Backup /></Suspense>
+                                    </Route>
+                                </IonRouterOutlet>
+                            </IonSplitPane>
+                            <Suspense fallback={null}><DeviceMenu /></Suspense>
+                            <Suspense fallback={null}><Notifications /></Suspense>
+                        </SignedIn>
+
+                        <SignedOut>
+                            <Route exact path="/welcome">
+                                <Suspense fallback={<PageLoader />}><Welcome /></Suspense>
+                            </Route>
+                            <Route path="/(dashboard|light|analytics|devices|hardware|about|data/backup)">
+                                <Redirect to="/welcome" />
+                            </Route>
+                            <Route exact path="/">
+                                <Redirect to="/welcome" />
+                            </Route>
+                        </SignedOut>
+                    </IonReactRouter>
+                    </NotificationProvider>
+                </DeviceProvider>
+            </LifeCycleProvider>
+            </ErrorBoundary>
+        </IonApp>
+    );
+};
+
+export default App;

@@ -1,0 +1,179 @@
+ion-menu ion-content {
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
+}
+
+ion-menu.md ion-content {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 0;
+  --padding-bottom: 20px;
+}
+
+ion-menu.md ion-list {
+  padding: 8px 0;
+  background: transparent;
+}
+
+ion-menu.md ion-list#main-list {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+ion-menu.md ion-item {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+
+ion-menu.md ion-item:hover {
+  --background: rgba(255, 255, 255, 0.05);
+}
+
+ion-menu.md ion-item.selected {
+  --background: rgba(45, 213, 91, 0.15);
+}
+
+ion-menu.md ion-item.selected ion-icon {
+  color: #2dd55b;
+}
+
+ion-menu.md ion-item.selected ion-label {
+  color: #2dd55b;
+}
+
+ion-menu.md ion-item ion-icon {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+ion-menu.md ion-item ion-label {
+  font-weight: 500;
+}
+
+ion-menu.ios ion-content {
+  --padding-bottom: 20px;
+}
+
+ion-menu.ios ion-list {
+  padding: 8px 0;
+  background: transparent;
+}
+
+ion-menu.ios ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 50px;
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+ion-menu.ios ion-item:hover {
+  --background: rgba(255, 255, 255, 0.05);
+}
+
+ion-menu.ios ion-item ion-icon {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+ion-menu.ios ion-item.selected {
+  --background: rgba(45, 213, 91, 0.15);
+}
+
+ion-menu.ios ion-item.selected ion-icon {
+  color: #2dd55b;
+}
+
+ion-menu.ios ion-item.selected ion-label {
+  color: #2dd55b;
+}
+
+ion-item.selected {
+  --color: #2dd55b;
+}
+
+.menu-header {
+  padding: 32px 20px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
+  margin-bottom: 8px;
+}
+
+.menu-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.menu-logo .logo-icon {
+  font-size: 36px;
+  color: #fff;
+}
+
+.menu-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.menu-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.menu-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  margin: 0 8px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.menu-user .user-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 2px solid rgba(45, 213, 91, 0.5);
+  border-radius: 50%;
+}
+
+.menu-user .user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menu-user .user-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-user .user-email {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

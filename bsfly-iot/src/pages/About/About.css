@@ -1,0 +1,97 @@
+.about-page ion-content {
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1210 100%);
+}
+
+.about-page .hero-card {
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2dd55b 0%, #17a34a 100%);
+  border: none;
+}
+
+.about-page .hero-card ion-card-title h1,
+.about-page .hero-card ion-card-subtitle,
+.about-page .hero-card ion-text p {
+  color: #fff !important;
+}
+
+.about-page ion-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.about-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.about-logo-icon {
+  font-size: 40px;
+  color: #fff;
+}
+
+.about-page ion-accordion-group {
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.about-page ion-accordion {
+  background: transparent;
+}
+
+.about-page ion-accordion ion-item[slot="header"] {
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.9);
+}
+
+.about-page ion-accordion ion-list {
+  background: transparent;
+  padding: 0;
+}
+
+.about-page ion-accordion ion-list ion-item {
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.7);
+}
+
+.about-page .hero-card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.about-page .hero-card .version-text {
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.about-page .hero-card .description-text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.about-page .footer-text {
+  padding-bottom: 32px;
+}
+
+.about-page .footer-text p {
+  font-size: 12px;
+  margin: 0;
+}
+
+@media (max-width: 576px) {
+  .about-page ion-card h1 {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,36 @@
+ion-toolbar ion-chip {
+    font-size: 0.72rem;
+    height: 28px;
+    margin: 0 4px;
+    letter-spacing: 0.02em;
+}
+
+ion-toolbar .offline-chip {
+    animation: pulse 2s infinite;
+}
+
+ion-toolbar .device-status-chip {
+    min-width: 100px;
+    justify-content: center;
+    font-weight: 600;
+}
+
+ion-toolbar .mode-visibility-chip {
+    min-width: 92px;
+    justify-content: center;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+ion-toolbar .mode-visibility-chip.mode-auto {
+    --background: linear-gradient(135deg, #1a5de8 0%, #2d8cff 100%);
+}
+
+ion-toolbar .mode-visibility-chip.mode-manual {
+    --background: linear-gradient(135deg, #d62f47 0%, #ff445a 100%);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

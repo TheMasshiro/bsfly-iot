@@ -1,0 +1,19 @@
+/* Data Indicator Styles */
+.data-indicator {
+  display: block;
+  margin: 8px 0;
+  font-size: 0.875rem;
+}
+
+.data-indicator ion-note {
+  display: block;
+}
+
+.data-indicator.fresh {
+  color: var(--ion-color-success);
+}
+
+.data-indicator.stale {
+  color: var(--ion-color-warning);
+  font-weight: 500;
+}

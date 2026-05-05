@@ -1,0 +1,149 @@
+.hardware-page ion-content {
+  --background: linear-gradient(180deg, #07110d 0%, #0c1511 100%);
+  --padding-bottom: 20px;
+}
+
+.hardware-page ion-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hardware-page .hero-card {
+  background: linear-gradient(135deg, #2dd55b 0%, #0f7d3d 100%);
+  border: none;
+}
+
+.hardware-page .hero-card ion-card-title h1,
+.hardware-page .hero-card ion-card-subtitle,
+.hardware-page .hero-card ion-text p {
+  color: #fff !important;
+}
+
+.hardware-page .hardware-logo {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hardware-page .hardware-logo-icon {
+  font-size: 42px;
+  color: #fff;
+}
+
+.hardware-page .hardware-description {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.hardware-page .info-card ion-card-title,
+.hardware-page .info-card ion-card-subtitle,
+.hardware-page .info-card ion-label,
+.hardware-page .info-card ion-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hardware-page .info-card ion-card-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hardware-page .subtitle-icon {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.hardware-page .ip-input-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 16px;
+}
+
+.hardware-page ion-input {
+  --background: rgba(255, 255, 255, 0.05);
+  --color: #fff;
+  --placeholder-color: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.hardware-page .action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hardware-page ion-button {
+  --border-radius: 16px;
+  height: 52px;
+}
+
+.hardware-page ion-button[color="danger"] {
+  --background: linear-gradient(135deg, #ff4757 0%, #c5000f 100%);
+}
+
+.hardware-page .hardware-hints {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.hardware-page .hardware-hints p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.hardware-page .notes-list {
+  padding: 0;
+  background: transparent;
+}
+
+.hardware-page .notes-list ion-item {
+  --background: transparent;
+}
+
+@media (min-width: 768px) {
+  .hardware-page .action-group {
+    flex-direction: row;
+  }
+
+  .hardware-page .action-group ion-button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .hardware-page ion-card {
+    border-radius: 16px;
+  }
+
+  .hardware-page .info-card,
+  .hardware-page .status-card {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .hardware-page .action-group ion-button,
+  .hardware-page .status-card ion-button {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .hardware-page ion-button {
+    height: 48px;
+  }
+
+  .hardware-page .subtitle-icon {
+    margin-right: 6px;
+  }
+}

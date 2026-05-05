@@ -1,0 +1,129 @@
+.global-fab-controls {
+  --frost-base: rgba(255, 255, 255, 0.035);
+  --frost-surface: rgba(255, 255, 255, 0.05);
+  --frost-border: rgba(255, 255, 255, 0.08);
+  --frost-highlight: rgba(255, 255, 255, 0.12);
+  --right: 22px;
+  --bottom: 0;
+  position: fixed;
+  right: var(--right);
+  bottom: calc(60px + var(--ion-safe-area-bottom, 0px));
+  z-index: 30;
+}
+
+.global-fab-controls ion-fab-list {
+  align-items: flex-end;
+  padding-right: 4px;
+}
+
+.global-fab-controls .global-fab-action-list ion-fab-button {
+  transform: translateX(-56px);
+}
+
+.global-fab-controls ion-fab-button {
+  --background: var(--frost-base);
+  --border-radius: 14px;
+  color: #fff;
+  --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.global-fab-controls ion-fab-button::part(native) {
+  border: 1px solid var(--frost-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  outline: none;
+}
+
+.global-fab-controls .fab-main-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.global-fab-controls .global-fab-action-list ion-fab-button {
+  --background: var(--frost-surface);
+  min-width: 122px;
+  width: auto;
+  height: 44px;
+  padding: 0 14px;
+  justify-content: flex-start;
+  gap: 8px;
+  color: #e9fff2;
+}
+
+.global-fab-controls .global-fab-action-list ion-fab-button.fab-control-active {
+  --background: linear-gradient(135deg, rgba(31, 132, 72, 0.8) 0%, rgba(45, 213, 91, 0.82) 100%);
+  color: #f2fff7;
+}
+
+.global-fab-controls .global-fab-action-list ion-fab-button ion-icon {
+  font-size: 1rem;
+}
+
+.global-fab-controls .fab-control-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.global-fab-controls .global-fab-mode-list {
+  align-items: center;
+  gap: 2px;
+  padding-right: 0;
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button {
+  min-width: 82px;
+  width: auto;
+  height: 40px;
+  padding: 0 8px;
+  justify-content: center;
+  --background: var(--frost-surface);
+  color: rgba(235, 247, 240, 0.9);
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button.fab-mode-auto.fab-mode-active {
+  --background: linear-gradient(135deg, rgba(26, 93, 232, 0.85) 0%, rgba(45, 140, 255, 0.9) 100%);
+  color: #f1f7ff;
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button.fab-mode-manual.fab-mode-active {
+  --background: linear-gradient(135deg, rgba(214, 47, 71, 0.85) 0%, rgba(255, 68, 90, 0.9) 100%);
+  color: #fff1f3;
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button.fab-mode-active {
+  filter: brightness(1.08) saturate(1.08);
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button.fab-mode-auto.fab-mode-active::part(native) {
+  border-color: rgba(120, 192, 255, 0.82);
+}
+
+.global-fab-controls .global-fab-mode-list ion-fab-button.fab-mode-manual.fab-mode-active::part(native) {
+  border-color: rgba(255, 146, 163, 0.84);
+}
+
+.global-fab-controls .fab-mode-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .global-fab-controls {
+    --right: 16px;
+  }
+
+  .global-fab-controls .global-fab-action-list ion-fab-button {
+    min-width: 112px;
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .global-fab-controls .global-fab-mode-list ion-fab-button {
+    min-width: 74px;
+  }
+}

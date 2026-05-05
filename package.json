@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@ionic/cli": "^7.2.1"
+  }
+}

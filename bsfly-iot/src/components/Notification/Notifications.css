@@ -1,0 +1,134 @@
+.notifications-menu ion-content {
+  --padding-bottom: 45px;
+}
+
+.notifications-menu ion-item-sliding {
+  margin: 8px 12px;
+}
+
+.notifications-menu .notification-item {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --inner-padding-end: 8px;
+  --background: var(--ion-card-background);
+  border-radius: 12px;
+}
+
+.notifications-menu ion-item-options {
+  border-radius: 0 12px 12px 0;
+}
+
+.notifications-menu ion-item-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifications-menu .notification-unread {
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
+}
+
+.notifications-menu .notification-success {
+  border-left: 4px solid var(--ion-color-success);
+  --background: rgba(var(--ion-color-success-rgb), 0.08);
+}
+
+.notifications-menu .notification-warning {
+  border-left: 4px solid var(--ion-color-warning);
+  --background: rgba(var(--ion-color-warning-rgb), 0.08);
+}
+
+.notifications-menu .notification-danger {
+  border-left: 4px solid var(--ion-color-danger);
+  --background: rgba(var(--ion-color-danger-rgb), 0.08);
+}
+
+.notifications-menu .notification-info {
+  border-left: 4px solid var(--ion-color-primary);
+  --background: rgba(var(--ion-color-primary-rgb), 0.08);
+}
+
+.notifications-menu .notification-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+.notifications-menu .notification-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0 4px 0;
+  color: var(--ion-text-color);
+}
+
+.notifications-menu .notification-message {
+  font-size: 0.85rem;
+  margin: 0 0 4px 0;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}
+
+.notifications-menu .notification-timestamp {
+  font-size: 0.7rem;
+  margin: 0;
+  color: var(--ion-color-medium);
+  opacity: 0.7;
+}
+
+.notifications-menu .unread-dot {
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+#notification-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+#notification-header ion-item {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+}
+
+#notification-list {
+  padding: 0;
+}
+
+#notification-list > ion-item {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+}
+
+.notification-segment {
+  width: 100%;
+  --background: transparent;
+}
+
+.notification-segment ion-segment-button {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --background-checked: rgba(var(--ion-color-success-rgb), 0.15);
+  --indicator-color: var(--ion-color-success);
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-success);
+  min-width: 0;
+  flex: 1;
+}
+
+.notification-segment ion-segment-button ion-label {
+  font-size: 12px;
+  margin-top: 2px;
+}

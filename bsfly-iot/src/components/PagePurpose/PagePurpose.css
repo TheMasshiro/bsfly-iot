@@ -1,0 +1,22 @@
+.page-purpose-banner {
+  margin: 10px 16px 6px;
+  padding: 0;
+}
+
+.page-purpose-text {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ion-color-medium);
+  opacity: 0.8;
+}
+
+.page-purpose-text ion-icon {
+  font-size: 0.92rem;
+  margin-top: 1px;
+  color: var(--ion-color-medium);
+  opacity: 0.75;
+}

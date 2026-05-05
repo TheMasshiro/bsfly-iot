@@ -1,0 +1,188 @@
+.timer-page ion-content {
+  --background: linear-gradient(180deg, #0a0a0a 0%, #0d1014 100%);
+}
+
+.timer-page .circular-progress-container {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 290px;
+}
+
+.timer-page .circular-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-page .circular-background-md {
+  background-color: transparent;
+  box-shadow: none !important;
+}
+
+.timer-page .circular-progress-container.circular-background-md {
+  background-color: transparent;
+  box-shadow: none !important;
+}
+
+.timer-page .circular-progress {
+  width: 270px;
+  height: 270px;
+}
+
+.timer-page .timer-text {
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 16px;
+}
+
+.timer-page .light-on .timer-text {
+  color: #ff5252;
+}
+
+.timer-page .light-bulb-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+.timer-page .light-bulb-icon {
+  font-size: 80px;
+  transition: all 0.4s ease;
+}
+
+.timer-page .light-off .light-bulb-icon {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.timer-page .light-on {
+  background: radial-gradient(circle, rgba(255, 82, 82, 0.2) 0%, transparent 70%);
+  box-shadow: 0 0 40px rgba(255, 82, 82, 0.3);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.timer-page .light-on .light-bulb-icon {
+  color: #ff5252;
+  filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.6));
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(255, 82, 82, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(255, 82, 82, 0.35);
+  }
+}
+
+.timer-page .light-status-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.timer-page .progress-chip {
+  position: absolute;
+  bottom: 80px;
+  left: 49%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.timer-page .timer-card {
+  margin: 0 8px 8px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timer-page .timer-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.timer-page .timer-card:active {
+  transform: translateY(0);
+}
+
+.timer-page .timer-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+
+.timer-page .timer-card-primary .timer-value {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.timer-page .timer-card-selected {
+  border: 2px solid #ff5252;
+  background: rgba(255, 82, 82, 0.1);
+}
+
+.timer-page .timer-card-active-option {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none !important;
+}
+
+.timer-page .timer-card-selected:hover {
+  background: rgba(255, 82, 82, 0.15);
+}
+
+.timer-page .timer-card-active-option:hover {
+  background: rgba(255, 82, 82, 0.1);
+}
+
+.timer-page .timer-card-selected .timer-value {
+  color: #ff5252;
+}
+
+.timer-page .timer-info {
+  flex: 1;
+}
+
+.timer-page .timer-name {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timer-page .timer-value {
+  margin: 8px 0 0;
+  padding-right: 8px;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.timer-page ion-radio::part(container),
+.timer-page ion-radio.radio-checked::part(container) {
+  border-color: transparent;
+}
+
+.timer-page ion-radio::part(mark),
+.timer-page ion-radio.radio-checked::part(mark) {
+  background: none;
+  transition: none;
+  transform: none;
+  border-radius: 8px;
+  border-color: transparent;
+}
