@@ -9,9 +9,7 @@ import {
     IonContent,
     IonHeader,
     IonIcon,
-    IonItem,
     IonLabel,
-    IonList,
     IonPage,
     IonText,
     IonToolbar,
@@ -21,16 +19,14 @@ import {
 import {
     cloudUploadOutline,
     hardwareChipOutline,
-    refreshOutline,
     serverOutline,
 } from "ionicons/icons";
 import { FC, useState } from "react";
 import Toolbar from "../../components/Toolbar/Toolbar";
 import PagePurpose from "../../components/PagePurpose/PagePurpose";
-import DataIndicator from "../../components/DataIndicator/DataIndicator";
-import { StatusSkeleton, CalibrationSkeleton } from "../../components/LoadingSkeleton/HardwareSkeleton";
+import { CalibrationSkeleton } from "../../components/LoadingSkeleton/HardwareSkeleton";
 import { useDevice } from "../../context/DeviceContext";
-import { useHardwareStatus, useDeviceCalibration } from "../../hooks/useHardwareStatus";
+import { useDeviceCalibration } from "../../hooks/useHardwareStatus";
 import { api, withToken } from "../../utils/api";
 import { STORAGE_KEYS } from "../../config/storage";
 import { CalibrateResponse } from "../../types/hardware";
@@ -39,22 +35,8 @@ import "./Hardware.css";
 const Hardware: FC = () => {
     const [present] = useIonToast();
     const { currentDevice, getToken } = useDevice();
-    const { status, refreshStatus } = useHardwareStatus(currentDevice?._id);
     const { calibration, refreshCalibration } = useDeviceCalibration(currentDevice?._id);
     const [calibrating, setCalibrating] = useState(false);
-
-    const fetchStatus = async () => {
-        if (!currentDevice?._id) {
-            present({ message: "Select a device first", duration: 2000, color: "warning" });
-            return;
-        }
-        await refreshStatus();
-        if (!status.error) {
-            present({ message: "Status fetched successfully", duration: 1400, color: "success" });
-        } else {
-            present({ message: status.error, duration: 2500, color: "danger" });
-        }
-    };
 
     const openOtaPage = () => {
         if (!currentDevice?._id) {
@@ -173,39 +155,6 @@ const Hardware: FC = () => {
                                     Reboot Device
                                 </IonButton>
                             </div>
-                        </div>
-                    </IonCardContent>
-                </IonCard>
-                <IonCard className="ion-margin status-card">
-                    <IonCardHeader>
-                        <IonCardTitle>Latest Update</IonCardTitle>
-                        <IonCardSubtitle>Firmware status from device</IonCardSubtitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        {status.loading ? (
-                            <StatusSkeleton count={3} />
-                        ) : (
-                            <IonList
-                                style={{ width: "100%", paddingLeft: 0, paddingRight: 0 }}
-                                aria-live="polite"
-                                aria-busy={status.loading}
-                            >
-                                {status.uptime && <IonItem lines="none"><IonLabel>{status.uptime}</IonLabel></IonItem>}
-                                {status.wifiConnected && <IonItem lines="none"><IonLabel>{status.wifiConnected}</IonLabel></IonItem>}
-                                {status.autoControlActive && <IonItem lines="none"><IonLabel>{status.autoControlActive}</IonLabel></IonItem>}
-                                {!status.uptime && !status.wifiConnected && !status.autoControlActive && (
-                                    <IonItem lines="none"><IonLabel>{status.error || "No status available"}</IonLabel></IonItem>
-                                )}
-                            </IonList>
-                        )}
-                        {status.lastUpdated && !status.loading && (
-                            <DataIndicator lastUpdated={status.lastUpdated} isStale={status.isStale} />
-                        )}
-                        <div style={{ display: "flex", gap: 12, marginTop: 8, justifyContent: "center", width: "100%" }}>
-                            <IonButton onClick={fetchStatus} disabled={!currentDevice || currentDevice.status === "offline" || status.loading} style={{ minWidth: 160 }} aria-label="Refresh hardware status">
-                                <IonIcon icon={refreshOutline} slot="start" />
-                                {status.loading ? "Refreshing..." : "Refresh"}
-                            </IonButton>
                         </div>
                     </IonCardContent>
                 </IonCard>

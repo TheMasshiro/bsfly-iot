@@ -70,11 +70,6 @@ const deviceSchema = new mongoose.Schema(
       default: 0,
     },
     lastCalibrationTime: { type: Date, sparse: true },
-    lastStatusData: {
-      type: mongoose.Schema.Types.Mixed,
-      sparse: true,
-    },
-    lastStatusUpdateTime: { type: Date, sparse: true },
   },
   { timestamps: true }
 );

@@ -10,30 +10,6 @@ const HTTP_TIMEOUT_MS = 5000;
  * Handles HTTP proxying, MQTT fallback, and error recovery
  */
 
-export const fetchDeviceStatusFromEsp32 = async (ipAddress) => {
-  if (!ipAddress) {
-    logger.debug("No IP address available for device");
-    return null;
-  }
-
-  try {
-    logger.debug(`Fetching device status from ESP32 at ${ipAddress}`);
-    const response = await axios.get(`http://${ipAddress}:80/status`, {
-      timeout: HTTP_TIMEOUT_MS,
-    });
-
-    if (response.data) {
-      logger.debug(`Successfully fetched device status from ${ipAddress}`);
-      return response.data;
-    }
-  } catch (error) {
-    logger.warn(
-      `Failed to fetch device status from ${ipAddress}: ${error.code || error.message}`
-    );
-    return null;
-  }
-};
-
 export const fetchHardwarePageFromEsp32 = async (ipAddress) => {
   if (!ipAddress) {
     logger.debug("No IP address available for hardware page");
@@ -167,7 +143,6 @@ export const triggerRebootViaMqtt = async (macAddress) => {
 };
 
 export default {
-  fetchDeviceStatusFromEsp32,
   fetchHardwarePageFromEsp32,
   fetchCalibrationStatusFromEsp32,
   triggerCalibrationViaDirect,

@@ -246,6 +246,41 @@ const MUTUALLY_EXCLUSIVE = {
   humidifier: ["fan"],
 };
 
+const getActuatorDrawerSuffix = (actuatorType) => {
+  if (typeof actuatorType !== "string") return "";
+  const match = actuatorType.match(/(\d+)$/);
+  return match ? match[1] : "";
+};
+
+const buildExclusiveActuatorIds = (deviceId, actuatorType) => {
+  if (!deviceId || typeof actuatorType !== "string") return [];
+
+  const drawerSuffix = getActuatorDrawerSuffix(actuatorType);
+  const fanId = drawerSuffix ? `${deviceId}:fan${drawerSuffix}` : `${deviceId}:fan`;
+  const humidifierId = drawerSuffix
+    ? `${deviceId}:humidifier${drawerSuffix}`
+    : `${deviceId}:humidifier`;
+
+  if (actuatorType === "heater") {
+    // Heater is shared across drawers; turning it on should clear both drawer fans.
+    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
+  }
+
+  if (actuatorType.startsWith("fan")) {
+    return [`${deviceId}:heater`, humidifierId];
+  }
+
+  if (actuatorType.startsWith("humidifier")) {
+    return [fanId];
+  }
+
+  if (MUTUALLY_EXCLUSIVE[actuatorType]) {
+    return MUTUALLY_EXCLUSIVE[actuatorType].map((type) => `${deviceId}:${type}`);
+  }
+
+  return [];
+};
+
 router.post("/:actuatorId", requireAuth, async (req, res) => {
   try {
     const actuatorId = normalizeActuatorId(req.params.actuatorId);
@@ -312,18 +347,13 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
     }
 
     if (state === true) {
-      const baseId = parts.slice(0, -1).join(":");
-
-      const exclusions = MUTUALLY_EXCLUSIVE[actuatorType];
-      if (exclusions) {
-        for (const excludeType of exclusions) {
-          const excludeId = `${baseId}:${excludeType}`;
-          await ActuatorState.findOneAndUpdate(
-            { actuatorId: excludeId },
-            { actuatorId: excludeId, state: false, updatedAt: new Date() },
-            { upsert: true }
-          );
-        }
+      const exclusions = buildExclusiveActuatorIds(device._id, actuatorType);
+      for (const excludeId of exclusions) {
+        await ActuatorState.findOneAndUpdate(
+          { actuatorId: excludeId },
+          { actuatorId: excludeId, state: false, updatedAt: new Date() },
+          { upsert: true }
+        );
       }
     }
 

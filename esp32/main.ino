@@ -337,7 +337,6 @@ void handleHardwarePage(AsyncWebServerRequest *request);
 void handleCalibrateAmmonia(AsyncWebServerRequest *request);
 void handleCalibrationStatus(AsyncWebServerRequest *request);
 void handleCalibrateAllSensors(AsyncWebServerRequest *request);
-void handleStatus(AsyncWebServerRequest *request);
 void handleGetSdData(AsyncWebServerRequest *request);
 void handleClearSdData(AsyncWebServerRequest *request);
 void handleSyncSdData(AsyncWebServerRequest *request);
@@ -2177,7 +2176,6 @@ void setupWebServer()
   server.on("/calibrate/mq137", HTTP_POST, handleCalibrateAmmonia);
   server.on("/calibration/status", HTTP_GET, handleCalibrationStatus);
   server.on("/calibrate/all", HTTP_POST, handleCalibrateAllSensors);
-  server.on("/status", HTTP_GET, handleStatus);
   server.on("/sdcard/data", HTTP_GET, handleGetSdData);
   server.on("/sdcard/clear", HTTP_POST, handleClearSdData);
   server.on("/sdcard/sync", HTTP_POST, handleSyncSdData);
@@ -2229,23 +2227,6 @@ void handleHardwarePage(AsyncWebServerRequest *request)
   html += "<div class='card'><h2>What this page does</h2><ul><li>Shows device status and IP address.</li><li>Accepts ElegantOTA firmware uploads from a browser.</li><li>Reboots the controller after the update finishes.</li></ul></div>";
   html += "</body></html>";
   request->send(200, "text/html", html);
-}
-
-void handleStatus(AsyncWebServerRequest *request)
-{
-  JsonDocument doc;
-  doc["deviceId"] = DEVICE_ID;
-  doc["ip"] = WiFi.localIP().toString();
-  doc["sdAvailable"] = sdAvailable;
-  doc["storedCount"] = getStoredDataCount();
-  doc["wifiConnected"] = WiFi.status() == WL_CONNECTED;
-  doc["requestedControlMode"] = getRequestedControlModeName();
-  doc["autoControlActive"] = isAutoControlActive();
-  doc["uptime"] = millis() / 1000;
-
-  String response;
-  serializeJson(doc, response);
-  request->send(200, "application/json", response);
 }
 
 void handleGetSdData(AsyncWebServerRequest *request)
