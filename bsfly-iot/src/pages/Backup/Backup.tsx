@@ -200,16 +200,16 @@ const Backup: FC = () => {
 
     const formatStatValue = (value: number | null): string => {
         if (value === null) return "-";
-        return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+        return Number.isInteger(value) ? value.toString() : value.toFixed(2);
     };
 
     const calculateStats = (arr: number[]): MetricStats => {
         if (arr.length === 0) return { avg: null, min: null, max: null, count: 0 };
         const sum = arr.reduce((a, b) => a + b, 0);
-        return {
-            avg: Math.round((sum / arr.length) * 10) / 10,
-            min: Math.round(Math.min(...arr) * 10) / 10,
-            max: Math.round(Math.max(...arr) * 10) / 10,
+            return {
+            avg: Math.round((sum / arr.length) * 100) / 100,
+            min: Math.round(Math.min(...arr) * 100) / 100,
+            max: Math.round(Math.max(...arr) * 100) / 100,
             count: arr.length,
         };
     };

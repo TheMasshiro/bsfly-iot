@@ -189,24 +189,29 @@ export async function initMqtt() {
             });
           }
 
+          const round2 = (v) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? Number(n.toFixed(2)) : v;
+          };
+
           const readingData = { timestamp: new Date() };
           if (payload.temperature !== undefined)
-            readingData.temperature = payload.temperature;
+            readingData.temperature = round2(payload.temperature);
           if (payload.humidity !== undefined)
-            readingData.humidity = payload.humidity;
+            readingData.humidity = round2(payload.humidity);
           if (payload.moisture !== undefined)
-            readingData.moisture = payload.moisture;
+            readingData.moisture = round2(payload.moisture);
           const leftSubstrate = payload.leftSubstrate ?? payload.leftSoil;
           const centerSubstrate = payload.centerSubstrate ?? payload.centerSoil;
           const rightSubstrate = payload.rightSubstrate ?? payload.rightSoil;
           if (leftSubstrate !== undefined)
-            readingData.leftSubstrate = leftSubstrate;
+            readingData.leftSubstrate = round2(leftSubstrate);
           if (centerSubstrate !== undefined)
-            readingData.centerSubstrate = centerSubstrate;
+            readingData.centerSubstrate = round2(centerSubstrate);
           if (rightSubstrate !== undefined)
-            readingData.rightSubstrate = rightSubstrate;
+            readingData.rightSubstrate = round2(rightSubstrate);
           if (payload.ammonia !== undefined)
-            readingData.ammonia = payload.ammonia;
+            readingData.ammonia = round2(payload.ammonia);
 
           await storeHourlyReading(drawer._id, readingData);
 
