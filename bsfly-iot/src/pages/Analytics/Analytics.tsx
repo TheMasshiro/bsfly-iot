@@ -285,7 +285,7 @@ const Analytics: FC = () => {
                                         >
                                             <IonIcon icon={sensor.icon} className="sensor-quick-icon" />
                                             <IonChip className={`sensor-quick-value status-${sensor.status}`}>
-                                                {typeof sensor.latestValue === 'number' ? Math.round(sensor.latestValue) : sensor.latestValue}{sensor.unit}
+                                                {typeof sensor.latestValue === 'number' ? sensor.latestValue.toFixed(2) : sensor.latestValue}{sensor.unit}
                                             </IonChip>
                                         </div>
                                     ))}

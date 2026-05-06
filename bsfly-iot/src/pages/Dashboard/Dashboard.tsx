@@ -555,7 +555,7 @@ const Dashboard: FC = () => {
                                                     <p className="sensor-name">{sensor.name}</p>
                                                 </div>
                                                 <div className="sensor-data">
-                                                    <span className="sensor-value">{typeof sensor.value === 'number' ? Math.round(sensor.value) : sensor.value}</span>
+                                                    <span className="sensor-value">{typeof sensor.value === 'number' ? sensor.value.toFixed(2) : sensor.value}</span>
                                                     <span className="sensor-unit">{sensor.unit}</span>
                                                 </div>
                                             </div>
