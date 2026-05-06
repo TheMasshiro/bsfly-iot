@@ -24,7 +24,7 @@
  * - WiFi: MQTT
  * - Fallback: Local SD card storage and autonomous control
  *
- * ==================== PIN MAPPING (FROM DEFINES) ====================
+ * ==================== PIN MAPPING ====================
  * ESP32 Pin Mapping:
  * | Function/Peripheral    | Macro       | ESP32 GPIO |
  * |------------------------|-------------|------------|
@@ -115,23 +115,13 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include "credentials.h"
-#include "modules/calibration/mq137_calibration.h"
-#include "modules/calibration/moisture_utils.h"
-#include "modules/web/web_handlers.h"
-#include "modules/sensors/sensor_pipeline.h"
-#include "modules/connectivity/connectivity.h"
-#include "modules/actuators/actuators.h"
-#include "modules/control/control.h"
-#include "modules/drivers/drivers.h"
-#include "modules/storage/storage.h"
-#include "modules/system/system.h"
 
 #define MQTT_BASE_TOPIC "devices"
 
 String DEVICE_ID;
 String DEVICE_ID_CLEAN;
 
-const u_int8_t IP_STA[] = {192, 168, 100, 100};
+const u_int8_t IP_STA[] = {192, 168, 100, 200};
 const u_int8_t IP_GW[] = {192, 168, 100, 1};
 const u_int8_t SUBNET[] = {255, 255, 255, 0};
 const u_int8_t IP_DNS[] = {192, 168, 100, 1};
@@ -224,6 +214,17 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define HUMIDITY_OPTIMAL_LOW 60.0
 #define HUMIDITY_OPTIMAL_HIGH 70.0
 
+// ==================== MQ137 CALIBRATION ====================
+#define MQ137_RL 4.7f                           // Load resistance in kOhm
+#define MQ137_VC 5.0f                           // Supply voltage in V
+#define MQ137_CALIBRATION_PPM 21.0f             // Display-only reference value (NOT actual fresh-air NH3 ppm); Ro is derived from MQ137_CALIBRATION_RATIO
+#define MQ137_CALIBRATION_RATIO 3.6f            // Rst/Ro ratio in fresh air (from datasheet)
+#define MQ137_CALIBRATION_CYCLES 500            // Number of readings to average
+#define MQ137_CALIBRATION_FILE "/mq137_ro.json" // File to store calibration data
+#define MQ137_NH3_A 23.7f                       // Coefficient A for NH3 ppm calculation (from log-log plot of datasheet)
+#define MQ137_NH3_B -4.796f                     // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
+#define MQ137_DIVIDER_INVERTED 1                // Set to 1 if your sensor is wired with the load resistor on the high side (Vc) instead of low side (GND)
+
 #define MOISTURE_MIN 40
 #define MOISTURE_MAX 70
 #define MOISTURE_OPTIMAL_LOW 50
@@ -267,8 +268,7 @@ static constexpr uint32_t TLS_MIN_FREE_HEAP = 65000;
 static constexpr uint32_t TLS_MIN_FREE_HEAP_MIN = 50000;
 
 static SemaphoreHandle_t gTlsMutex = nullptr;
-// TLS/HTTPS client (shared across modules: heartbeat, storage, actuator state)
-WiFiClientSecure gHttpsClient;
+static WiFiClientSecure gHttpsClient;
 static unsigned long gTlsFailCooldownUntilMs = 0;
 
 // ==================== HEARTBEAT & SENSOR UPLOAD TASK ====================
@@ -297,7 +297,12 @@ bool lightState = false;
 unsigned long lightEndTime = 0;
 unsigned long offlineAutoControlHoldUntil = 0;
 
-// ControlMode enum moved to modules/system/system.h
+enum ControlMode
+{
+  CONTROL_MODE_AUTO = 0,
+  CONTROL_MODE_MANUAL = 1,
+};
+
 ControlMode requestedControlMode = CONTROL_MODE_AUTO;
 
 struct DhtReading
@@ -405,6 +410,7 @@ bool sendSensorReading(const char *drawerName, float temperature, float humidity
 
 // Moisture helpers
 static inline int moisturePercentFromRaw(int raw);
+static inline void printAds1MoistureDebug(int16_t r0, int16_t r1, int16_t r2);
 
 // MUX / I2C helpers
 void selectMuxChannel(uint8_t channel);
@@ -412,8 +418,9 @@ int readMuxAnalog(uint8_t channel);
 void selectTcaChannel(uint8_t channel);
 
 // LCD helpers
-void updateLCD1(float temp, float humidity, int moisture, int ammonia);
+void updateLCD1(float temp, float humidity, int ammonia);
 void updateLCD2(float temp, float humidity);
+static void updateLCD2SubstratesRow(int leftPct, int centerPct, int rightPct);
 void displayLCDMessage(uint8_t lcdNum, const char *line1, const char *line2);
 
 // ADS helpers / readers
@@ -426,7 +433,26 @@ int readMQ137();
 
 // MCP / actuators
 void setMcpActuator(uint8_t pin, bool state);
-// Actuator, control, and connectivity modules handle these
+bool applyActuatorState(const char *actuator, bool state);
+void logActuatorCommand(const char *actuator, bool state);
+void publishActuatorStateBool(const char *actuator, bool state);
+
+// Inline actuator helpers
+inline void setEggLarvaePump(bool state);
+inline void setEggLarvaeHumidifier(bool state);
+inline void setEggLarvaeFan(bool state);
+inline void setEggLarvaeHeater(bool state);
+inline void setEggLarvaeHeaterFan(bool state);
+inline void setPupaHumidifier(bool state);
+inline void setPupaFan(bool state);
+
+// Offline control / mode
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture);
+void autoControlPupaDrawer(float temperature, float humidity);
+bool isAutoControlActive();
+void setRequestedControlMode(ControlMode mode);
+const char *getRequestedControlModeName();
+void recordManualActuatorChange();
 void logConnectivityState(const char *source);
 
 // DHT helpers
@@ -444,12 +470,6 @@ void storeSensorToSD(const char *drawerName, float temperature, float humidity,
 void uploadStoredData();
 int getStoredDataCount();
 
-// Rounding helpers
-static inline double round2(double v)
-{
-  return round(v * 100.0) / 100.0;
-}
-
 static void sdCountTask(void *pvParameters);
 
 // Web server
@@ -466,7 +486,10 @@ void handleReboot(AsyncWebServerRequest *request);
 
 struct Nh3Metrics;
 static Nh3Metrics readNh3Metrics();
+float calculateRstFromRaw(int16_t rawValue);
 static float estimateNh3PpmFromRaw(int16_t rawValue);
+float calibrateMQ137();
+void loadMQ137Calibration();
 
 // Misc
 static void logLoopHealth();
@@ -483,7 +506,13 @@ inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
 static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
 static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
 static inline unsigned long getOfflineHoldUntilLocked();
-// Forward declarations - now provided by module headers (see #include "modules/system/system.h")
+static inline void recordManualActuatorChangeLocked();
+static inline ControlMode getControlModeLocked();
+static inline void setControlModeLocked(ControlMode mode);
+
+static bool canStartTlsNow(const char *tag);
+static void tlsUnlock();
+static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
 
 // ==================== SETUP ====================
 void setup()
@@ -655,14 +684,14 @@ void setup()
   pinMode(MUX_S3, OUTPUT);
 
   // DHTs
+  dhtA11.begin();
+  dhtB11.begin();
+  dhtC11.begin();
   dhtA22.begin();
   dhtB22.begin();
   dhtC22.begin();
   dhtD22.begin();
   dhtE22.begin();
-  dhtA11.begin();
-  dhtB11.begin();
-  dhtC11.begin();
   dhtD11.begin();
   dhtE11.begin();
 
@@ -759,6 +788,17 @@ void ledOff()
   mcp.digitalWrite(MCP_ENCLOSURE_LIGHT, HIGH);
 }
 
+void updateLightLed()
+{
+  if (lightState)
+  {
+    ledOn();
+  }
+  else
+  {
+    ledOff();
+  }
+}
 
 // ==================== MAIN LOOP ====================
 void loop()
@@ -876,6 +916,68 @@ void sensorTask(void *pvParameters)
   }
 }
 
+// ==================== ACTUATOR CONTROL ====================
+bool applyActuatorState(const char *actuator, bool state)
+{
+  lastActuatorCommandTime = millis();
+
+  // Manual change holdoff must be protected (used by multiple contexts)
+  recordManualActuatorChangeLocked();
+
+  if (strcmp(actuator, "light") == 0)
+  {
+    setLightTimerLocked(state, 0);
+    updateLightLed();
+    logActuatorCommand("light", state);
+    return true;
+  }
+  else if (strcmp(actuator, "substrate") == 0 || strcmp(actuator, "pump") == 0)
+  {
+    setEggLarvaePump(state);
+    logActuatorCommand("substrate", state);
+    return true;
+  }
+  else if (strcmp(actuator, "humidifier1") == 0)
+  {
+    setEggLarvaeHumidifier(state);
+    logActuatorCommand("humidifier1", state);
+    return true;
+  }
+  else if (strcmp(actuator, "humidifier3") == 0)
+  {
+    setPupaHumidifier(state);
+    logActuatorCommand("humidifier3", state);
+    return true;
+  }
+  else if (strcmp(actuator, "humidifier") == 0)
+  {
+    setEggLarvaeHumidifier(state);
+    setPupaHumidifier(state);
+    logActuatorCommand("humidifier", state);
+    return true;
+  }
+  else if (strcmp(actuator, "heater") == 0)
+  {
+    setEggLarvaeHeater(state);
+    setEggLarvaeHeaterFan(state);
+    logActuatorCommand("heater", state);
+    return true;
+  }
+  else if (strcmp(actuator, "fan1") == 0)
+  {
+    setEggLarvaeFan(state);
+    logActuatorCommand("fan1", state);
+    return true;
+  }
+  else if (strcmp(actuator, "fan3") == 0)
+  {
+    setPupaFan(state);
+    logActuatorCommand("fan3", state);
+    return true;
+  }
+  return false;
+}
+
 // ==================== SENSOR DATA ====================
 void sendSensorData()
 {
@@ -886,12 +988,65 @@ void sendSensorData()
 // ==================== MOISTURE CALIBRATION ====================
 static inline int moisturePercentFromRaw(int raw)
 {
-  return moisturePercentFromRawValue(raw, gMoistureRawDry, gMoistureRawWet);
+  if (raw < 0)
+    return -1;
+
+  // Ensure ordering
+  int dry = gMoistureRawDry;
+  int wet = gMoistureRawWet;
+  if (dry == wet)
+    return -1;
+  if (dry < wet)
+  {
+    int tmp = dry;
+    dry = wet;
+    wet = tmp;
+  }
+
+  // Many capacitive modules give higher voltage (thus raw) when DRY.
+  // Map raw in [wet..dry] -> [100..0] or [0..100] depending on your convention.
+  // Here: wet => 100, dry => 0.
+  long pct = map(raw, wet, dry, 100, 0);
+  return (int)constrain(pct, 0, 100);
 }
 
 static inline const char *rawRangeTag(int raw)
 {
-  return moistureRawRangeTag(raw, gMoistureRawDry, gMoistureRawWet);
+  if (raw < 0)
+    return "INVALID";
+  int dry = gMoistureRawDry;
+  int wet = gMoistureRawWet;
+  if (dry < wet)
+  {
+    int t = dry;
+    dry = wet;
+    wet = t;
+  }
+
+  if (raw > dry)
+    return "ABOVE_DRY";
+  if (raw < wet)
+    return "BELOW_WET";
+  return "IN_RANGE";
+}
+
+static inline void printAds1MoistureDebug(int16_t r0, int16_t r1, int16_t r2)
+{
+  Serial.print(F("Sub volts(L/C/R)="));
+  if (r0 != ADS_INVALID)
+    Serial.print(ads1.computeVolts(r0), 3);
+  else
+    Serial.print(F("NaN"));
+  Serial.print(F("/"));
+  if (r1 != ADS_INVALID)
+    Serial.print(ads1.computeVolts(r1), 3);
+  else
+    Serial.print(F("NaN"));
+  Serial.print(F("/"));
+  if (r2 != ADS_INVALID)
+    Serial.println(ads1.computeVolts(r2), 3);
+  else
+    Serial.println(F("NaN"));
 }
 
 void collectAndProcessEggLarvaeDrawer()
@@ -954,6 +1109,11 @@ void collectAndProcessEggLarvaeDrawer()
   int substrate2Raw = readSubstrate2();
   int substrate3Raw = readSubstrate3();
 
+  printAds1MoistureDebug(
+      (substrate1Raw < 0) ? ADS_INVALID : (int16_t)substrate1Raw,
+      (substrate2Raw < 0) ? ADS_INVALID : (int16_t)substrate2Raw,
+      (substrate3Raw < 0) ? ADS_INVALID : (int16_t)substrate3Raw);
+
   int leftSubstrate = moisturePercentFromRaw(substrate1Raw);
   int centerSubstrate = moisturePercentFromRaw(substrate2Raw);
   int rightSubstrate = moisturePercentFromRaw(substrate3Raw);
@@ -984,25 +1144,25 @@ void collectAndProcessEggLarvaeDrawer()
 
   Serial.print(F(" vrl="));
   if (isfinite(nh3.vrl))
-    Serial.print(nh3.vrl, 2);
+    Serial.print(nh3.vrl, 3);
   else
     Serial.print(F("NaN"));
 
   Serial.print(F(" rs_kohm="));
   if (isfinite(nh3.rs_kohm))
-    Serial.print(nh3.rs_kohm, 2);
+    Serial.print(nh3.rs_kohm, 3);
   else
     Serial.print(F("NaN"));
 
   Serial.print(F(" ratio="));
   if (isfinite(nh3.ratio))
-    Serial.print(nh3.ratio, 2);
+    Serial.print(nh3.ratio, 3);
   else
     Serial.print(F("NaN"));
 
   Serial.print(F(" ppm="));
   if (isfinite(nh3.ppm))
-    Serial.println(nh3.ppm, 2);
+    Serial.println(nh3.ppm, 4);
   else
     Serial.println(F("NaN"));
 
@@ -1013,7 +1173,9 @@ void collectAndProcessEggLarvaeDrawer()
     if (leftSubstrate >= 0 && centerSubstrate >= 0 && rightSubstrate >= 0)
       avgMoisture = (leftSubstrate + centerSubstrate + rightSubstrate) / 3;
 
-    updateLCD1(temperature, humidity, avgMoisture, -1);
+    updateLCD1(temperature, humidity, -1);
+
+    updateLCD2SubstratesRow(leftSubstrate, centerSubstrate, rightSubstrate);
 
     sendOrStoreSensorReading("Drawer 1", temperature, humidity,
                              leftSubstrate, centerSubstrate, rightSubstrate,
@@ -1041,7 +1203,7 @@ void collectAndProcessEggLarvaeDrawer()
       lcd1.setCursor(0, 0);
       lcd1.print(F("T:X H:X"));
       lcd1.setCursor(0, 1);
-      lcd1.print(F("S:X NH3:X"));
+      lcd1.print(F("NH3:X"));
     }
   }
 }
@@ -1097,7 +1259,6 @@ void collectAndProcessPupaDrawer()
   {
     Serial.println("[WARN] Drawer 2 DHT E reading rejected as unstable");
   }
-
   if (validSensors > 0)
   {
     temperature = tempSum / validSensors;
@@ -1110,10 +1271,8 @@ void collectAndProcessPupaDrawer()
     if (lcd2Available)
     {
       selectTcaChannel(TCA_CH_LCD2);
-      lcd2.clear();
-      lcd2.setCursor(0, 0);
-      lcd2.print("T:X ");
-      lcd2.print(" H:X ");
+      lcd2.setCursor(0, 1);
+      lcd2.print("T:X H:X ");
     }
     Serial.println("[WARN] Drawer 2 has no valid DHT readings in this cycle");
   }
@@ -1193,7 +1352,7 @@ void sendOrStoreSensorReading(const char *drawerName, float temperature, float h
       Serial.print(F(" | NH3: "));
       if (isfinite(nh3.ppm))
       {
-        Serial.print(nh3.ppm, 2);
+        Serial.print(nh3.ppm, 4);
         Serial.print(F(" ppm"));
       }
       else
@@ -1203,7 +1362,7 @@ void sendOrStoreSensorReading(const char *drawerName, float temperature, float h
 
       Serial.print(F(" | Rs/Ro: "));
       if (isfinite(nh3.ratio))
-        Serial.print(nh3.ratio, 2);
+        Serial.print(nh3.ratio, 3);
       else
         Serial.print(F("NaN"));
     }
@@ -1240,15 +1399,15 @@ bool sendSensorReading(const char *drawerName, float temperature, float humidity
 
   doc["macAddress"] = DEVICE_ID;
   doc["drawerName"] = drawerName;
-  doc["temperature"] = round2(temperature);
-  doc["humidity"] = round2(humidity);
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
 
   if (leftSubstrate >= 0)
-    doc["leftSubstrate"] = round2((double)leftSubstrate);
+    doc["leftSubstrate"] = leftSubstrate;
   if (centerSubstrate >= 0)
-    doc["centerSubstrate"] = round2((double)centerSubstrate);
+    doc["centerSubstrate"] = centerSubstrate;
   if (rightSubstrate >= 0)
-    doc["rightSubstrate"] = round2((double)rightSubstrate);
+    doc["rightSubstrate"] = rightSubstrate;
 
   // Drawer 1: backend expects "ammonia" => send NH3 ppm as "ammonia" (float OK; backend converts to int)
   if (strcmp(drawerName, "Drawer 1") == 0)
@@ -1257,9 +1416,9 @@ bool sendSensorReading(const char *drawerName, float temperature, float humidity
     if (nh3.valid)
     {
       if (isfinite(nh3.ppm))
-        doc["ammonia"] = round2(nh3.ppm); // ammonia == ppm
+        doc["ammonia"] = nh3.ppm; // ammonia == ppm
       if (isfinite(nh3.ratio))
-        doc["ammoniaRatio"] = round2(nh3.ratio);
+        doc["ammoniaRatio"] = nh3.ratio;
       doc["ammoniaRaw"] = (nh3.raw == ADS_INVALID) ? -1 : nh3.raw;
     }
   }
@@ -1524,12 +1683,247 @@ uint64_t getServerTime()
   return serverTime;
 }
 
-// Driver helpers moved to modules/drivers/drivers.cpp
+// ==================== MUX HELPERS ====================
+void selectMuxChannel(uint8_t channel)
+{
+  digitalWrite(MUX_S0, channel & 0x01);
+  digitalWrite(MUX_S1, (channel >> 1) & 0x01);
+  digitalWrite(MUX_S2, (channel >> 2) & 0x01);
+  digitalWrite(MUX_S3, (channel >> 3) & 0x01);
+  delayMicroseconds(100);
+}
+
+int readMuxAnalog(uint8_t channel)
+{
+  selectMuxChannel(channel);
+  return analogRead(MUX_SIG);
+}
+
+// ==================== TCA9548A HELPER ====================
+void selectTcaChannel(uint8_t channel)
+{
+  if (!tcaAvailable)
+  {
+    i2cErrorCount++;
+    Serial.println(F("[WARN] TCA9548A not available, cannot select channel"));
+    return;
+  }
+  Wire.beginTransmission(TCA9548A_ADDR);
+  Wire.write(1 << channel);
+  Wire.endTransmission();
+}
+
+// ==================== LCD DISPLAY HELPERS ====================
+void updateLCD1(float temp, float humidity, int ammonia)
+{
+  (void)ammonia; // Option A: legacy % not used anymore
+
+  if (!lcd1Available)
+    return;
+
+  Nh3Metrics nh3 = readNh3Metrics();
+
+  selectTcaChannel(TCA_CH_LCD1);
+  lcd1.clear();
+  lcd1.setCursor(0, 0);
+
+  // Temperature
+  if (!isnan(temp))
+  {
+    lcd1.print("T:");
+    lcd1.print(temp, 1);
+    lcd1.print("C ");
+  }
+  else
+  {
+    lcd1.print("T:X ");
+  }
+
+  // Humidity
+  if (!isnan(humidity))
+  {
+    lcd1.print("H:");
+    lcd1.print((int)humidity);
+    lcd1.print("%");
+  }
+  else
+  {
+    lcd1.print("H:X");
+  }
+
+  lcd1.setCursor(0, 1);
+
+  // NH3: show ppm if available; if ppm is too tiny/NaN, show ratio
+  if (isfinite(nh3.ppm))
+  {
+    lcd1.print("NH3:");
+    if (nh3.ppm < 10.0f)
+      lcd1.print(nh3.ppm, 1); // e.g. 0.1, 2.3
+    else
+      lcd1.print((int)(nh3.ppm + 0.5f)); // e.g. 12, 105
+
+    lcd1.print("ppm");
+  }
+  else if (isfinite(nh3.ratio))
+  {
+    lcd1.print("R:");
+    lcd1.print(nh3.ratio, 2); // Rs/Ro
+    lcd1.print("    ");       // pad
+  }
+  else
+  {
+    lcd1.print("NH3:X");
+  }
+}
+
+static void updateLCD2SubstratesRow(int leftPct, int centerPct, int rightPct)
+{
+  if (!lcd2Available)
+    return;
+
+  selectTcaChannel(TCA_CH_LCD2);
+  lcd2.setCursor(0, 0);
+
+  // Example: "S 68/63/100 "
+  // Keep it within 16 chars.
+  char row0[17];
+  snprintf(row0, sizeof(row0), "S %3d/%3d/%3d",
+           (leftPct >= 0 && leftPct <= 100) ? leftPct : -1,
+           (centerPct >= 0 && centerPct <= 100) ? centerPct : -1,
+           (rightPct >= 0 && rightPct <= 100) ? rightPct : -1);
+
+  // Ensure fixed width (pad with spaces)
+  for (size_t i = strlen(row0); i < 16; i++)
+    row0[i] = ' ';
+  row0[16] = '\0';
+
+  lcd2.print(row0);
+}
+
+void updateLCD2(float temp, float humidity)
+{
+  if (!lcd2Available)
+    return;
+  selectTcaChannel(TCA_CH_LCD2);
+  lcd2.setCursor(0, 1);
+
+  char row1[17];
+
+  // Row 1 example: "T:29.4C H:63%"
+  // Fits 16 chars.
+  if (!isnan(temp) && !isnan(humidity))
+  {
+    snprintf(row1, sizeof(row1), "T:%4.1fC H:%2d%%", temp, (int)humidity);
+  }
+  else if (!isnan(temp))
+  {
+    snprintf(row1, sizeof(row1), "T:%4.1fC H:X  ", temp);
+  }
+  else if (!isnan(humidity))
+  {
+    snprintf(row1, sizeof(row1), "T:X    H:%2d%%", (int)humidity);
+  }
+  else
+  {
+    snprintf(row1, sizeof(row1), "T:X    H:X   ");
+  }
+
+  // Pad/truncate to 16
+  row1[16] = '\0';
+  lcd2.print(row1);
+}
+
+void displayLCDMessage(uint8_t lcdNum, const char *line1, const char *line2)
+{
+  if (lcdNum == 1 && !lcd1Available)
+    return;
+  if (lcdNum == 2 && !lcd2Available)
+    return;
+
+  selectTcaChannel(lcdNum == 1 ? TCA_CH_LCD1 : TCA_CH_LCD2);
+  LiquidCrystal_I2C &lcd = (lcdNum == 1) ? lcd1 : lcd2;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
+}
+
+// ==================== ADS1115 HELPERS ====================
+int16_t readAds1Channel(uint8_t channel)
+{
+  if (!ads1Available)
+    return ADS_INVALID;
+
+  return ads1.readADC_SingleEnded(channel);
+}
+
+int16_t readAds2Channel(uint8_t channel)
+{
+  if (!ads2Available)
+    return ADS_INVALID;
+
+  return ads2.readADC_SingleEnded(channel);
+}
 
 // ==================== MCP23017 HELPERS ====================
+void setMcpActuator(uint8_t pin, bool state)
+{
+  if (!mcpAvailable)
+    return;
+  mcp.digitalWrite(pin, state ? LOW : HIGH);
+}
 
+void logActuatorCommand(const char *actuator, bool state)
+{
+  if (state)
+  {
+    Serial.print(F("[ACTUATOR ON] "));
+    Serial.println(actuator);
+  }
+  else
+  {
+    Serial.print(F("[ACTUATOR OFF] "));
+    Serial.println(actuator);
+  }
+}
 
+void publishActuatorStateBool(const char *actuator, bool state)
+{
+  if (!mqttEnabled)
+    return;
 
+  JsonDocument doc;
+  doc["state"] = state;
+
+  char payload[64];
+  serializeJson(doc, payload, sizeof(payload));
+
+  char topic[160];
+  snprintf(topic, sizeof(topic), "%s/%s/actuators/%s/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str(), actuator);
+
+  mqttEnqueuePublish(topic, payload, true);
+}
+
+void publishLightTimerState(int timeSeconds, uint64_t startTimeMs)
+{
+  if (!mqttEnabled)
+    return;
+
+  JsonDocument doc;
+  JsonObject state = doc["state"].to<JsonObject>();
+  state["time"] = timeSeconds;
+  state["startTime"] = startTimeMs;
+
+  char payload[128];
+  serializeJson(doc, payload, sizeof(payload));
+
+  char topic[160];
+  snprintf(topic, sizeof(topic), "%s/%s/actuators/light/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+
+  mqttEnqueuePublish(topic, payload, true);
+}
 
 // ==================== MQTT CALLBACK & RECONNECT ====================
 void mqttCallback(char *topic, byte *payload, unsigned int length)
@@ -1761,13 +2155,375 @@ int readMQ137()
 }
 
 // ==================== SD CARD STORAGE ====================
-// storeSensorToSD moved to modules/storage/storage.cpp
+void storeSensorToSD(const char *drawerName, float temperature, float humidity,
+                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia)
+{
+  (void)ammonia; // Option A
 
-// uploadStoredData moved to modules/storage/storage.cpp
+  if (!sdAvailable)
+    return;
 
-// getStoredDataCount moved to modules/storage/storage.cpp
+  File file = SD.open(SD_DATA_FILE, FILE_APPEND);
+  if (!file)
+    return;
 
-// ==================== DHT HELPERS ====================
+  JsonDocument doc;
+  doc["macAddress"] = DEVICE_ID;
+  doc["drawerName"] = drawerName;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+
+  if (leftSubstrate >= 0)
+    doc["leftSubstrate"] = leftSubstrate;
+  if (centerSubstrate >= 0)
+    doc["centerSubstrate"] = centerSubstrate;
+  if (rightSubstrate >= 0)
+    doc["rightSubstrate"] = rightSubstrate;
+
+  // Keep SD schema consistent with backend uploads: "ammonia" carries ppm for Drawer 1
+  if (strcmp(drawerName, "Drawer 1") == 0)
+  {
+    Nh3Metrics nh3 = readNh3Metrics();
+    if (nh3.valid)
+    {
+      if (isfinite(nh3.ppm))
+        doc["ammonia"] = nh3.ppm; // ammonia == ppm
+      if (isfinite(nh3.ratio))
+        doc["ammoniaRatio"] = nh3.ratio;
+      doc["ammoniaRaw"] = (nh3.raw == ADS_INVALID) ? -1 : nh3.raw;
+    }
+  }
+
+  doc["timestamp"] = millis();
+
+  char line[384];
+  size_t n = serializeJson(doc, line, sizeof(line));
+  if (n > 0)
+    file.println(line);
+
+  file.close();
+}
+
+void uploadStoredData()
+{
+  if (!sdAvailable || WiFi.status() != WL_CONNECTED)
+    return;
+
+  // Avoid TLS attempts when heap is low/fragmented
+  if (!canStartTlsNow("sdUpload"))
+    return;
+
+  // Serialize TLS across heartbeat/serverTime/sdUpload
+  if (!tlsTryLock(pdMS_TO_TICKS(5000)))
+  {
+    Serial.println(F("[TLS] SD upload skipped: TLS mutex busy"));
+    return;
+  }
+
+  File file = SD.open(SD_DATA_FILE, FILE_READ);
+  if (!file)
+  {
+    tlsUnlock();
+    return;
+  }
+
+  const char *tempPath = "/temp_data.json";
+  File tempFile = SD.open(tempPath, FILE_WRITE);
+
+  const String url = String(BACKEND_URL) + "/api/sensors";
+
+  int uploaded = 0;
+  int failed = 0;
+  int processedThisCycle = 0;
+  bool hasPendingData = false;
+
+  char lineBuf[384];
+
+  auto readLine = [&](File &f, char *buf, size_t bufLen) -> bool
+  {
+    size_t n = f.readBytesUntil('\n', buf, bufLen - 1);
+    if (n == 0)
+      return false;
+    buf[n] = '\0';
+
+    while (n > 0 && (buf[n - 1] == '\r' || buf[n - 1] == ' ' || buf[n - 1] == '\t'))
+    {
+      buf[n - 1] = '\0';
+      n--;
+    }
+
+    size_t start = 0;
+    while (buf[start] == ' ' || buf[start] == '\t')
+      start++;
+
+    if (start > 0)
+      memmove(buf, buf + start, strlen(buf + start) + 1);
+
+    return strlen(buf) > 0;
+  };
+
+  while (file.available())
+  {
+    if (processedThisCycle >= SD_UPLOAD_MAX_PER_CYCLE)
+      break;
+
+    if (!readLine(file, lineBuf, sizeof(lineBuf)))
+      continue;
+
+    JsonDocument doc;
+    if (deserializeJson(doc, lineBuf) != DeserializationError::Ok)
+      continue;
+
+    HTTPClient http;
+    http.setTimeout(SD_UPLOAD_HTTP_TIMEOUT_MS);
+
+    // IMPORTANT: reuse the global TLS client (less heap churn/fragmentation)
+    if (!http.begin(gHttpsClient, url))
+    {
+      if (tempFile)
+      {
+        tempFile.println(lineBuf);
+        hasPendingData = true;
+      }
+      failed++;
+      processedThisCycle++;
+      continue;
+    }
+
+    http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST((uint8_t *)lineBuf, strlen(lineBuf));
+    http.end();
+
+    if (httpCode == 200 || httpCode == 201)
+    {
+      uploaded++;
+    }
+    else
+    {
+      if (tempFile)
+      {
+        tempFile.println(lineBuf);
+        hasPendingData = true;
+      }
+      failed++;
+    }
+
+    processedThisCycle++;
+    yield();
+  }
+
+  while (file.available())
+  {
+    if (!readLine(file, lineBuf, sizeof(lineBuf)))
+      continue;
+
+    if (tempFile)
+    {
+      tempFile.println(lineBuf);
+      hasPendingData = true;
+    }
+  }
+
+  file.close();
+  if (tempFile)
+    tempFile.close();
+
+  SD.remove(SD_DATA_FILE);
+  if (hasPendingData && SD.exists(tempPath))
+  {
+    SD.rename(tempPath, SD_DATA_FILE);
+  }
+  else
+  {
+    SD.remove(tempPath);
+  }
+
+  if (uploaded > 0)
+  {
+    Serial.print(F("Uploaded "));
+    Serial.print(uploaded);
+    Serial.println(F(" stored readings"));
+  }
+  if (failed > 0)
+  {
+    Serial.print(F("Failed to upload "));
+    Serial.print(failed);
+    Serial.println(F(" readings (kept for retry)"));
+  }
+
+  tlsUnlock();
+}
+
+int getStoredDataCount()
+{
+  if (!sdAvailable || !SD.exists(SD_DATA_FILE))
+    return 0;
+
+  File file = SD.open(SD_DATA_FILE, FILE_READ);
+  if (!file)
+    return 0;
+
+  char buf[384];
+
+  auto readLine = [&](File &f, char *out, size_t outLen) -> bool
+  {
+    size_t n = f.readBytesUntil('\n', out, outLen - 1);
+    if (n == 0)
+      return false;
+    out[n] = '\0';
+
+    // Trim CR and whitespace at end
+    while (n > 0 && (out[n - 1] == '\r' || out[n - 1] == ' ' || out[n - 1] == '\t'))
+    {
+      out[n - 1] = '\0';
+      n--;
+    }
+
+    // Skip leading whitespace
+    size_t start = 0;
+    while (out[start] == ' ' || out[start] == '\t')
+      start++;
+
+    if (start > 0)
+      memmove(out, out + start, strlen(out + start) + 1);
+
+    return strlen(out) > 0;
+  };
+
+  int count = 0;
+  while (file.available())
+  {
+    if (readLine(file, buf, sizeof(buf)))
+      count++;
+  }
+
+  file.close();
+  return count;
+}
+
+// ==================== OFFLINE AUTO CONTROL ====================
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
+{
+  bool fanOn = false;
+  bool heaterOn = false;
+  bool heaterFanOn = false;
+  bool humidifierOn = false;
+  bool pumpOn = false;
+
+  // Temperature control: fan for cooling, heater for warming
+  if (temperature > TEMP_OPTIMAL_HIGH)
+  {
+    fanOn = true;
+    heaterOn = false;
+    heaterFanOn = false;
+  }
+  else if (temperature < TEMP_OPTIMAL_LOW)
+  {
+    fanOn = false;
+    heaterOn = true;
+    heaterFanOn = true;
+  }
+
+  if (temperature > TEMP_MAX)
+  {
+    fanOn = true;
+    heaterOn = false;
+    heaterFanOn = false;
+  }
+  else if (temperature < TEMP_MIN)
+  {
+    fanOn = false;
+    heaterOn = true;
+    heaterFanOn = true;
+  }
+
+  // Humidity control: humidifier when humidity is low (mutually exclusive with fans)
+  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  {
+    humidifierOn = true;
+    fanOn = false; // Turn off fans if humidifier is needed
+  }
+  else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+  {
+    humidifierOn = false;
+  }
+
+  // Moisture control
+  if (moisture < MOISTURE_OPTIMAL_LOW || moisture < MOISTURE_MIN)
+  {
+    pumpOn = true;
+  }
+
+  setEggLarvaePump(pumpOn);
+  setEggLarvaeFan(fanOn);
+  setEggLarvaeHeater(heaterOn);
+  setEggLarvaeHeaterFan(heaterFanOn);
+  setEggLarvaeHumidifier(humidifierOn);
+
+  Serial.println(F("Auto control Drawer 1:"));
+  Serial.print(F("  Temp="));
+  Serial.print(temperature);
+  Serial.print(F(" Hum="));
+  Serial.print(humidity);
+  Serial.print(F(" Moist="));
+  Serial.println(moisture);
+  Serial.print(F("  Fan="));
+  Serial.print(fanOn ? F("ON") : F("OFF"));
+  Serial.print(F(" Heater="));
+  Serial.print(heaterOn ? F("ON") : F("OFF"));
+  Serial.print(F(" Humidifier="));
+  Serial.print(humidifierOn ? F("ON") : F("OFF"));
+  Serial.print(F(" Pump="));
+  Serial.println(pumpOn ? F("ON") : F("OFF"));
+}
+
+void autoControlPupaDrawer(float temperature, float humidity)
+{
+  bool fanOn = false;
+  bool humidifierOn = false;
+
+  // Temperature control: fan for cooling only
+  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  {
+    fanOn = true;
+    humidifierOn = false;
+  }
+
+  // Humidity control: humidify when dry, ventilate when too humid
+  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  {
+    humidifierOn = true;
+    fanOn = false;
+  }
+  else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+  {
+    humidifierOn = false;
+    fanOn = true;
+  }
+
+  setPupaFan(fanOn);
+  setPupaHumidifier(humidifierOn);
+
+  Serial.println(F("Auto control Drawer 2:"));
+  Serial.print(F("  Temp="));
+  Serial.print(temperature);
+  Serial.print(F(" Hum="));
+  Serial.println(humidity);
+  Serial.print(F("  Fan="));
+  Serial.println(fanOn ? F("ON") : F("OFF"));
+}
+
+bool isValidDrawer1DhtReading(float temperature, float humidity)
+{
+  // Drawer 1 operates in a warm, humid envelope. Tight bounds block cross-type garbage readings.
+  return !isnan(temperature) && !isnan(humidity) && temperature >= 15.0f && temperature <= 45.0f && humidity >= 30.0f && humidity <= 95.0f;
+}
+
+bool isValidDrawer2DhtReading(float temperature, float humidity)
+{
+  return !isnan(temperature) && !isnan(humidity) && temperature >= 15.0f && temperature <= 45.0f && humidity >= 20.0f && humidity <= 100.0f;
+}
+
 bool isStableDhtReading(const DhtReading &current, const DhtReading &previous, float maxTempDelta, float maxHumidityDelta)
 {
   if (!previous.valid)
@@ -2062,7 +2818,7 @@ static const char HARDWARE_HTML[] PROGMEM = R"HTML(
 
 void handleHardwarePage(AsyncWebServerRequest *request)
 {
-  request->send(200, "text/html", HARDWARE_HTML);
+  request->send_P(200, "text/html", HARDWARE_HTML);
 }
 
 void handleStatus(AsyncWebServerRequest *request)
@@ -2435,6 +3191,131 @@ static float estimateNh3PpmFromRaw(int16_t rawValue)
   return ppm;
 }
 
+// Perform MQ137 calibration
+float calibrateMQ137()
+{
+  if (mq137CalibrationInProgress)
+  {
+    Serial.println(F("MQ137 calibration already in progress"));
+    return mq137Ro;
+  }
+
+  Serial.println(F("[MQ137] Starting calibration..."));
+  Serial.println(F("[MQ137] Please ensure sensor is in fresh air (20°C, 65% humidity, 21% O2)"));
+  mq137CalibrationInProgress = true;
+
+  // Take multiple readings and average them
+  float RsSum = 0;
+  for (int i = 0; i < MQ137_CALIBRATION_CYCLES; i++)
+  {
+    int16_t rawValue = readAds2Channel(ADS2_MQ137);
+    float Rst = calculateRstFromRaw(rawValue);
+    RsSum += Rst;
+
+    if (i % 50 == 0)
+    {
+      Serial.print(F("[MQ137] Reading "));
+      Serial.print(i);
+      Serial.print(F("/"));
+      Serial.print(MQ137_CALIBRATION_CYCLES);
+      Serial.print(F(" - Rst: "));
+      Serial.println(Rst);
+    }
+
+    delay(10);
+  }
+
+  float RsAverage = RsSum / MQ137_CALIBRATION_CYCLES;
+
+  // Calculate Ro: Ro = Rst / (Rst/Ro ratio at calibration point)
+  mq137Ro = RsAverage / MQ137_CALIBRATION_RATIO;
+  mq137LastCalibration = getServerTime() / 1000ULL; // Store as seconds since epoch
+
+  // Save calibration to SD card
+  if (sdAvailable)
+  {
+    JsonDocument doc;
+    doc["ro"] = mq137Ro;
+    doc["timestamp"] = mq137LastCalibration;
+    doc["rsAverage"] = RsAverage;
+    doc["calibrationPoint"] = MQ137_CALIBRATION_PPM;
+
+    File file = SD.open(MQ137_CALIBRATION_FILE, FILE_WRITE);
+    if (file)
+    {
+      serializeJson(doc, file);
+      file.close();
+      Serial.println(F("[MQ137] Calibration data saved to SD"));
+    }
+    else
+    {
+      Serial.println(F("[MQ137] Failed to save calibration to SD"));
+    }
+  }
+
+  mq137CalibrationInProgress = false;
+
+  Serial.print(F("[MQ137] Calibration complete! Ro = "));
+  Serial.println(mq137Ro);
+
+  return mq137Ro;
+}
+
+// Load calibration from SD card
+void loadMQ137Calibration()
+{
+  if (!sdAvailable)
+  {
+    Serial.println(F("[MQ137] SD not available, calibration not loaded (Ro=0)"));
+    return;
+  }
+
+  if (!SD.exists(MQ137_CALIBRATION_FILE))
+  {
+    Serial.println(F("[MQ137] No calibration file found (Ro=0, please calibrate)"));
+    return;
+  }
+
+  File file = SD.open(MQ137_CALIBRATION_FILE, FILE_READ);
+  if (!file)
+  {
+    Serial.println(F("[MQ137] Failed to open calibration file"));
+    return;
+  }
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, file);
+  file.close();
+
+  if (error)
+  {
+    Serial.print(F("[MQ137] Failed to parse calibration: "));
+    Serial.println(error.f_str());
+    return;
+  }
+
+  // ArduinoJson v7+ friendly: avoid containsKey()
+  if (doc["ro"].is<float>() || doc["ro"].is<int>() || doc["ro"].is<double>())
+  {
+    mq137Ro = doc["ro"].as<float>();
+
+    // timestamp is optional; only read if present and numeric
+    if (doc["timestamp"].is<unsigned long>() || doc["timestamp"].is<long>() || doc["timestamp"].is<uint32_t>())
+      mq137LastCalibration = doc["timestamp"].as<unsigned long>();
+
+    Serial.print(F("[MQ137] Loaded calibration - Ro = "));
+    Serial.print(mq137Ro);
+    Serial.print(F(" (timestamp: "));
+    Serial.print(mq137LastCalibration);
+    Serial.println(F(")"));
+  }
+  else
+  {
+    Serial.println(F("[MQ137] Calibration file missing numeric 'ro', using Ro=0 (not calibrated)"));
+    mq137Ro = 0.0f;
+  }
+}
+
 // ==================== ASYNC MQ137 CALIBRATION TASK ====================
 static void mq137CalibrationTask(void *pvParameters)
 {
@@ -2525,4 +3406,109 @@ static void mq137CalibrationTask(void *pvParameters)
   Serial.println(mq137Ro);
 
   vTaskDelete(nullptr);
+}
+
+// ==================== STATE LOCKING (CRITICAL SECTION) ====================
+// Protects shared state touched from loop(), sensorTask(), MQTT callback, and web handlers.
+static inline void setControlModeLocked(ControlMode mode)
+{
+  stateLock();
+  requestedControlMode = mode;
+  if (requestedControlMode == CONTROL_MODE_AUTO)
+  {
+    offlineAutoControlHoldUntil = 0;
+  }
+  stateUnlock();
+}
+
+static inline ControlMode getControlModeLocked()
+{
+  stateLock();
+  ControlMode m = requestedControlMode;
+  stateUnlock();
+  return m;
+}
+
+static inline void recordManualActuatorChangeLocked()
+{
+  stateLock();
+  offlineAutoControlHoldUntil = millis() + OFFLINE_AUTOCONTROL_HOLD_MS;
+  stateUnlock();
+}
+
+static inline unsigned long getOfflineHoldUntilLocked()
+{
+  stateLock();
+  unsigned long t = offlineAutoControlHoldUntil;
+  stateUnlock();
+  return t;
+}
+
+static inline void setLightTimerLocked(bool on, unsigned long endTimeMs)
+{
+  stateLock();
+  lightState = on;
+  lightEndTime = endTimeMs;
+  stateUnlock();
+}
+
+static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs)
+{
+  stateLock();
+  on = lightState;
+  endTimeMs = lightEndTime;
+  stateUnlock();
+}
+
+static bool tlsTryLock(TickType_t waitTicks)
+{
+  if (!gTlsMutex)
+    return false;
+  return xSemaphoreTake(gTlsMutex, waitTicks) == pdTRUE;
+}
+
+static void tlsUnlock()
+{
+  if (gTlsMutex)
+    xSemaphoreGive(gTlsMutex);
+}
+
+static bool canStartTlsNow(const char *tag)
+{
+  uint32_t heap = ESP.getFreeHeap();
+  uint32_t minHeap = ESP.getMinFreeHeap();
+
+  if (heap < TLS_MIN_FREE_HEAP || minHeap < TLS_MIN_FREE_HEAP_MIN)
+  {
+    Serial.print(F("[TLS] Skip "));
+    Serial.print(tag);
+    Serial.print(F(": heap="));
+    Serial.print(heap);
+    Serial.print(F(" minHeap="));
+    Serial.println(minHeap);
+    return false;
+  }
+  return true;
+}
+
+static void sdCountTask(void *pvParameters)
+{
+  (void)pvParameters;
+
+  // Initial fill
+  if (sdAvailable)
+    gSdStoredCountCached = getStoredDataCount();
+  else
+    gSdStoredCountCached = 0;
+
+  for (;;)
+  {
+    // Update every 10s; keep off the async web task
+    if (sdAvailable)
+      gSdStoredCountCached = getStoredDataCount();
+    else
+      gSdStoredCountCached = 0;
+
+    vTaskDelay(pdMS_TO_TICKS(10000));
+  }
 }
