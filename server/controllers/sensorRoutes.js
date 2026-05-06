@@ -37,7 +37,7 @@ const emptySensorResponse = {
 const computeMoisture = (reading) => {
   if (!reading) return null;
   if (reading.moisture !== undefined && reading.moisture !== null) {
-    return reading.moisture;
+    return Math.round(reading.moisture);
   }
 
   const substrateValues = [
@@ -49,7 +49,7 @@ const computeMoisture = (reading) => {
   );
 
   if (substrateValues.length === 0) return null;
-  return substrateValues.reduce((sum, v) => sum + v, 0) / substrateValues.length;
+  return Math.round(substrateValues.reduce((sum, v) => sum + v, 0) / substrateValues.length);
 };
 
 const getHourBucket = (timestamp = new Date()) => {
@@ -361,6 +361,9 @@ router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, asy
         temperature: [],
         humidity: [],
         moisture: [],
+        leftSubstrate: [],
+        centerSubstrate: [],
+        rightSubstrate: [],
         ammonia: [],
       };
     }
@@ -379,6 +382,9 @@ router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, asy
               if (reading.temperature !== undefined) hourlyData[hourKey].temperature.push(reading.temperature);
               if (reading.humidity !== undefined) hourlyData[hourKey].humidity.push(reading.humidity);
               if (computedMoisture !== null) hourlyData[hourKey].moisture.push(computedMoisture);
+              if (reading.leftSubstrate !== undefined) hourlyData[hourKey].leftSubstrate.push(Math.round(reading.leftSubstrate));
+              if (reading.centerSubstrate !== undefined) hourlyData[hourKey].centerSubstrate.push(Math.round(reading.centerSubstrate));
+              if (reading.rightSubstrate !== undefined) hourlyData[hourKey].rightSubstrate.push(Math.round(reading.rightSubstrate));
               if (reading.ammonia !== undefined) hourlyData[hourKey].ammonia.push(reading.ammonia);
             }
           }
@@ -390,7 +396,10 @@ router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, asy
       hour: h.hour,
       temperature: h.temperature.length > 0 ? h.temperature.reduce((a, b) => a + b, 0) / h.temperature.length : null,
       humidity: h.humidity.length > 0 ? h.humidity.reduce((a, b) => a + b, 0) / h.humidity.length : null,
-      moisture: h.moisture.length > 0 ? h.moisture.reduce((a, b) => a + b, 0) / h.moisture.length : null,
+      moisture: h.moisture.length > 0 ? Math.round(h.moisture.reduce((a, b) => a + b, 0) / h.moisture.length) : null,
+      leftSubstrate: h.leftSubstrate.length > 0 ? Math.round(h.leftSubstrate.reduce((a, b) => a + b, 0) / h.leftSubstrate.length) : null,
+      centerSubstrate: h.centerSubstrate.length > 0 ? Math.round(h.centerSubstrate.reduce((a, b) => a + b, 0) / h.centerSubstrate.length) : null,
+      rightSubstrate: h.rightSubstrate.length > 0 ? Math.round(h.rightSubstrate.reduce((a, b) => a + b, 0) / h.rightSubstrate.length) : null,
       ammonia: h.ammonia.length > 0 ? h.ammonia.reduce((a, b) => a + b, 0) / h.ammonia.length : null,
     }));
 

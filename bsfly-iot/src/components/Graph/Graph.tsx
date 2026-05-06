@@ -26,7 +26,29 @@ const SENSOR_KEY_MAP: Record<string, string> = {
     temperature: 'temperature',
     humidity: 'humidity',
     moisture: 'moisture',
+    leftsubstrate: 'leftSubstrate',
+    centersubstrate: 'centerSubstrate',
+    rightsubstrate: 'rightSubstrate',
     ammonia: 'ammonia',
+};
+
+const DISPLAY_TITLE_MAP: Record<string, string> = {
+    temperature: 'TEMPERATURE',
+    humidity: 'HUMIDITY',
+    moisture: 'SUBSTRATE MOISTURE',
+    leftsubstrate: 'LEFT SUBSTRATE',
+    centersubstrate: 'CENTER SUBSTRATE',
+    rightsubstrate: 'RIGHT SUBSTRATE',
+    ammonia: 'AMMONIA',
+};
+
+const formatGraphValue = (sensorType: string, value: number): string => {
+    const key = sensorType.toLowerCase().replace(/\s+/g, '');
+    if (key === 'moisture' || key === 'leftsubstrate' || key === 'centersubstrate' || key === 'rightsubstrate') {
+        return Math.round(value).toString();
+    }
+
+    return value.toFixed(2);
 };
 
 Chart.register(annotationPlugin);
@@ -217,7 +239,8 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         return () => { chartRef.current?.destroy(); };
     }, [chartData, sensorType, upperLimit, lowerLimit, warningLimit, unit]);
 
-    const displayTitle = sensorType.toUpperCase() === "MOISTURE" ? "SUBSTRATE MOISTURE" : sensorType.toUpperCase();
+    const displayKey = sensorType.toLowerCase().replace(/\s+/g, '');
+    const displayTitle = DISPLAY_TITLE_MAP[displayKey] ?? sensorType.toUpperCase();
 
     if (loading) {
         return (
@@ -256,7 +279,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                     <span>{displayTitle}</span>
                     <div className="graph-value-container">
                         <IonText className={`graph-value ${colorClass}`}>
-                            {typeof latestValue === 'number' ? latestValue.toFixed(2) : latestValue}{unit}
+                            {typeof latestValue === 'number' ? formatGraphValue(sensorType, latestValue) : latestValue}{unit}
                         </IonText>
                         <IonChip color={chipColor} className="graph-status-chip">
                             {statusText}

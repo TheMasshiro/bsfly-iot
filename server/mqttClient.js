@@ -194,22 +194,27 @@ export async function initMqtt() {
             return Number.isFinite(n) ? Number(n.toFixed(2)) : v;
           };
 
+          const roundWhole = (v) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? Math.round(n) : v;
+          };
+
           const readingData = { timestamp: new Date() };
           if (payload.temperature !== undefined)
             readingData.temperature = round2(payload.temperature);
           if (payload.humidity !== undefined)
             readingData.humidity = round2(payload.humidity);
           if (payload.moisture !== undefined)
-            readingData.moisture = round2(payload.moisture);
+            readingData.moisture = roundWhole(payload.moisture);
           const leftSubstrate = payload.leftSubstrate ?? payload.leftSoil;
           const centerSubstrate = payload.centerSubstrate ?? payload.centerSoil;
           const rightSubstrate = payload.rightSubstrate ?? payload.rightSoil;
           if (leftSubstrate !== undefined)
-            readingData.leftSubstrate = round2(leftSubstrate);
+            readingData.leftSubstrate = roundWhole(leftSubstrate);
           if (centerSubstrate !== undefined)
-            readingData.centerSubstrate = round2(centerSubstrate);
+            readingData.centerSubstrate = roundWhole(centerSubstrate);
           if (rightSubstrate !== undefined)
-            readingData.rightSubstrate = round2(rightSubstrate);
+            readingData.rightSubstrate = roundWhole(rightSubstrate);
           if (payload.ammonia !== undefined)
             readingData.ammonia = round2(payload.ammonia);
 

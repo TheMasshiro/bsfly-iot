@@ -198,8 +198,9 @@ const Backup: FC = () => {
         hour: string;
     }
 
-    const formatStatValue = (value: number | null): string => {
+    const formatStatValue = (value: number | null, forceInteger = false): string => {
         if (value === null) return "-";
+        if (forceInteger) return Math.round(value).toString();
         return Number.isInteger(value) ? value.toString() : value.toFixed(2);
     };
 
@@ -418,7 +419,7 @@ const Backup: FC = () => {
                     entry.date,
                     formatStatValue(entry.temperature.avg),
                     formatStatValue(entry.humidity.avg),
-                    formatStatValue(entry.moisture.avg),
+                    formatStatValue(entry.moisture.avg, true),
                     formatStatValue(entry.ammonia.avg),
                 ], dailyWidths);
             });
@@ -459,7 +460,7 @@ const Backup: FC = () => {
                         entry.hour,
                         formatStatValue(entry.temperature.avg),
                         formatStatValue(entry.humidity.avg),
-                        formatStatValue(entry.moisture.avg),
+                        formatStatValue(entry.moisture.avg, true),
                         formatStatValue(entry.ammonia.avg),
                     ], hourlyWidths, 6.5);
                 });

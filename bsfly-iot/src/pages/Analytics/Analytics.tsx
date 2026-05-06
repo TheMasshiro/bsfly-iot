@@ -19,6 +19,9 @@ interface SensorValues {
     temperature: number | null;
     humidity: number | null;
     moisture: number | null;
+    leftSubstrate: number | null;
+    centerSubstrate: number | null;
+    rightSubstrate: number | null;
     ammonia: number | null;
 }
 
@@ -26,7 +29,18 @@ const EMPTY_SENSOR_VALUES: SensorValues = {
     temperature: null,
     humidity: null,
     moisture: null,
+    leftSubstrate: null,
+    centerSubstrate: null,
+    rightSubstrate: null,
     ammonia: null,
+};
+
+const formatAnalyticsValue = (sensor: string, value: number | null): string => {
+    if (value === null) return '-';
+    if (sensor === 'Left Substrate' || sensor === 'Center Substrate' || sensor === 'Right Substrate' || sensor === 'Moisture') {
+        return Math.round(value).toString();
+    }
+    return value.toFixed(2);
 };
 
 const normalizeDrawerName = (name: unknown): string | null => {
@@ -72,6 +86,9 @@ const Analytics: FC = () => {
             temperature: toNumberOrNull(data?.temperature),
             humidity: toNumberOrNull(data?.humidity),
             moisture: moistureFromApi ?? computedMoisture,
+            leftSubstrate,
+            centerSubstrate,
+            rightSubstrate,
             ammonia: toNumberOrNull(data?.ammonia),
         };
     }, []);
@@ -212,10 +229,28 @@ const Analytics: FC = () => {
                 unit: "%",
                 icon: cloudOutline
             },
-            ...(moisture ? [
+            ...(moisture && stage === 'Drawer 1' ? [
                 {
                     id: "3",
-                    sensor: "Moisture",
+                    sensor: "Left Substrate",
+                    max: moisture.max,
+                    min: moisture.min,
+                    warn: moisture.optimal[1],
+                    unit: "%",
+                    icon: waterOutline
+                },
+                {
+                    id: "4",
+                    sensor: "Center Substrate",
+                    max: moisture.max,
+                    min: moisture.min,
+                    warn: moisture.optimal[1],
+                    unit: "%",
+                    icon: waterOutline
+                },
+                {
+                    id: "5",
+                    sensor: "Right Substrate",
                     max: moisture.max,
                     min: moisture.min,
                     warn: moisture.optimal[1],
@@ -236,8 +271,12 @@ const Analytics: FC = () => {
                 latestValue = sensorValues.temperature ?? 0;
             } else if (graph.sensor === "Humidity") {
                 latestValue = sensorValues.humidity ?? 0;
-            } else if (graph.sensor === "Moisture") {
-                latestValue = sensorValues.moisture ?? 0;
+            } else if (graph.sensor === "Left Substrate") {
+                latestValue = sensorValues.leftSubstrate ?? 0;
+            } else if (graph.sensor === "Center Substrate") {
+                latestValue = sensorValues.centerSubstrate ?? 0;
+            } else if (graph.sensor === "Right Substrate") {
+                latestValue = sensorValues.rightSubstrate ?? 0;
             }
 
             let status: 'danger' | 'warning' | 'primary' | 'success';
@@ -285,7 +324,7 @@ const Analytics: FC = () => {
                                         >
                                             <IonIcon icon={sensor.icon} className="sensor-quick-icon" />
                                             <IonChip className={`sensor-quick-value status-${sensor.status}`}>
-                                                {typeof sensor.latestValue === 'number' ? sensor.latestValue.toFixed(2) : sensor.latestValue}{sensor.unit}
+                                                {formatAnalyticsValue(sensor.sensor, typeof sensor.latestValue === 'number' ? sensor.latestValue : null)}{sensor.unit}
                                             </IonChip>
                                         </div>
                                     ))}
