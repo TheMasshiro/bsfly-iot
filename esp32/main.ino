@@ -17,44 +17,49 @@
  * - ADS1115 ADC modules (substrate moisture and ammonia)
  * - MCP23017 I/O expander (actuator control)
  * - CD74HC4067 analog multiplexer (substrate sensors)
- * - DHT11 temperature/humidity sensors (2x for Drawer 1)
- * - DHT22 temperature/humidity sensor (1x for Drawer 2)
+ * - DHT11/DHT22 temperature/humidity sensors
  * - MicroSD card module
  *
  * Network:
  * - WiFi: MQTT
  * - Fallback: Local SD card storage and autonomous control
  *
- * ==================== PIN MAPPING ====================
+ * ==================== PIN MAPPING (FROM DEFINES) ====================
  * ESP32 Pin Mapping:
- * | Function/Peripheral    | Macro            | ESP32 Pin |
- * |------------------------|------------------|-----------|
- * | I2C SDA                | I2C_SDA          | 21        |
- * | I2C SCL                | I2C_SCL          | 22        |
- * | SPI SCK (SD Card)      | SPI_SCK          | 18        |
- * | SPI MISO (SD Card)     | SPI_MISO         | 19        |
- * | SPI MOSI (SD Card)     | SPI_MOSI         | 23        |
- * | SPI CS (SD Card)       | SPI_CS_SD        | 15        |
- * | LED                    | LED_PIN          | 4         |
- * | MUX SIG                | MUX_SIG          | 35        |
- * | MUX S0                 | MUX_S0           | 16        |
- * | MUX S1                 | MUX_S1           | 17        |
- * | MUX S2                 | MUX_S2           | 32        |
- * | MUX S3                 | MUX_S3           | 33        |
- * | DHT Sensor A           | DHT_A_PIN        | 13        |
- * | DHT Sensor B           | DHT_B_PIN        | 26        |
- * | DHT Sensor C           | DHT_C_PIN        | 25        |
- * | DHT Sensor D           | DHT_D_PIN        | 14        |
- * | DHT Sensor E           | DHT_E_PIN        | 27        |
+ * | Function/Peripheral    | Macro       | ESP32 GPIO |
+ * |------------------------|-------------|------------|
+ * | I2C SDA                | I2C_SDA     | 21         |
+ * | I2C SCL                | I2C_SCL     | 22         |
+ * | SPI SCK (SD Card)      | SPI_SCK     | 18         |
+ * | SPI MISO (SD Card)     | SPI_MISO    | 19         |
+ * | SPI MOSI (SD Card)     | SPI_MOSI    | 23         |
+ * | SPI CS (SD Card)       | SPI_CS_SD   | 15         |
+ * | LED                    | LED_PIN     | 4          |
+ * | MUX SIG (analog in)    | MUX_SIG     | 35         |
+ * | MUX S0                 | MUX_S0      | 17         |
+ * | MUX S1                 | MUX_S1      | 5          |
+ * | MUX S2                 | MUX_S2      | 32         |
+ * | MUX S3                 | MUX_S3      | 33         |
+ * | DHT Sensor A           | DHT_A_PIN   | 16         |
+ * | DHT Sensor B           | DHT_B_PIN   | 26         |
+ * | DHT Sensor C           | DHT_C_PIN   | 25         |
+ * | DHT Sensor D           | DHT_D_PIN   | 14         |
+ * | DHT Sensor E           | DHT_E_PIN   | 27         |
  *
  * I2C Device Addresses:
- * | Device                 | Macro            | Address   |
- * |------------------------|------------------|-----------|
- * | ADS1115 #1             | ADS1115_ADDR_1   | 0x48      |
- * | ADS1115 #2             | ADS1115_ADDR_2   | 0x49      |
- * | MCP23017               | MCP23017_ADDR    | 0x20      |
- * | TCA9548A               | TCA9548A_ADDR    | 0x70      |
- * | LCD (I2C)              | LCD_ADDR         | 0x27      |
+ * | Device                 | Macro            | Address |
+ * |------------------------|------------------|---------|
+ * | ADS1115 #1             | ADS1115_ADDR_1   | 0x48    |
+ * | ADS1115 #2             | ADS1115_ADDR_2   | 0x49    |
+ * | MCP23017               | MCP23017_ADDR    | 0x20    |
+ * | TCA9548A               | TCA9548A_ADDR    | 0x70    |
+ * | LCD (I2C)              | LCD_ADDR         | 0x27    |
+ *
+ * TCA9548A Channels:
+ * | Device | Macro       | Channel |
+ * |--------|-------------|---------|
+ * | LCD #1 | TCA_CH_LCD1 | 0       |
+ * | LCD #2 | TCA_CH_LCD2 | 1       |
  *
  * MCP23017 Pin Mapping (Actuators):
  * | Actuator               | Macro                     | MCP23017 Pin |
@@ -66,21 +71,26 @@
  * | Egg/Larvae Heater      | MCP_EGGLARVAE_HEATER      | 4            |
  * | Egg/Larvae Heater Fans | MCP_EGGLARVAE_HEATER_FANS | 5            |
  * | Pupa Humidifier        | MCP_PUPA_HUMIDIFIER       | 6            |
- * | Pupa Fans              | MCP_PUPA_FANS             | 7            |
+ * | Pupa Fan               | MCP_PUPA_FAN              | 7            |
  *
- * Other Analog Channels:
- * | Function               | Macro            | Channel/Pin |
- * |------------------------|------------------|-------------|
- * | Substrate 1 (ADS1115)  | ADS_SUBSTRATE1   | 0           |
- * | Substrate 2 (ADS1115)  | ADS_SUBSTRATE2   | 1           |
- * | Substrate 3 (ADS1115)  | ADS_SUBSTRATE3   | 2           |
- * | Ammonia (ADS1115)      | ADS_MQ137        | 3           |
- * | Substrate 1 (MUX)      | MUX_CH_SUBSTRATE1| 0           |
- * | Substrate 2 (MUX)      | MUX_CH_SUBSTRATE2| 1           |
- * | Substrate 3 (MUX)      | MUX_CH_SUBSTRATE3| 2           |
+ * ADS1115 Channels:
+ * | Function               | Macro            | ADS / Channel |
+ * |------------------------|------------------|---------------|
+ * | Substrate 1            | ADS1_SUBSTRATE_1 | ADS#1 / A0    |
+ * | Substrate 2            | ADS1_SUBSTRATE_2 | ADS#1 / A1    |
+ * | Substrate 3            | ADS1_SUBSTRATE_3 | ADS#1 / A2    |
+ * | Ammonia (MQ137)        | ADS2_MQ137       | ADS#2 / A0    |
+ *
+ * CD74HC4067 Channels:
+ * | Function               | Macro             | MUX Channel |
+ * |------------------------|-------------------|-------------|
+ * | Substrate 1 (MUX)      | MUX_CH_SUBSTRATE1 | 0           |
+ * | Substrate 2 (MUX)      | MUX_CH_SUBSTRATE2 | 1           |
+ * | Substrate 3 (MUX)      | MUX_CH_SUBSTRATE3 | 2           |
  * ==================================================
  */
 
+// Include necessary libraries
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiManager.h>
@@ -93,6 +103,7 @@
 #include <ElegantOTA.h>
 #include <ArduinoJson.h>
 #include <math.h>
+#include <limits.h>
 #include <SD.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -102,14 +113,20 @@
 #include <DHT.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
-
-// ==================== CONFIGURATION ====================
-#include "credentials.h"\n#include "mq137_calibration.h"
+#include <freertos/task.h>
+#include "credentials.h"
+#include "mq137_calibration.h"
+#include "moisture_utils.h"
 
 #define MQTT_BASE_TOPIC "devices"
 
 String DEVICE_ID;
 String DEVICE_ID_CLEAN;
+
+const u_int8_t IP_STA[] = {192, 168, 100, 100};
+const u_int8_t IP_GW[] = {192, 168, 100, 1};
+const u_int8_t SUBNET[] = {255, 255, 255, 0};
+const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 
 // ==================== I2C BUS ====================
 #define I2C_SDA GPIO_NUM_21
@@ -130,14 +147,14 @@ String DEVICE_ID_CLEAN;
 #define MUX_S3 GPIO_NUM_33
 
 // ==================== DHT SENSORS ====================
-// Drawer 1 sensors: DHT11 A+B and DHT22 C
+// Drawer 1
 #define DHT_A_PIN GPIO_NUM_16
-
 #define DHT_B_PIN GPIO_NUM_26
 #define DHT_C_PIN GPIO_NUM_25
-// Drawer 2 dedicated DHT22 sensor D
+// Drawer 2
 #define DHT_D_PIN GPIO_NUM_14
 #define DHT_E_PIN GPIO_NUM_27
+
 #define DHT_READ_ATTEMPTS 1
 #define DHT11_TYPE DHT11
 #define DHT22_TYPE DHT22
@@ -165,10 +182,10 @@ String DEVICE_ID_CLEAN;
 #define MCP_PUPA_FAN 7
 
 // ==================== ADS1115 CHANNELS ====================
-#define ADS_SUBSTRATE1 0
-#define ADS_SUBSTRATE2 1
-#define ADS_SUBSTRATE3 2
-#define ADS_MQ137 3
+#define ADS1_SUBSTRATE_1 0 // On ADS1115 #1
+#define ADS1_SUBSTRATE_2 1 // On ADS1115 #1
+#define ADS1_SUBSTRATE_3 2 // On ADS1115 #1
+#define ADS2_MQ137 0       // On ADS1115 #2
 
 // ==================== CD74HC4067 CHANNELS ====================
 #define MUX_CH_SUBSTRATE1 0
@@ -198,13 +215,6 @@ String DEVICE_ID_CLEAN;
 #define HUMIDITY_MAX 80.0
 #define HUMIDITY_OPTIMAL_LOW 60.0
 #define HUMIDITY_OPTIMAL_HIGH 70.0
-
-// ==================== MQ137 CALIBRATION ====================
-#define MQ137_RL 47.0  // Load resistance in kOhm (47K recommended)
-#define MQ137_CALIBRATION_PPM 21.0  // Fresh air reference (21% O2 approx)
-#define MQ137_CALIBRATION_RATIO 3.6  // Rs/Ro ratio in fresh air (from datasheet)
-#define MQ137_CALIBRATION_CYCLES 500  // Number of readings to average
-#define MQ137_CALIBRATION_FILE "/mq137_ro.json"  // File to store calibration data
 
 #define MOISTURE_MIN 40
 #define MOISTURE_MAX 70
@@ -243,7 +253,32 @@ unsigned long lastSdSyncTime = 0;
 unsigned long lastActuatorCommandTime = 0;
 unsigned long lastMqttReconnectAttempt = 0;
 unsigned long lastModeDebugTime = 0;
+
+// ==================== TLS / HTTPS ROBUSTNESS ====================
+static constexpr uint32_t TLS_MIN_FREE_HEAP = 65000;
+static constexpr uint32_t TLS_MIN_FREE_HEAP_MIN = 50000;
+
+static SemaphoreHandle_t gTlsMutex = nullptr;
+static WiFiClientSecure gHttpsClient;
+static unsigned long gTlsFailCooldownUntilMs = 0;
+
+// ==================== HEARTBEAT & SENSOR UPLOAD TASK ====================
 TaskHandle_t heartbeatTaskHandle = nullptr;
+TaskHandle_t sensorTaskHandle = nullptr;
+
+// ==================== SD UPLOAD TASK ====================
+static TaskHandle_t sdUploadTaskHandle = nullptr;
+static volatile bool sdUploadKick = false;
+
+static volatile int gSdStoredCountCached = -1;
+static TaskHandle_t sdCountTaskHandle = nullptr;
+static void sdCountTask(void *pvParameters);
+
+// ==================== STATE LOCKING (CRITICAL SECTION) ====================
+// Protects shared state touched from loop(), sensorTask(), MQTT callback, and web handlers.
+static portMUX_TYPE gStateMux = portMUX_INITIALIZER_UNLOCKED;
+static inline void stateLock() { portENTER_CRITICAL(&gStateMux); }
+static inline void stateUnlock() { portEXIT_CRITICAL(&gStateMux); }
 
 int lastHeartbeatHttpCode = 0;
 bool lastWifiConnected = false;
@@ -278,82 +313,174 @@ DhtReading lastDrawer2SensorE = {NAN, NAN, false, 0};
 AsyncWebServer server(80);
 
 // ==================== MQ137 CALIBRATION VARIABLES ====================
-float mq137Ro = 3.6;  // Sensor resistance at calibration (default 3.6 kOhm)
-float mq137LastCalibration = 0.0;  // Unix timestamp of last calibration
-bool mq137CalibrationInProgress = false;  // Flag to indicate ongoing calibration
+float mq137Ro = 0.0f;                    // Ro in kΩ (0 = not calibrated yet)
+float mq137LastCalibration = 0.0f;       // Unix timestamp (seconds) of last calibration
+bool mq137CalibrationInProgress = false; // Flag to indicate ongoing calibration
+
+// Async calibration task state
+static TaskHandle_t mq137CalTaskHandle = nullptr;
+static volatile uint16_t mq137CalProgress = 0; // 0..100
+static volatile uint16_t mq137CalValidSamples = 0;
+static volatile float mq137CalLastRsAvg = NAN;
+
+struct Nh3Metrics
+{
+  bool valid;
+  int16_t raw;
+  float vrl;
+  float rs_kohm;
+  float ratio;
+  float ppm;
+};
+
+// ==================== MOISTURE CALIBRATION (raw endpoints) ====================
+// These defaults are placeholders; you should calibrate for your setup.
+static int gMoistureRawDry = 28000; // raw reading in air/dry
+static int gMoistureRawWet = 12000; // raw reading in water/very wet
+
+static SemaphoreHandle_t gDhtMutex = nullptr;
+
+// ==================== ADS1115 VARIABLES ====================
+static constexpr int16_t ADS_INVALID = INT16_MIN;
 
 // MQTT client (optional)
 WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
 
+struct MqttPublishItem
+{
+  char topic[160];
+  char payload[384];
+  bool retain;
+};
+
+static QueueHandle_t gMqttPublishQueue = nullptr;
+static volatile uint32_t gMqttQueueDropCount = 0;
 bool mqttEnabled = false;
 
 bool tcaAvailable = false;
-
 unsigned int i2cErrorCount = 0;
 unsigned int sdErrorCount = 0;
 
 // ==================== FUNCTION PROTOTYPES ====================
 void setup();
 void loop();
-static void logLoopHealth();
+
+// MQTT queue helpers
+static bool mqttEnqueuePublish(const char *topic, const char *payload, bool retain);
+static void mqttDrainQueue();
+void mqttCallback(char *topic, byte *payload, unsigned int length);
+void mqttReconnect();
+
+// Tasks
+static void sdUploadTask(void *pvParameters);
+static inline void kickHeartbeatNow();
+void heartbeatTask(void *pvParameters);
+void sensorTask(void *pvParameters);
+static void mq137CalibrationTask(void *pvParameters);
+
+// Heartbeat / network
+bool sendHeartbeat();
+uint64_t getServerTime();
+void setActuatorState(const char *actuatorType, bool state);
+
+// LED / light timer
 void ledOn();
 void ledOff();
 void updateLightLed();
-bool applyActuatorState(const char *actuator, bool state);
+void publishLightTimerState(int timeSeconds, uint64_t startTimeMs);
+
+// Sensors / processing
 void sendSensorData();
 void collectAndProcessEggLarvaeDrawer();
 void collectAndProcessPupaDrawer();
-void sendOrStoreSensorReading(const char *drawerName, float temperature, float humidity, int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
-bool sendSensorReading(const char *drawerName, float temperature, float humidity, int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
-bool sendHeartbeat();
-void setActuatorState(const char *actuatorType, bool state);
-uint64_t getServerTime();
+void sendOrStoreSensorReading(const char *drawerName, float temperature, float humidity,
+                              int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
+bool sendSensorReading(const char *drawerName, float temperature, float humidity,
+                       int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
+
+// Moisture helpers
+static inline int moisturePercentFromRaw(int raw);
+
+// MUX / I2C helpers
 void selectMuxChannel(uint8_t channel);
 int readMuxAnalog(uint8_t channel);
 void selectTcaChannel(uint8_t channel);
+
+// LCD helpers
 void updateLCD1(float temp, float humidity, int moisture, int ammonia);
 void updateLCD2(float temp, float humidity);
 void displayLCDMessage(uint8_t lcdNum, const char *line1, const char *line2);
+
+// ADS helpers / readers
 int16_t readAds1Channel(uint8_t channel);
 int16_t readAds2Channel(uint8_t channel);
-void setMcpActuator(uint8_t pin, bool state);
-void logActuatorCommand(const char *actuator, bool state);
-void publishActuatorStateBool(const char *actuator, bool state);
-void publishLightTimerState(int timeSeconds, uint64_t startTimeMs);
-void mqttCallback(char *topic, byte *payload, unsigned int length);
-void mqttReconnect();
 int readSubstrate1();
 int readSubstrate2();
 int readSubstrate3();
 int readMQ137();
-void storeSensorToSD(const char *drawerName, float temperature, float humidity, int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
-void uploadStoredData();
-int getStoredDataCount();
+
+// MCP / actuators
+void setMcpActuator(uint8_t pin, bool state);
+bool applyActuatorState(const char *actuator, bool state);
+void logActuatorCommand(const char *actuator, bool state);
+void publishActuatorStateBool(const char *actuator, bool state);
+
+// Inline actuator helpers
+inline void setEggLarvaePump(bool state);
+inline void setEggLarvaeHumidifier(bool state);
+inline void setEggLarvaeFan(bool state);
+inline void setEggLarvaeHeater(bool state);
+inline void setEggLarvaeHeaterFan(bool state);
+inline void setPupaHumidifier(bool state);
+inline void setPupaFan(bool state);
+
+// Offline control / mode
 void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture);
 void autoControlPupaDrawer(float temperature, float humidity);
+bool isAutoControlActive();
+void setRequestedControlMode(ControlMode mode);
+const char *getRequestedControlModeName();
+void recordManualActuatorChange();
+void logConnectivityState(const char *source);
+
+// DHT helpers
+bool isValidDrawer1DhtReading(float temperature, float humidity);
+bool isValidDrawer2DhtReading(float temperature, float humidity);
+bool isStableDhtReading(const DhtReading &current, const DhtReading &previous,
+                        float maxTempDelta, float maxHumidityDelta);
+bool readRawDht(DHT &sensor, float &humidity, float &temperature);
+DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11,
+                           bool useDrawer1Validation, bool allowTypeFallback, const char *label);
+
+// SD storage
+void storeSensorToSD(const char *drawerName, float temperature, float humidity,
+                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
+void uploadStoredData();
+int getStoredDataCount();
+
+static void sdCountTask(void *pvParameters);
+
+// Web server
 void setupWebServer();
 void handleHardwarePage(AsyncWebServerRequest *request);
 void handleCalibrateAmmonia(AsyncWebServerRequest *request);
 void handleCalibrationStatus(AsyncWebServerRequest *request);
 void handleCalibrateAllSensors(AsyncWebServerRequest *request);
+void handleStatus(AsyncWebServerRequest *request);
 void handleGetSdData(AsyncWebServerRequest *request);
 void handleClearSdData(AsyncWebServerRequest *request);
 void handleSyncSdData(AsyncWebServerRequest *request);
 void handleReboot(AsyncWebServerRequest *request);
-bool isValidDrawer1DhtReading(float temperature, float humidity);
-bool isValidDrawer2DhtReading(float temperature, float humidity);
-bool isStableDhtReading(const DhtReading &current, const DhtReading &previous, float maxTempDelta, float maxHumidityDelta);
-bool readRawDht(DHT &sensor, float &humidity, float &temperature);
-DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11, bool useDrawer1Validation, bool allowTypeFallback, const char *label);
-void heartbeatTask(void *pvParameters);
-void recordManualActuatorChange();
-void logConnectivityState(const char *source);
-const char *getRequestedControlModeName();
-bool isAutoControlActive();
-void setRequestedControlMode(ControlMode mode);
 
-// Inline actuator helpers
+struct Nh3Metrics;
+static Nh3Metrics readNh3Metrics();
+static float estimateNh3PpmFromRaw(int16_t rawValue);
+
+// Misc
+static void logLoopHealth();
+
+// Inline actuator helpers (definitions)
 inline void setEggLarvaePump(bool state) { setMcpActuator(MCP_EGGLARVAE_PUMP, state); }
 inline void setEggLarvaeHumidifier(bool state) { setMcpActuator(MCP_EGGLARVAE_HUMIDIFIER, state); }
 inline void setEggLarvaeFan(bool state) { setMcpActuator(MCP_EGGLARVAE_FANS, state); }
@@ -362,12 +489,36 @@ inline void setEggLarvaeHeaterFan(bool state) { setMcpActuator(MCP_EGGLARVAE_HEA
 inline void setPupaHumidifier(bool state) { setMcpActuator(MCP_PUPA_HUMIDIFIER, state); }
 inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
 
+static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
+static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
+static inline unsigned long getOfflineHoldUntilLocked();
+static inline void recordManualActuatorChangeLocked();
+static inline ControlMode getControlModeLocked();
+static inline void setControlModeLocked(ControlMode mode);
+
+static bool canStartTlsNow(const char *tag);
+static void tlsUnlock();
+static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
+
 // ==================== SETUP ====================
 void setup()
 {
   setCpuFrequencyMhz(240);
   Serial.begin(115200);
   delay(1000);
+
+  // Create TLS mutex
+  if (!gTlsMutex)
+    gTlsMutex = xSemaphoreCreateMutex();
+  gHttpsClient.setInsecure();
+
+  // Create DHT mutex
+  if (!gDhtMutex)
+    gDhtMutex = xSemaphoreCreateMutex();
+
+  // Create MQTT publish queue early.
+  if (!gMqttPublishQueue)
+    gMqttPublishQueue = xQueueCreate(12, sizeof(MqttPublishItem));
 
   // Initialize SPI for SD card
   pinMode(SPI_CS_SD, OUTPUT);
@@ -421,12 +572,12 @@ void setup()
   }
   else
   {
-    ads1.setGain(GAIN_ONE);                     // 0-1.024V range (for substrate and ammonia sensors)
-    ads1.setDataRate(RATE_ADS1115_128SPS);      // Set data rate to 128 samples per second for faster readings
-    ads1.startADCReading(ADS_SUBSTRATE1, true); // Start continuous reading for Substrate 1 on channel 0
-    ads1.startADCReading(ADS_SUBSTRATE2, true); // Start continuous reading for Substrate 2 on channel 1
-    ads1.startADCReading(ADS_SUBSTRATE3, true); // Start continuous reading for Substrate 3 on channel 2
-    ads1.startADCReading(ADS_MQ137, true);      // Start continuous reading for MQ137 sensor on channel 3
+    ads1.readADC_SingleEnded(0); // Dummy read to set up config register for channel 0
+    ads1.readADC_SingleEnded(1); // Dummy read to set up config register for channel 1
+    ads1.readADC_SingleEnded(2); // Dummy read to set up config register for channel 2
+    ads1.setGain(GAIN_TWOTHIRDS);
+    ads1.setDataRate(RATE_ADS1115_128SPS);
+
     Serial.println(F("ADS1115 #1 initialized"));
   }
 
@@ -438,26 +589,31 @@ void setup()
   }
   else
   {
-    ads2.setGain(GAIN_TWOTHIRDS);          // 0-6.144V range (for substrate and ammonia sensors)
-    ads2.setDataRate(RATE_ADS1115_860SPS); // Set data rate to 860 samples per second for faster readings
+    // Keep consistent unless ADS#2 is used for a lower-voltage signal that needs higher gain.
+    ads2.readADC_SingleEnded(0); // Dummy read to set up config register for channel 0
+    ads2.setGain(GAIN_TWOTHIRDS);
+    ads2.setDataRate(RATE_ADS1115_128SPS);
     Serial.println(F("ADS1115 #2 initialized"));
   }
 
-  // MCP23017
+  // MCP23017 (DEGRADED MODE: do not return from setup())
   mcpAvailable = mcp.begin_I2C(MCP23017_ADDR);
   if (!mcpAvailable)
   {
-    Serial.println(F("MCP23017 not found"));
-    return;
+    Serial.println(F("MCP23017 not found (degraded mode: actuators/light disabled)"));
+    // DO NOT return;
   }
-  for (int i = 0; i < 16; i++)
+  else
   {
-    mcp.pinMode(i, OUTPUT);
-    mcp.digitalWrite(i, HIGH);
+    for (int i = 0; i < 16; i++)
+    {
+      mcp.pinMode(i, OUTPUT);
+      mcp.digitalWrite(i, HIGH);
+    }
+    Serial.println(F("MCP23017 initialized"));
   }
-  Serial.println(F("MCP23017 initialized"));
 
-  // TC9548A
+  // TCA9548A (DEGRADED MODE: do not return from setup())
   tcaAvailable = false;
   Wire.beginTransmission(TCA9548A_ADDR);
   if (Wire.endTransmission() == 0)
@@ -467,31 +623,45 @@ void setup()
   }
   else
   {
-    Serial.println(F("TCA9548A not found"));
-    return;
+    Serial.println(F("TCA9548A not found (degraded mode: LCD disabled)"));
+    // DO NOT return;
   }
 
   // LCD #1
-  selectTcaChannel(TCA_CH_LCD1);
-  lcd1.init();
-  lcd1Available = true;
-  lcd1.setBacklight(255);
-  lcd1.setCursor(0, 0);
-  lcd1.print(F("Drawer 1"));
-  lcd1.setCursor(0, 1);
-  lcd1.print(F("Initializing..."));
-  delay(200);
+  if (tcaAvailable)
+  {
+    selectTcaChannel(TCA_CH_LCD1);
+    lcd1.init();
+    lcd1Available = true;
+    lcd1.setBacklight(255);
+    lcd1.setCursor(0, 0);
+    lcd1.print(F("Drawer 1"));
+    lcd1.setCursor(0, 1);
+    lcd1.print(F("Initializing..."));
+    delay(200);
+  }
+  else
+  {
+    lcd1Available = false;
+  }
 
   // LCD #2
-  selectTcaChannel(TCA_CH_LCD2);
-  lcd2.init();
-  lcd2Available = true;
-  lcd2.setBacklight(255);
-  lcd2.setCursor(0, 0);
-  lcd2.print(F("Drawer 2"));
-  lcd2.setCursor(0, 1);
-  lcd2.print(F("Initializing..."));
-  delay(200);
+  if (tcaAvailable)
+  {
+    selectTcaChannel(TCA_CH_LCD2);
+    lcd2.init();
+    lcd2Available = true;
+    lcd2.setBacklight(255);
+    lcd2.setCursor(0, 0);
+    lcd2.print(F("Drawer 2"));
+    lcd2.setCursor(0, 1);
+    lcd2.print(F("Initializing..."));
+    delay(200);
+  }
+  else
+  {
+    lcd2Available = false;
+  }
 
   // CD74HC4067
   pinMode(MUX_S0, OUTPUT);
@@ -511,10 +681,13 @@ void setup()
   dhtD11.begin();
   dhtE11.begin();
 
+  loadMQ137Calibration(); // Load MQ137 calibration from SD if present
+
   // WiFiManager
-  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.setSleep(false);
   WiFiManager wm;
+  wm.setSTAStaticIPConfig(IPAddress(IP_STA), IPAddress(IP_GW), IPAddress(SUBNET), IPAddress(IP_DNS));
   wm.setConfigPortalTimeout(180);
 
   bool res = wm.autoConnect("setupBSF", "bsfcpe67");
@@ -540,20 +713,43 @@ void setup()
     Serial.println(DEVICE_ID_CLEAN);
   }
 
-  // Load MQ137 calibration data from SD card
-  loadMQ137Calibration();
-
   setupWebServer();
   sendHeartbeat();
 
-  // Run / in its own task so HTTP latency does not block actuator responsiveness.
   xTaskCreatePinnedToCore(
       heartbeatTask,
       "HeartbeatTask",
       8192,
       nullptr,
-      1,
+      6,
       &heartbeatTaskHandle,
+      0);
+
+  xTaskCreatePinnedToCore(
+      sdUploadTask,
+      "SDUploadTask",
+      8192,
+      nullptr,
+      4,
+      &sdUploadTaskHandle,
+      0);
+
+  xTaskCreatePinnedToCore(
+      sensorTask,
+      "SensorTask",
+      16384,
+      nullptr,
+      2,
+      &sensorTaskHandle,
+      1);
+
+  xTaskCreatePinnedToCore(
+      sdCountTask,
+      "SDCountTask",
+      4096,
+      nullptr,
+      1,
+      &sdCountTaskHandle,
       1);
 
   if (strlen(MQTT_BROKER) > 0)
@@ -566,11 +762,15 @@ void setup()
 // ==================== LED CONTROL ====================
 void ledOn()
 {
+  if (!mcpAvailable)
+    return;
   mcp.digitalWrite(MCP_ENCLOSURE_LIGHT, LOW);
 }
 
 void ledOff()
 {
+  if (!mcpAvailable)
+    return;
   mcp.digitalWrite(MCP_ENCLOSURE_LIGHT, HIGH);
 }
 
@@ -606,6 +806,9 @@ void loop()
     Serial.print(F("[MODE] WiFi "));
     Serial.println(wifiConnected ? F("CONNECTED") : F("DISCONNECTED -> OFFLINE mode"));
     lastWifiConnected = wifiConnected;
+
+    if (wifiConnected)
+      kickHeartbeatNow(); // send one ASAP after reconnect
   }
 
   if (mqttConnected != lastMqttConnected)
@@ -626,42 +829,90 @@ void loop()
     if (!mqttClient.connected() && currentTime - lastMqttReconnectAttempt >= MQTT_RECONNECT_INTERVAL_MS)
       mqttReconnect();
     mqttClient.loop();
-  }
-
-  if (currentTime - lastSensorTime >= SENSOR_INTERVAL)
-  {
-    sendSensorData();
-    lastSensorTime = currentTime;
-  }
-
-  if (currentTime - lastSdSyncTime >= SD_SYNC_INTERVAL)
-  {
-    uploadStoredData();
-    lastSdSyncTime = currentTime;
+    mqttDrainQueue();
   }
 
   if (lightEndTime > 0 && millis() >= lightEndTime)
   {
-    lightState = false;
-    lightEndTime = 0;
-    updateLightLed();
-    publishActuatorStateBool("light", false);
-    Serial.println(F("Light timer expired - Light OFF"));
+    // Make timer expiry atomic with respect to MQTT callback / actuator apply
+    stateLock();
+    bool expired = (lightEndTime > 0 && millis() >= lightEndTime);
+    if (expired)
+    {
+      lightState = false;
+      lightEndTime = 0;
+    }
+    stateUnlock();
+
+    if (expired)
+    {
+      updateLightLed();
+      publishActuatorStateBool("light", false);
+      Serial.println(F("Light timer expired - Light OFF"));
+    }
   }
 
   yield();
+}
+
+// ==================== SD UPLOAD TASK ====================
+static void sdUploadTask(void *pvParameters)
+{
+  (void)pvParameters;
+
+  for (;;)
+  {
+    if (sdUploadKick)
+    {
+      sdUploadKick = false;
+      uploadStoredData();
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(200));
+  }
+}
+
+// ==================== SENSOR TASK ====================
+void sensorTask(void *pvParameters)
+{
+  (void)pvParameters;
+
+  // Use a fixed-rate schedule to prevent drift
+  TickType_t lastWake = xTaskGetTickCount();
+
+  // Spread initial load a little so we don't collide with boot MQTT/heartbeat setup.
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  lastWake = xTaskGetTickCount();
+
+  for (;;)
+  {
+    uint32_t startMs = millis();
+
+    sendSensorData();
+
+    uint32_t elapsed = millis() - startMs;
+    if (elapsed > (uint32_t)SENSOR_INTERVAL)
+    {
+      Serial.print(F("[WARN] Sensor cycle overran interval: "));
+      Serial.print(elapsed);
+      Serial.println(F(" ms"));
+    }
+
+    vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(SENSOR_INTERVAL));
+  }
 }
 
 // ==================== ACTUATOR CONTROL ====================
 bool applyActuatorState(const char *actuator, bool state)
 {
   lastActuatorCommandTime = millis();
-  recordManualActuatorChange();
+
+  // Manual change holdoff must be protected (used by multiple contexts)
+  recordManualActuatorChangeLocked();
 
   if (strcmp(actuator, "light") == 0)
   {
-    lightState = state;
-    lightEndTime = 0;
+    setLightTimerLocked(state, 0);
     updateLightLed();
     logActuatorCommand("light", state);
     return true;
@@ -720,72 +971,61 @@ void sendSensorData()
   collectAndProcessPupaDrawer();      // Drawer 2 (1 dedicated DHT22)
 }
 
+// ==================== MOISTURE CALIBRATION ====================
+static inline int moisturePercentFromRaw(int raw)
+{
+  return moisturePercentFromRawValue(raw, gMoistureRawDry, gMoistureRawWet);
+}
+
+static inline const char *rawRangeTag(int raw)
+{
+  return moistureRawRangeTag(raw, gMoistureRawDry, gMoistureRawWet);
+}
+
 void collectAndProcessEggLarvaeDrawer()
 {
+  // ----- DHTs -----
   DhtReading currentA = readDhtAutoType(dhtA11, dhtA22, true, true, true, "A");
   DhtReading currentB = readDhtAutoType(dhtB11, dhtB22, true, true, true, "B");
   DhtReading currentC = readDhtAutoType(dhtC11, dhtC22, false, true, false, "C");
 
-  float humidityA = currentA.humidity;
-  float temperatureA = currentA.temperature;
-  float humidityB = currentB.humidity;
-  float temperatureB = currentB.temperature;
-  float humidityC = currentC.humidity;
-  float temperatureC = currentC.temperature;
-
-  Serial.print(F("DHT A -> T:"));
-  Serial.print(temperatureA);
-  Serial.print(F(" C H:"));
-  Serial.print(humidityA);
-  Serial.print(F(" % | DHT B -> T:"));
-  Serial.print(temperatureB);
-  Serial.print(F(" C H:"));
-  Serial.print(humidityB);
-  Serial.print(F(" % | DHT C -> T:"));
-  Serial.print(temperatureC);
-  Serial.print(F(" C H:"));
-  Serial.println(humidityC);
+  // Compact print (avoid long serial spam that can slow loops under load)
+  Serial.print(F("DHT1 A:"));
+  Serial.print(currentA.valid ? F("OK ") : F("X "));
+  Serial.print(F("B:"));
+  Serial.print(currentB.valid ? F("OK ") : F("X "));
+  Serial.print(F("C:"));
+  Serial.println(currentC.valid ? F("OK") : F("X"));
 
   float humidity = NAN;
   float temperature = NAN;
+
   int validSensors = 0;
-  float tempSum = 0, humSum = 0;
+  float tempSum = 0.0f, humSum = 0.0f;
 
-  if (currentA.valid && (!lastDrawer1SensorA.valid || isStableDhtReading(currentA, lastDrawer1SensorA, 6.0f, 25.0f)))
+  auto accept = [&](const DhtReading &cur, DhtReading &last, const char *label)
   {
-    tempSum += currentA.temperature;
-    humSum += currentA.humidity;
-    validSensors++;
-    lastDrawer1SensorA = currentA;
-  }
-  else if (currentA.valid)
-  {
-    Serial.println(F("[WARN] Drawer 1 DHT A reading rejected as unstable"));
-  }
+    if (!cur.valid)
+      return;
 
-  if (currentB.valid && (!lastDrawer1SensorB.valid || isStableDhtReading(currentB, lastDrawer1SensorB, 6.0f, 25.0f)))
-  {
-    tempSum += currentB.temperature;
-    humSum += currentB.humidity;
-    validSensors++;
-    lastDrawer1SensorB = currentB;
-  }
-  else if (currentB.valid)
-  {
-    Serial.println(F("[WARN] Drawer 1 DHT B reading rejected as unstable"));
-  }
+    if (!last.valid || isStableDhtReading(cur, last, 6.0f, 25.0f))
+    {
+      tempSum += cur.temperature;
+      humSum += cur.humidity;
+      validSensors++;
+      last = cur;
+    }
+    else
+    {
+      Serial.print(F("[WARN] Drawer 1 DHT "));
+      Serial.print(label);
+      Serial.println(F(" rejected as unstable"));
+    }
+  };
 
-  if (currentC.valid && (!lastDrawer1SensorC.valid || isStableDhtReading(currentC, lastDrawer1SensorC, 6.0f, 25.0f)))
-  {
-    tempSum += currentC.temperature;
-    humSum += currentC.humidity;
-    validSensors++;
-    lastDrawer1SensorC = currentC;
-  }
-  else if (currentC.valid)
-  {
-    Serial.println(F("[WARN] Drawer 1 DHT C reading rejected as unstable"));
-  }
+  accept(currentA, lastDrawer1SensorA, "A");
+  accept(currentB, lastDrawer1SensorB, "B");
+  accept(currentC, lastDrawer1SensorC, "C");
 
   if (validSensors > 0)
   {
@@ -794,67 +1034,85 @@ void collectAndProcessEggLarvaeDrawer()
   }
   else
   {
-    Serial.println("[WARN] Drawer 1 has no valid DHT readings in this cycle");
+    Serial.println(F("[WARN] Drawer 1 has no valid DHT readings in this cycle"));
   }
 
+  // ----- Substrate raw + % -----
   int substrate1Raw = readSubstrate1();
   int substrate2Raw = readSubstrate2();
   int substrate3Raw = readSubstrate3();
 
-  Serial.print(F("Substrate Raw Values - S1:"));
+  int leftSubstrate = moisturePercentFromRaw(substrate1Raw);
+  int centerSubstrate = moisturePercentFromRaw(substrate2Raw);
+  int rightSubstrate = moisturePercentFromRaw(substrate3Raw);
+
+  Serial.print(F("Sub(L/C/R) raw="));
   Serial.print(substrate1Raw);
-  Serial.print(F(" S2:"));
+  Serial.print(F("/"));
   Serial.print(substrate2Raw);
-  Serial.print(F(" S3:"));
-  Serial.println(substrate3Raw);
-
-  int leftSubstrate = map(substrate1Raw, 0, 26000, 0, 100);
-  leftSubstrate = constrain(leftSubstrate, 0, 100);
-
-  int centerSubstrate = map(substrate2Raw, 0, 26000, 0, 100);
-  centerSubstrate = constrain(centerSubstrate, 0, 100);
-
-  int rightSubstrate = map(substrate3Raw, 0, 26000, 0, 100);
-  rightSubstrate = constrain(rightSubstrate, 0, 100);
-
-  Serial.print(F("Substrate Mapped (%) - Left:"));
+  Serial.print(F("/"));
+  Serial.print(substrate3Raw);
+  Serial.print(F(" pct="));
   Serial.print(leftSubstrate);
-  Serial.print(F(" Center:"));
+  Serial.print(F("/"));
   Serial.print(centerSubstrate);
-  Serial.print(F(" Right:"));
-  Serial.println(rightSubstrate);
+  Serial.print(F("/"));
+  Serial.print(rightSubstrate);
+  Serial.print(F(" tag="));
+  Serial.print(rawRangeTag(substrate1Raw));
+  Serial.print(F("/"));
+  Serial.print(rawRangeTag(substrate2Raw));
+  Serial.print(F("/"));
+  Serial.println(rawRangeTag(substrate3Raw));
 
-  int ammoniaRaw = readMQ137();
-  // Calculate ammonia concentration using calibration constant
-  float Rs = calculateRsFromRaw(ammoniaRaw);
-  float ratio = (mq137Ro > 0) ? (Rs / mq137Ro) : 1.0;
-  
-  // Simplified PPM calculation (exponent from MQ137 datasheet)
-  // PPM = 10^((log(RS/RO) - log(a)) / b)
-  // For MQ137: a ≈ 3.6, b ≈ -0.93 (approximate from gas curve)
-  float ammonia_ppm = 0;
-  if (ratio > 0)
-  {
-    // Simplified formula: ppm ≈ 21 * (1 / ratio)^1.2 (approximate for ammonia)
-    ammonia_ppm = 21.0 * pow(1.0 / ratio, 1.2);
-  }
-  
-  // Clamp to 0-100 ppm range for display
-  int ammonia = constrain((int)ammonia_ppm, 0, 100);
+  Nh3Metrics nh3 = readNh3Metrics();
 
+  Serial.print(F("[MQ137] raw="));
+  Serial.print((nh3.raw == ADS_INVALID) ? -1 : nh3.raw);
+
+  Serial.print(F(" vrl="));
+  if (isfinite(nh3.vrl))
+    Serial.print(nh3.vrl, 3);
+  else
+    Serial.print(F("NaN"));
+
+  Serial.print(F(" rs_kohm="));
+  if (isfinite(nh3.rs_kohm))
+    Serial.print(nh3.rs_kohm, 3);
+  else
+    Serial.print(F("NaN"));
+
+  Serial.print(F(" ratio="));
+  if (isfinite(nh3.ratio))
+    Serial.print(nh3.ratio, 3);
+  else
+    Serial.print(F("NaN"));
+
+  Serial.print(F(" ppm="));
+  if (isfinite(nh3.ppm))
+    Serial.println(nh3.ppm, 4);
+  else
+    Serial.println(F("NaN"));
+
+  // ----- Display + publish/store + control -----
   if (!isnan(humidity) && !isnan(temperature))
   {
-    int avgMoisture = (leftSubstrate + centerSubstrate + rightSubstrate) / 3;
-    updateLCD1(temperature, humidity, avgMoisture, ammonia);
+    int avgMoisture = -1;
+    if (leftSubstrate >= 0 && centerSubstrate >= 0 && rightSubstrate >= 0)
+      avgMoisture = (leftSubstrate + centerSubstrate + rightSubstrate) / 3;
 
-    sendOrStoreSensorReading("Drawer 1", temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, ammonia);
+    updateLCD1(temperature, humidity, avgMoisture, -1);
+
+    sendOrStoreSensorReading("Drawer 1", temperature, humidity,
+                             leftSubstrate, centerSubstrate, rightSubstrate,
+                             -1);
 
     if (isAutoControlActive())
     {
       bool offline = WiFi.status() != WL_CONNECTED;
       if (!offline || millis() >= offlineAutoControlHoldUntil)
       {
-        autoControlEggLarvaeDrawer(temperature, humidity, avgMoisture);
+        autoControlEggLarvaeDrawer(temperature, humidity, (avgMoisture >= 0 ? avgMoisture : 0));
       }
       else
       {
@@ -864,15 +1122,14 @@ void collectAndProcessEggLarvaeDrawer()
   }
   else
   {
-    // Show "X" for invalid values on LCD1
     if (lcd1Available)
     {
       selectTcaChannel(TCA_CH_LCD1);
       lcd1.clear();
       lcd1.setCursor(0, 0);
-      lcd1.print("T:X H:X");
+      lcd1.print(F("T:X H:X"));
       lcd1.setCursor(0, 1);
-      lcd1.print("S:X NH3:X");
+      lcd1.print(F("S:X NH3:X"));
     }
   }
 }
@@ -988,22 +1245,13 @@ void collectAndProcessPupaDrawer()
 
 void sendOrStoreSensorReading(const char *drawerName, float temperature, float humidity, int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia)
 {
+  // ammonia argument is legacy (old percent). Backend expects "ammonia" key, which we now treat as PPM.
+  (void)ammonia;
+
   bool wifiConnected = WiFi.status() == WL_CONNECTED;
   bool mqttConnected = mqttEnabled && mqttClient.connected();
 
-  if (!wifiConnected)
-  {
-    Serial.println(F("[MODE] OFFLINE: WiFi disconnected, storing locally and using auto-control"));
-  }
-  else if (!mqttConnected)
-  {
-    Serial.println(F("[MODE] DEGRADED: WiFi connected but MQTT unavailable, trying send/fallback to SD"));
-    ;
-  }
-  else
-  {
-    Serial.println(F("[MODE] ONLINE: WiFi+MQTT connected, publishing live data"));
-  }
+  // ...existing code...
 
   // --- Console printing for debugging ---
   Serial.print(F("[SENSOR] "));
@@ -1013,6 +1261,7 @@ void sendOrStoreSensorReading(const char *drawerName, float temperature, float h
   Serial.print(F(" C | Humidity: "));
   Serial.print(humidity);
   Serial.print(F(" %"));
+
   if (leftSubstrate >= 0 && centerSubstrate >= 0 && rightSubstrate >= 0)
   {
     Serial.print(F(" | Substrate LCR: "));
@@ -1023,26 +1272,45 @@ void sendOrStoreSensorReading(const char *drawerName, float temperature, float h
     Serial.print(rightSubstrate);
     Serial.print(F(" %"));
   }
-  if (ammonia >= 0)
+
+  if (strcmp(drawerName, "Drawer 1") == 0)
   {
-    Serial.print(F(" | Ammonia: "));
-    Serial.print(ammonia);
-    Serial.print(F(" %"));
+    Nh3Metrics nh3 = readNh3Metrics();
+    if (nh3.valid)
+    {
+      Serial.print(F(" | NH3: "));
+      if (isfinite(nh3.ppm))
+      {
+        Serial.print(nh3.ppm, 4);
+        Serial.print(F(" ppm"));
+      }
+      else
+      {
+        Serial.print(F("NaN"));
+      }
+
+      Serial.print(F(" | Rs/Ro: "));
+      if (isfinite(nh3.ratio))
+        Serial.print(nh3.ratio, 3);
+      else
+        Serial.print(F("NaN"));
+    }
   }
+
   Serial.println();
-  // --- End console printing ---
+
   if (wifiConnected)
   {
-    bool success = sendSensorReading(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, ammonia);
+    bool success = sendSensorReading(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, -1);
     if (!success && sdAvailable)
     {
-      storeSensorToSD(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, ammonia);
+      storeSensorToSD(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, -1);
       Serial.println(F("[MODE] Fallback: publish failed, data buffered to SD"));
     }
   }
   else if (sdAvailable)
   {
-    storeSensorToSD(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, ammonia);
+    storeSensorToSD(drawerName, temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate, -1);
     Serial.print(F("Stored offline: "));
     Serial.println(drawerName);
   }
@@ -1051,13 +1319,14 @@ void sendOrStoreSensorReading(const char *drawerName, float temperature, float h
 bool sendSensorReading(const char *drawerName, float temperature, float humidity,
                        int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia)
 {
-  if (!(mqttEnabled && mqttClient.connected()))
+  (void)ammonia; // Option A: ignore legacy ammonia %
+
+  if (!mqttEnabled)
     return false;
 
-  // Keep this reasonably sized; adjust if you add more fields.
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
 
-  doc["macAddress"] = DEVICE_ID; // (still a String global, OK)
+  doc["macAddress"] = DEVICE_ID;
   doc["drawerName"] = drawerName;
   doc["temperature"] = temperature;
   doc["humidity"] = humidity;
@@ -1068,32 +1337,71 @@ bool sendSensorReading(const char *drawerName, float temperature, float humidity
     doc["centerSubstrate"] = centerSubstrate;
   if (rightSubstrate >= 0)
     doc["rightSubstrate"] = rightSubstrate;
-  if (ammonia >= 0)
-    doc["ammonia"] = ammonia;
 
-  char payload[256];
+  // Drawer 1: backend expects "ammonia" => send NH3 ppm as "ammonia" (float OK; backend converts to int)
+  if (strcmp(drawerName, "Drawer 1") == 0)
+  {
+    Nh3Metrics nh3 = readNh3Metrics();
+    if (nh3.valid)
+    {
+      if (isfinite(nh3.ppm))
+        doc["ammonia"] = nh3.ppm; // ammonia == ppm
+      if (isfinite(nh3.ratio))
+        doc["ammoniaRatio"] = nh3.ratio;
+      doc["ammoniaRaw"] = (nh3.raw == ADS_INVALID) ? -1 : nh3.raw;
+    }
+  }
+
+  char payload[384];
   size_t n = serializeJson(doc, payload, sizeof(payload));
   if (n == 0)
+    return false;
+
+  char topic[128];
+  snprintf(topic, sizeof(topic), "%s/%s/sensors", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+
+  return mqttEnqueuePublish(topic, payload, false);
+}
+
+static bool mqttEnqueuePublish(const char *topic, const char *payload, bool retain = false)
+{
+  if (!mqttEnabled)
+    return false;
+  if (!gMqttPublishQueue)
+    return false;
+  if (!topic || !payload)
+    return false;
+
+  MqttPublishItem item{};
+  strncpy(item.topic, topic, sizeof(item.topic) - 1);
+  strncpy(item.payload, payload, sizeof(item.payload) - 1);
+  item.retain = retain;
+
+  // Non-blocking: keep system responsive, drop if queue is full.
+  if (xQueueSend(gMqttPublishQueue, &item, 0) != pdTRUE)
   {
-    Serial.print(F("[WARN] serializeJson produced empty payload for "));
-    Serial.println(drawerName);
+    gMqttQueueDropCount++;
     return false;
   }
 
-  char topic[128];
-  // Avoid temporary String concatenations
-  snprintf(topic, sizeof(topic), "%s/%s/sensors", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+  return true;
+}
 
-  if (mqttClient.publish(topic, payload))
+static void mqttDrainQueue()
+{
+  if (!mqttEnabled || !mqttClient.connected() || !gMqttPublishQueue)
+    return;
+
+  MqttPublishItem item;
+  const int kMaxPerLoop = 8;
+
+  for (int i = 0; i < kMaxPerLoop; i++)
   {
-    Serial.print(drawerName);
-    Serial.println(F(" sensor data published via MQTT"));
-    return true;
-  }
+    if (xQueueReceive(gMqttPublishQueue, &item, 0) != pdTRUE)
+      break;
 
-  Serial.print(F("MQTT publish failed for "));
-  Serial.println(drawerName);
-  return false;
+    mqttClient.publish(item.topic, item.payload, item.retain);
+  }
 }
 
 // ==================== HEARTBEAT ====================
@@ -1106,8 +1414,25 @@ bool sendHeartbeat()
     return false;
   }
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  if (millis() < gTlsFailCooldownUntilMs)
+  {
+    lastHeartbeatHttpCode = -1004;
+    return false;
+  }
+
+  if (!canStartTlsNow("heartbeat"))
+  {
+    lastHeartbeatHttpCode = -1002; // low heap / fragmented
+    return false;
+  }
+
+  if (!tlsTryLock(pdMS_TO_TICKS(1500)))
+  {
+    Serial.println(F("[TLS] Heartbeat skipped: TLS mutex busy"));
+    lastHeartbeatHttpCode = -1003;
+    return false;
+  }
+
   HTTPClient http;
   http.setTimeout(HEARTBEAT_TIMEOUT_MS);
 
@@ -1116,17 +1441,17 @@ bool sendHeartbeat()
   Serial.print(F("Sending heartbeat to: "));
   Serial.println(heartbeatUrl);
 
-  if (!http.begin(client, heartbeatUrl))
+  if (!http.begin(gHttpsClient, heartbeatUrl))
   {
     Serial.println(F("HTTP begin failed"));
     lastHeartbeatHttpCode = -1001;
+    tlsUnlock();
     return false;
   }
 
   http.addHeader("Content-Type", "application/json");
 
-  // Prepare heartbeat payload with IP address
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["ipAddress"] = WiFi.localIP().toString();
   String jsonPayload;
   serializeJson(doc, jsonPayload);
@@ -1134,14 +1459,16 @@ bool sendHeartbeat()
   int httpCode = http.POST(jsonPayload);
   lastHeartbeatHttpCode = httpCode;
 
+  http.end();
+  tlsUnlock();
+
   if (httpCode == 200)
   {
-    Serial.print(F("Heartbeat sent - device online at "));
-    Serial.println(WiFi.localIP());
-    http.end();
+    Serial.println(F("Heartbeat sent - device online"));
     return true;
   }
-  else if (httpCode == 404)
+
+  if (httpCode == 404)
   {
     Serial.println(F("Device not registered. Register in app Settings."));
   }
@@ -1150,13 +1477,22 @@ bool sendHeartbeat()
     Serial.print(F("Heartbeat failed, code: "));
     Serial.println(httpCode);
     if (httpCode < 0)
-    {
       Serial.println(F("[MODE] Internet/DNS unreachable while WiFi is connected"));
-    }
   }
 
-  http.end();
+  if (httpCode < 0)
+  {
+    // Back off 60s on transport/TLS errors to avoid repeated heap fragmentation.
+    gTlsFailCooldownUntilMs = millis() + 60000UL;
+  }
+
   return false;
+}
+
+static inline void kickHeartbeatNow()
+{
+  if (heartbeatTaskHandle)
+    xTaskNotifyGive(heartbeatTaskHandle);
 }
 
 void heartbeatTask(void *pvParameters)
@@ -1165,19 +1501,18 @@ void heartbeatTask(void *pvParameters)
 
   for (;;)
   {
-    unsigned long now = millis();
-    if (now - lastHeartbeatTime >= HEARTBEAT_INTERVAL &&
-        now - lastActuatorCommandTime >= HEARTBEAT_COOLDOWN_AFTER_ACTUATOR_MS)
-    {
-      bool ok = sendHeartbeat();
-      if (!ok)
-      {
-        Serial.println(F("[MODE] Heartbeat check failed; operating in offline/degraded behavior"));
-      }
-      lastHeartbeatTime = millis();
-    }
+    // Wait until next interval OR until someone kicks us (notify)
+    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(HEARTBEAT_INTERVAL));
 
-    vTaskDelay(pdMS_TO_TICKS(200));
+    unsigned long now = millis();
+    if (now - lastActuatorCommandTime < HEARTBEAT_COOLDOWN_AFTER_ACTUATOR_MS)
+      continue;
+
+    bool ok = sendHeartbeat();
+    if (!ok)
+      Serial.println(F("[MODE] Heartbeat check failed; operating in offline/degraded behavior"));
+
+    lastHeartbeatTime = millis();
   }
 }
 
@@ -1187,13 +1522,28 @@ void setActuatorState(const char *actuatorType, bool state)
   if (WiFi.status() != WL_CONNECTED)
     return;
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  if (!canStartTlsNow("actuatorState"))
+    return;
+
+  if (!tlsTryLock(pdMS_TO_TICKS(2000)))
+  {
+    Serial.println(F("[TLS] setActuatorState skipped: TLS mutex busy"));
+    return;
+  }
+
   HTTPClient http;
-  http.setTimeout(5000);
+  http.setTimeout(2000);
+
   String url = String(BACKEND_URL) + "/api/actuators/" + DEVICE_ID + ":" + actuatorType;
 
-  http.begin(client, url);
+  if (!http.begin(gHttpsClient, url))
+  {
+    Serial.println(F("[TLS] setActuatorState: HTTP begin failed"));
+    http.end();
+    tlsUnlock();
+    return;
+  }
+
   http.addHeader("Content-Type", "application/json");
 
   JsonDocument doc;
@@ -1204,6 +1554,9 @@ void setActuatorState(const char *actuatorType, bool state)
 
   int httpCode = http.POST(payload);
 
+  http.end();
+  tlsUnlock();
+
   if (httpCode == 200 || httpCode == 201)
   {
     Serial.print(F("Actuator "));
@@ -1211,18 +1564,37 @@ void setActuatorState(const char *actuatorType, bool state)
     Serial.print(F(" set to "));
     Serial.println(state ? F("ON") : F("OFF"));
   }
-
-  http.end();
+  else
+  {
+    Serial.print(F("Actuator HTTP failed, code: "));
+    Serial.println(httpCode);
+  }
 }
 
 // ==================== TIME HELPER ====================
 uint64_t getServerTime()
 {
-  WiFiClientSecure client;
-  client.setInsecure();
+  if (WiFi.status() != WL_CONNECTED)
+    return 0;
+
+  if (!canStartTlsNow("serverTime"))
+    return 0;
+
+  if (!tlsTryLock(pdMS_TO_TICKS(1500)))
+  {
+    Serial.println(F("[TLS] getServerTime skipped: TLS mutex busy"));
+    return 0;
+  }
+
   HTTPClient http;
   http.setTimeout(2000);
-  http.begin(client, String(BACKEND_URL) + "/api/time");
+
+  if (!http.begin(gHttpsClient, String(BACKEND_URL) + "/api/time"))
+  {
+    tlsUnlock();
+    return 0;
+  }
+
   int httpCode = http.GET();
   uint64_t serverTime = 0;
 
@@ -1230,13 +1602,13 @@ uint64_t getServerTime()
   {
     String payload = http.getString();
     JsonDocument doc;
-    if (!deserializeJson(doc, payload))
-    {
+    DeserializationError err = deserializeJson(doc, payload);
+    if (!err && !doc["now"].isNull())
       serverTime = doc["now"].as<uint64_t>();
-    }
   }
 
   http.end();
+  tlsUnlock();
   return serverTime;
 }
 
@@ -1273,8 +1645,13 @@ void selectTcaChannel(uint8_t channel)
 // ==================== LCD DISPLAY HELPERS ====================
 void updateLCD1(float temp, float humidity, int moisture, int ammonia)
 {
+  (void)ammonia; // Option A: legacy % not used anymore
+
   if (!lcd1Available)
     return;
+
+  Nh3Metrics nh3 = readNh3Metrics();
+
   selectTcaChannel(TCA_CH_LCD1);
   lcd1.clear();
   lcd1.setCursor(0, 0);
@@ -1317,12 +1694,22 @@ void updateLCD1(float temp, float humidity, int moisture, int ammonia)
     lcd1.print("S:X ");
   }
 
-  // Ammonia
-  if (ammonia >= 0 && ammonia <= 100)
+  // NH3: show ppm if available; if ppm is too tiny/NaN, show ratio
+  if (isfinite(nh3.ppm))
   {
     lcd1.print("NH3:");
-    lcd1.print(ammonia);
-    lcd1.print("%");
+    if (nh3.ppm < 10.0f)
+      lcd1.print(nh3.ppm, 1); // e.g. 0.1, 2.3
+    else
+      lcd1.print((int)(nh3.ppm + 0.5f)); // e.g. 12, 105
+
+    lcd1.print("ppm");
+  }
+  else if (isfinite(nh3.ratio))
+  {
+    lcd1.print("R:");
+    lcd1.print(nh3.ratio, 2); // Rs/Ro
+    lcd1.print("    ");       // pad
   }
   else
   {
@@ -1384,14 +1771,16 @@ void displayLCDMessage(uint8_t lcdNum, const char *line1, const char *line2)
 int16_t readAds1Channel(uint8_t channel)
 {
   if (!ads1Available)
-    return 0;
+    return ADS_INVALID;
+
   return ads1.readADC_SingleEnded(channel);
 }
 
 int16_t readAds2Channel(uint8_t channel)
 {
   if (!ads2Available)
-    return 0;
+    return ADS_INVALID;
+
   return ads2.readADC_SingleEnded(channel);
 }
 
@@ -1419,10 +1808,10 @@ void logActuatorCommand(const char *actuator, bool state)
 
 void publishActuatorStateBool(const char *actuator, bool state)
 {
-  if (!mqttEnabled || !mqttClient.connected())
+  if (!mqttEnabled)
     return;
 
-  StaticJsonDocument<64> doc;
+  JsonDocument doc;
   doc["state"] = state;
 
   char payload[64];
@@ -1430,15 +1819,16 @@ void publishActuatorStateBool(const char *actuator, bool state)
 
   char topic[160];
   snprintf(topic, sizeof(topic), "%s/%s/actuators/%s/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str(), actuator);
-  mqttClient.publish(topic, payload);
+
+  mqttEnqueuePublish(topic, payload, true);
 }
 
 void publishLightTimerState(int timeSeconds, uint64_t startTimeMs)
 {
-  if (!mqttEnabled || !mqttClient.connected())
+  if (!mqttEnabled)
     return;
 
-  StaticJsonDocument<96> doc;
+  JsonDocument doc;
   JsonObject state = doc["state"].to<JsonObject>();
   state["time"] = timeSeconds;
   state["startTime"] = startTimeMs;
@@ -1448,7 +1838,8 @@ void publishLightTimerState(int timeSeconds, uint64_t startTimeMs)
 
   char topic[160];
   snprintf(topic, sizeof(topic), "%s/%s/actuators/light/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
-  mqttClient.publish(topic, payload);
+
+  mqttEnqueuePublish(topic, payload, true);
 }
 
 // ==================== MQTT CALLBACK & RECONNECT ====================
@@ -1501,7 +1892,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     return;
 
   // JSON parse (bounded)
-  StaticJsonDocument<256> d;
+  JsonDocument d;
   bool isJson = (deserializeJson(d, msg) == DeserializationError::Ok);
 
   // Handle mode actuator
@@ -1543,28 +1934,30 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
       if (estimatedRemaining > 0)
       {
-        lightEndTime = localNowMs + estimatedRemaining;
-        lightState = true;
+        setLightTimerLocked(true, (unsigned long)(localNowMs + estimatedRemaining));
       }
       else
       {
-        lightEndTime = 0;
-        lightState = false;
+        setLightTimerLocked(false, 0);
       }
 
       updateLightLed();
-      if (lightState)
+
+      bool on;
+      unsigned long endT;
+      getLightTimerLocked(on, endT);
+
+      if (on)
         publishLightTimerState(timeSeconds, startTimeMs);
       else
         publishActuatorStateBool("light", false);
 
       Serial.print(F("Light (MQTT timer): "));
-      Serial.println(lightState ? F("ON") : F("OFF"));
+      Serial.println(on ? F("ON") : F("OFF"));
     }
     else
     {
-      lightState = false;
-      lightEndTime = 0;
+      setLightTimerLocked(false, 0);
       updateLightLed();
       publishActuatorStateBool("light", false);
       Serial.println(F("Light (MQTT): OFF"));
@@ -1648,48 +2041,76 @@ void mqttReconnect()
 // ==================== SENSOR READERS ====================
 int readSubstrate1()
 {
-  return readAds1Channel(ADS_SUBSTRATE1);
+  int16_t v = readAds1Channel(ADS1_SUBSTRATE_1);
+  if (v == ADS_INVALID)
+    return -1; // sentinel for "invalid"
+  return (int)v;
 }
 
 int readSubstrate2()
 {
-  return readAds1Channel(ADS_SUBSTRATE2);
+  int16_t v = readAds1Channel(ADS1_SUBSTRATE_2);
+  if (v == ADS_INVALID)
+    return -1;
+  return (int)v;
 }
 
 int readSubstrate3()
 {
-  return readAds1Channel(ADS_SUBSTRATE3);
+  int16_t v = readAds1Channel(ADS1_SUBSTRATE_3);
+  if (v == ADS_INVALID)
+    return -1;
+  return (int)v;
 }
 
-int readMQ137() { return readAds1Channel(ADS_MQ137); }
+int readMQ137()
+{
+  int16_t v = readAds2Channel(ADS2_MQ137);
+  if (v == ADS_INVALID)
+    return -1;
+  return (int)v;
+}
 
 // ==================== SD CARD STORAGE ====================
-void storeSensorToSD(const char *drawerName, float temperature, float humidity, int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia)
+void storeSensorToSD(const char *drawerName, float temperature, float humidity,
+                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia)
 {
+  (void)ammonia; // Option A
+
   if (!sdAvailable)
     return;
 
   File file = SD.open(SD_DATA_FILE, FILE_APPEND);
   if (!file)
-  {
-    Serial.println(F("Failed to open SD file for writing"));
-    sdErrorCount++;
     return;
-  }
 
-  StaticJsonDocument<384> doc;
+  JsonDocument doc;
   doc["macAddress"] = DEVICE_ID;
   doc["drawerName"] = drawerName;
   doc["temperature"] = temperature;
   doc["humidity"] = humidity;
+
   if (leftSubstrate >= 0)
     doc["leftSubstrate"] = leftSubstrate;
   if (centerSubstrate >= 0)
     doc["centerSubstrate"] = centerSubstrate;
   if (rightSubstrate >= 0)
     doc["rightSubstrate"] = rightSubstrate;
-  if (ammonia >= 0)
-    doc["ammonia"] = ammonia;
+
+  // Keep SD schema consistent with backend uploads: "ammonia" carries ppm for Drawer 1
+  if (strcmp(drawerName, "Drawer 1") == 0)
+  {
+    Nh3Metrics nh3 = readNh3Metrics();
+    if (nh3.valid)
+    {
+      if (isfinite(nh3.ppm))
+        doc["ammonia"] = nh3.ppm; // ammonia == ppm
+      if (isfinite(nh3.ratio))
+        doc["ammoniaRatio"] = nh3.ratio;
+      doc["ammoniaRaw"] = (nh3.raw == ADS_INVALID) ? -1 : nh3.raw;
+    }
+  }
+
   doc["timestamp"] = millis();
 
   char line[384];
@@ -1704,12 +2125,24 @@ void uploadStoredData()
 {
   if (!sdAvailable || WiFi.status() != WL_CONNECTED)
     return;
-  if (!SD.exists(SD_DATA_FILE))
+
+  // Avoid TLS attempts when heap is low/fragmented
+  if (!canStartTlsNow("sdUpload"))
     return;
+
+  // Serialize TLS across heartbeat/serverTime/sdUpload
+  if (!tlsTryLock(pdMS_TO_TICKS(5000)))
+  {
+    Serial.println(F("[TLS] SD upload skipped: TLS mutex busy"));
+    return;
+  }
 
   File file = SD.open(SD_DATA_FILE, FILE_READ);
   if (!file)
+  {
+    tlsUnlock();
     return;
+  }
 
   const char *tempPath = "/temp_data.json";
   File tempFile = SD.open(tempPath, FILE_WRITE);
@@ -1730,14 +2163,12 @@ void uploadStoredData()
       return false;
     buf[n] = '\0';
 
-    // Trim CR and whitespace at end
     while (n > 0 && (buf[n - 1] == '\r' || buf[n - 1] == ' ' || buf[n - 1] == '\t'))
     {
       buf[n - 1] = '\0';
       n--;
     }
 
-    // Skip leading whitespace
     size_t start = 0;
     while (buf[start] == ' ' || buf[start] == '\t')
       start++;
@@ -1756,19 +2187,16 @@ void uploadStoredData()
     if (!readLine(file, lineBuf, sizeof(lineBuf)))
       continue;
 
-    // Validate JSON quickly (optional, but keeps parity with your existing check)
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     if (deserializeJson(doc, lineBuf) != DeserializationError::Ok)
       continue;
 
-    WiFiClientSecure client;
-    client.setInsecure();
-
     HTTPClient http;
     http.setTimeout(SD_UPLOAD_HTTP_TIMEOUT_MS);
-    if (!http.begin(client, url))
+
+    // IMPORTANT: reuse the global TLS client (less heap churn/fragmentation)
+    if (!http.begin(gHttpsClient, url))
     {
-      // keep for retry
       if (tempFile)
       {
         tempFile.println(lineBuf);
@@ -1798,15 +2226,9 @@ void uploadStoredData()
     }
 
     processedThisCycle++;
-
-    // Make sure MQTT stays serviced during SD sync bursts
-    if (mqttEnabled && mqttClient.connected())
-      mqttClient.loop();
-
     yield();
   }
 
-  // Keep the rest of unread lines for the next sync cycle
   while (file.available())
   {
     if (!readLine(file, lineBuf, sizeof(lineBuf)))
@@ -1845,6 +2267,8 @@ void uploadStoredData()
     Serial.print(failed);
     Serial.println(F(" readings (kept for retry)"));
   }
+
+  tlsUnlock();
 }
 
 int getStoredDataCount()
@@ -2027,16 +2451,30 @@ bool isStableDhtReading(const DhtReading &current, const DhtReading &previous, f
 
 bool readRawDht(DHT &sensor, float &humidity, float &temperature)
 {
+  if (gDhtMutex)
+  {
+    if (xSemaphoreTake(gDhtMutex, pdMS_TO_TICKS(1500)) != pdTRUE)
+      return false;
+  }
+
+  bool ok = false;
+
   for (int attempt = 0; attempt < DHT_READ_ATTEMPTS; attempt++)
   {
     humidity = sensor.readHumidity();
     temperature = sensor.readTemperature();
     if (!isnan(temperature) && !isnan(humidity))
-      return true;
+    {
+      ok = true;
+      break;
+    }
     delay(120);
   }
 
-  return false;
+  if (gDhtMutex)
+    xSemaphoreGive(gDhtMutex);
+
+  return ok;
 }
 
 DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11, bool useDrawer1Validation, bool allowTypeFallback, const char *label)
@@ -2102,12 +2540,7 @@ DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11, bool useDra
 
 void recordManualActuatorChange()
 {
-  offlineAutoControlHoldUntil = millis() + OFFLINE_AUTOCONTROL_HOLD_MS;
-}
-
-const char *getRequestedControlModeName()
-{
-  return requestedControlMode == CONTROL_MODE_MANUAL ? "manual" : "auto";
+  recordManualActuatorChangeLocked();
 }
 
 bool isAutoControlActive()
@@ -2116,20 +2549,18 @@ bool isAutoControlActive()
   {
     return true;
   }
-  return requestedControlMode == CONTROL_MODE_AUTO;
+
+  // Read mode under lock
+  return getControlModeLocked() == CONTROL_MODE_AUTO;
 }
 
 void setRequestedControlMode(ControlMode mode)
 {
-  requestedControlMode = mode;
-  if (requestedControlMode == CONTROL_MODE_AUTO)
-  {
-    offlineAutoControlHoldUntil = 0;
-  }
+  setControlModeLocked(mode);
 
-  if (mqttEnabled && mqttClient.connected())
+  if (mqttEnabled)
   {
-    StaticJsonDocument<64> doc;
+    JsonDocument doc;
     doc["state"] = getRequestedControlModeName();
 
     char payload[64];
@@ -2137,11 +2568,19 @@ void setRequestedControlMode(ControlMode mode)
 
     char topic[160];
     snprintf(topic, sizeof(topic), "%s/%s/actuators/mode/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
-    mqttClient.publish(topic, payload);
+
+    mqttEnqueuePublish(topic, payload, true);
   }
 
   Serial.print(F("[MODE] Requested control mode set to "));
   Serial.println(getRequestedControlModeName());
+}
+
+const char *getRequestedControlModeName()
+{
+  // Small: return based on a locked read to avoid stale/tearing
+  ControlMode m = getControlModeLocked();
+  return m == CONTROL_MODE_MANUAL ? "manual" : "auto";
 }
 
 void logConnectivityState(const char *source)
@@ -2176,6 +2615,7 @@ void setupWebServer()
   server.on("/calibrate/mq137", HTTP_POST, handleCalibrateAmmonia);
   server.on("/calibration/status", HTTP_GET, handleCalibrationStatus);
   server.on("/calibrate/all", HTTP_POST, handleCalibrateAllSensors);
+  server.on("/status", HTTP_GET, handleStatus);
   server.on("/sdcard/data", HTTP_GET, handleGetSdData);
   server.on("/sdcard/clear", HTTP_POST, handleClearSdData);
   server.on("/sdcard/sync", HTTP_POST, handleSyncSdData);
@@ -2186,47 +2626,135 @@ void setupWebServer()
   Serial.println(WiFi.localIP());
 }
 
+static const char HARDWARE_HTML[] PROGMEM = R"HTML(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BSFly IoT</title>
+  <meta name='viewport' content='width=device-width,initial-scale=1'>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:760px;margin:0 auto;background:#08110d;color:#e9f5ee}
+    h1,h2,h3{color:#ffffff}
+    .card{background:rgba(255,255,255,.05);padding:18px;margin:14px 0;border-radius:16px;border:1px solid rgba(255,255,255,.08)}
+    a,button{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#2dd55b 0%,#17a34a 100%);color:white;border:none;padding:12px 18px;border-radius:12px;margin:6px 6px 6px 0;cursor:pointer;text-decoration:none;font-weight:700}
+    button:hover,a:hover{filter:brightness(1.05)}
+    .danger{background:linear-gradient(135deg,#ff4757 0%,#c5000f 100%)}
+    .muted{color:rgba(233,245,238,.75);line-height:1.6}
+    ul{padding-left:20px;line-height:1.7}
+    code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+  </style>
+</head>
+<body>
+  <h1>BSFly IoT Hardware</h1>
+  <p class='muted'>Upload firmware over the air, then reboot the controller from the same page.</p>
+
+  <div class='card'>
+    <strong>Device ID:</strong> <span id="deviceId">Loading...</span><br>
+    <strong>IP Address:</strong> <span id="ip">Loading...</span>
+  </div>
+
+  <div class='card'>
+    <strong>SD Card:</strong> <span id="sdAvail">Loading...</span><br>
+    <strong>Control Mode:</strong> <span id="modeText">Loading...</span><br>
+    <strong>Stored Readings:</strong> <span id="storedCount">Loading...</span>
+  </div>
+
+  <div class='card'>
+    <h2>Actions</h2>
+    <a href='/update' target='_blank' rel='noopener noreferrer'>Open ElegantOTA Upload</a>
+    <button class='danger' onclick="fetch('/reboot',{method:'POST'}).then(r=>r.json()).then(d=>alert(d.message)).catch(e=>alert(e.message))">
+      Reboot ESP32
+    </button>
+  </div>
+
+  <div class='card'>
+    <h2>MQ137 Ammonia Sensor Calibration</h2>
+    <p class='muted'>Calibrate the MQ137 sensor in fresh air.</p>
+    <p id='calibStatus' class='muted'>Status: Loading...</p>
+    <button id='calibBtn' onclick='startCalibration()'>Start Calibration</button>
+  </div>
+
+  <script>
+    let calibPollTimer=null;
+
+    function renderStatus(s){
+      document.getElementById('deviceId').textContent = s.deviceId || 'N/A';
+      document.getElementById('ip').textContent = s.ip || 'N/A';
+      document.getElementById('sdAvail').textContent = (s.sdAvailable ? 'Available' : 'Not found');
+      document.getElementById('storedCount').textContent = (typeof s.storedCount !== 'undefined') ? s.storedCount : 'N/A';
+      document.getElementById('modeText').textContent = s.requestedControlMode || 'N/A';
+    }
+
+    function renderCalib(d){
+      const inProg=!!d.inProgress;
+      const prog=('progress' in d)?(''+d.progress):'0';
+      const valid=('validSamples' in d)?(''+d.validSamples):'0';
+      const ro=(d.ro!==undefined&&d.ro!==null)?d.ro:'N/A';
+      const last=(d.lastCalibration?new Date(d.lastCalibration*1000).toLocaleString():'Never');
+      let st='Status: '+(inProg?'Calibrating':'Idle')+' | Progress: '+prog+'% (valid '+valid+') | Ro='+ro+' | Last='+last;
+      document.getElementById('calibStatus').textContent=st;
+      const btn=document.getElementById('calibBtn');
+      btn.disabled=inProg;
+      btn.textContent=inProg?'Calibrating...':'Start Calibration';
+    }
+
+    function loadStatus(){
+      fetch('/status').then(r=>r.json()).then(renderStatus).catch(_=>{});
+    }
+
+    function loadCalibStatus(){
+      fetch('/calibration/status').then(r=>r.json()).then(d=>{
+        renderCalib(d);
+        if(d.inProgress){
+          if(!calibPollTimer) calibPollTimer=setInterval(loadCalibStatus, 1000);
+        } else {
+          if(calibPollTimer){clearInterval(calibPollTimer); calibPollTimer=null;}
+        }
+      }).catch(_=>{
+        document.getElementById('calibStatus').textContent='Status: Error loading';
+      });
+    }
+
+    function startCalibration(){
+      const btn=document.getElementById('calibBtn');
+      btn.disabled=true; btn.textContent='Starting...';
+      fetch('/calibrate/mq137',{method:'POST'}).then(async r=>{
+        let d={}; try{d=await r.json();}catch(e){}
+        if(!r.ok){throw new Error(d.error||d.message||('HTTP '+r.status));}
+        loadCalibStatus();
+      }).catch(e=>alert('Error: '+e.message));
+    }
+
+    loadStatus();
+    loadCalibStatus();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>
+)HTML";
+
 void handleHardwarePage(AsyncWebServerRequest *request)
 {
-  String html = "<!DOCTYPE html><html><head><title>BSFly IoT</title>";
-  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
-  html += "<style>body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:20px;max-width:760px;margin:0 auto;background:#08110d;color:#e9f5ee}";
-  html += "h1,h2,h3{color:#ffffff}.card{background:rgba(255,255,255,.05);padding:18px;margin:14px 0;border-radius:16px;border:1px solid rgba(255,255,255,.08)}";
-  html += "a,button{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#2dd55b 0%,#17a34a 100%);color:white;border:none;padding:12px 18px;border-radius:12px;margin:6px 6px 6px 0;cursor:pointer;text-decoration:none;font-weight:700}";
-  html += "button:hover,a:hover{filter:brightness(1.05)}.danger{background:linear-gradient(135deg,#ff4757 0%,#c5000f 100%)}.muted{color:rgba(233,245,238,.75);line-height:1.6}ul{padding-left:20px;line-height:1.7}";
-  html += "code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}</style></head>";
-  html += "<body><h1>BSFly IoT Hardware</h1>";
-  html += "<p class='muted'>Upload firmware over the air, then reboot the controller from the same page.</p>";
-  html += "<div class='card'><strong>Device ID:</strong> " + DEVICE_ID + "<br><strong>IP Address:</strong> " + WiFi.localIP().toString() + "</div>";
-  html += "<div class='card'><strong>SD Card:</strong> " + String(sdAvailable ? "Available" : "Not found") + "<br><strong>Control Mode:</strong> " + String(getRequestedControlModeName()) + "<br><strong>Stored Readings:</strong> " + String(getStoredDataCount()) + "</div>";
-  html += "<div class='card'><h2>Actions</h2>";
-  html += "<a href='/update' target='_blank' rel='noopener noreferrer'>Open ElegantOTA Upload</a>";
-  html += "<button class='danger' onclick=\"fetch('/reboot',{method:'POST'}).then(r=>r.json()).then(d=>alert(d.message)).catch(e=>alert(e.message))\">Reboot ESP32</button>";
-  html += "</div>";
-  html += "<div class='card'><h2>MQ137 Ammonia Sensor Calibration</h2>";
-  html += "<p class='muted'>Calibrate the MQ137 sensor for accurate ammonia readings. Ensure sensor is in fresh air (20°C, 65% humidity) before calibrating.</p>";
-  html += "<p id='calibStatus' class='muted'>Status: Loading...</p>";
-  html += "<button id='calibBtn' onclick=\"startCalibration()\">Start Calibration</button>";
-  html += "<script>";
-  html += "function loadCalibStatus(){fetch('/calibration/status').then(r=>r.json()).then(d=>{";
-  html += "let st='Status: Ro='+(d.ro||'N/A')+', Last='+(d.lastCalibration?new Date(d.lastCalibration*1000).toLocaleString():'Never');";
-  html += "document.getElementById('calibStatus').textContent=st;";
-  html += "document.getElementById('calibBtn').disabled=d.inProgress;";
-  html += "document.getElementById('calibBtn').textContent=d.inProgress?'Calibrating...':'Start Calibration';";
-  html += "}).catch(e=>document.getElementById('calibStatus').textContent='Status: Error loading')}";
-  html += "function startCalibration(){";
-  html += "document.getElementById('calibBtn').disabled=true;";
-  html += "document.getElementById('calibBtn').textContent='Calibrating...';";
-  html += "fetch('/calibrate/mq137',{method:'POST'}).then(r=>r.json()).then(d=>{";
-  html += "alert(d.message||'Calibration complete\\n\\nRo='+(d.ro||'N/A'));";
-  html += "loadCalibStatus();";
-  html += "}).catch(e=>alert('Error: '+e.message)).finally(()=>document.getElementById('calibBtn').disabled=false)}";
-  html += "loadCalibStatus();";
-  html += "</script>";
-  html += "</div>";
-  html += "<div class='card'><h2>What this page does</h2><ul><li>Shows the device IP address and OTA controls.</li><li>Accepts ElegantOTA firmware uploads from a browser.</li><li>Reboots the controller after the update finishes.</li></ul></div>";
-  html += "</body></html>";
-  request->send(200, "text/html", html);
+  request->send(200, "text/html", HARDWARE_HTML);
+}
+
+void handleStatus(AsyncWebServerRequest *request)
+{
+  int cached = (int)gSdStoredCountCached;
+
+  JsonDocument doc;
+  doc["deviceId"] = DEVICE_ID;
+  doc["ip"] = WiFi.localIP().toString();
+  doc["sdAvailable"] = sdAvailable;
+  doc["storedCount"] = (cached >= 0) ? cached : 0;
+  doc["wifiConnected"] = WiFi.status() == WL_CONNECTED;
+  doc["requestedControlMode"] = getRequestedControlModeName();
+  doc["autoControlActive"] = isAutoControlActive();
+  doc["uptime"] = millis() / 1000;
+
+  String response;
+  serializeJson(doc, response);
+  request->send(200, "application/json", response);
 }
 
 void handleGetSdData(AsyncWebServerRequest *request)
@@ -2304,20 +2832,18 @@ void handleSyncSdData(AsyncWebServerRequest *request)
     return;
   }
 
-  int beforeCount = getStoredDataCount();
-  uploadStoredData();
-  int afterCount = getStoredDataCount();
-  int uploaded = beforeCount - afterCount;
+  sdUploadKick = true;
 
+  int cached = (int)gSdStoredCountCached;
   JsonDocument doc;
-  doc["message"] = "Sync complete";
-  doc["uploaded"] = uploaded;
-  doc["remaining"] = afterCount;
+  doc["message"] = "Sync queued";
+  doc["queued"] = true;
+  doc["storedCount"] = (cached >= 0) ? cached : 0;
   doc["success"] = true;
 
   String response;
   serializeJson(doc, response);
-  request->send(200, "application/json", response);
+  request->send(202, "application/json", response);
 }
 
 void handleReboot(AsyncWebServerRequest *request)
@@ -2335,57 +2861,96 @@ void handleReboot(AsyncWebServerRequest *request)
 
 void handleCalibrateAmmonia(AsyncWebServerRequest *request)
 {
-  // Verify API key if provided
-  if (request->hasParam("key"))
-  {
-    String providedKey = request->getParam("key")->value();
-    // Note: Compare with device API key (currently would need to retrieve from flash)
-    // For now, we'll just proceed - you can add authentication here
-  }
-
   JsonDocument doc;
-  
-  if (mq137CalibrationInProgress)
+
+  if (mq137CalibrationInProgress || mq137CalTaskHandle != nullptr)
   {
     doc["error"] = "Calibration already in progress";
     doc["status"] = "busy";
+    String response;
+    serializeJson(doc, response);
+    request->send(409, "application/json", response);
+    return;
   }
-  else
+
+  // MQ137 is read from ADS1115 #2 in this firmware
+  if (!ads2Available)
   {
-    // Run calibration (this may take a few seconds)
-    float newRo = calibrateMQ137();
-    
-    doc["success"] = true;
-    doc["message"] = "MQ137 calibration completed";
-    doc["ro"] = newRo;
-    doc["timestamp"] = mq137LastCalibration;
-    doc["calibrationPoint"] = MQ137_CALIBRATION_PPM;
+    doc["error"] = "ADS1115 #2 not available";
+    String response;
+    serializeJson(doc, response);
+    request->send(503, "application/json", response);
+    return;
   }
+
+  // Start calibration in background task; return immediately.
+  BaseType_t ok = xTaskCreatePinnedToCore(
+      mq137CalibrationTask,
+      "MQ137Cal",
+      6144,
+      nullptr,
+      1,
+      &mq137CalTaskHandle,
+      1);
+
+  if (ok != pdPASS)
+  {
+    mq137CalTaskHandle = nullptr;
+    doc["error"] = "Failed to start calibration task";
+    String response;
+    serializeJson(doc, response);
+    request->send(500, "application/json", response);
+    return;
+  }
+
+  doc["success"] = true;
+  doc["message"] = "MQ137 calibration started";
+  doc["status"] = "started";
+  doc["progress"] = (int)mq137CalProgress;
 
   String response;
   serializeJson(doc, response);
-  request->send(200, "application/json", response);
+  request->send(202, "application/json", response);
 }
 
 void handleCalibrationStatus(AsyncWebServerRequest *request)
 {
   JsonDocument doc;
-  
-  doc["inProgress"] = mq137CalibrationInProgress;
+
+  doc["inProgress"] = (mq137CalibrationInProgress || mq137CalTaskHandle != nullptr);
+  doc["progress"] = (int)mq137CalProgress;
+  doc["validSamples"] = (int)mq137CalValidSamples;
   doc["ro"] = mq137Ro;
   doc["lastCalibration"] = mq137LastCalibration;
   doc["calibrationPoint"] = MQ137_CALIBRATION_PPM;
   doc["rl"] = (float)MQ137_RL;
-  
-  // Calculate ppm from current reading if calibrated
+
+  if (isfinite(mq137CalLastRsAvg))
+    doc["rsAverage"] = mq137CalLastRsAvg;
+
+  // Keep your old estimated PPM behavior, but only when we can read a value.
   if (mq137Ro > 0)
   {
-    int16_t rawValue = readAds1Channel(ADS_MQ137);
-    float Rs = calculateRsFromRaw(rawValue);
-    float ratio = Rs / mq137Ro;
-    // Simple ppm estimation (would need lookup table for accuracy)
-    float ppm = 21.0 * (1.0 / (ratio + 0.01));  // Placeholder formula
-    doc["estimatedPpm"] = ppm;
+    int16_t rawValue = readAds2Channel(ADS2_MQ137);
+    if (rawValue != ADS_INVALID)
+    {
+      doc["raw"] = rawValue;
+      doc["vrl"] = ads2.computeVolts(rawValue);
+
+      float rs = calculateRstFromRaw(rawValue);
+      doc["rs_kohm"] = rs;
+
+      float ratio = rs / mq137Ro;
+      doc["rs_ro_ratio"] = ratio;
+
+      float ppm = estimateNh3PpmFromRaw(rawValue);
+      if (isfinite(ppm))
+        doc["estimatedPpm"] = ppm;
+
+      // Expose curve constants for debugging/tuning
+      doc["curveA"] = MQ137_NH3_A;
+      doc["curveB"] = MQ137_NH3_B;
+    }
   }
 
   String response;
@@ -2396,7 +2961,7 @@ void handleCalibrationStatus(AsyncWebServerRequest *request)
 void handleCalibrateAllSensors(AsyncWebServerRequest *request)
 {
   JsonDocument doc;
-  
+
   if (mq137CalibrationInProgress)
   {
     doc["error"] = "Calibration already in progress";
@@ -2404,28 +2969,27 @@ void handleCalibrateAllSensors(AsyncWebServerRequest *request)
   }
   else
   {
-    // Calibrate MQ137 ammonia sensor
     Serial.println(F("[CALIBRATION] Starting all-sensor calibration..."));
     float newRo = calibrateMQ137();
-    
-    // TODO: Add calibration for substrate moisture sensors
-    // TODO: Add calibration for temperature sensors
-    
+
     doc["success"] = true;
     doc["message"] = "All sensors calibrated";
-    doc["mq137"] = {
-      "ro": newRo,
-      "timestamp": mq137LastCalibration,
-      "status": "calibrated"
-    };
-    doc["substrate"] = {
-      "status": "not_implemented",
-      "message": "Substrate moisture calibration available on hardware page"
-    };
-    doc["temperature"] = {
-      "status": "not_needed",
-      "message": "Temperature sensors use standard DHT calibration"
-    };
+
+    // mq137 object
+    JsonObject mq137 = doc["mq137"].to<JsonObject>();
+    mq137["ro"] = newRo;
+    mq137["timestamp"] = mq137LastCalibration;
+    mq137["status"] = "calibrated";
+
+    // substrate object
+    JsonObject substrate = doc["substrate"].to<JsonObject>();
+    substrate["status"] = "not_implemented";
+    substrate["message"] = "Substrate moisture calibration available on hardware page";
+
+    // temperature object
+    JsonObject temperature = doc["temperature"].to<JsonObject>();
+    temperature["status"] = "not_needed";
+    temperature["message"] = "Temperature sensors use standard DHT calibration";
   }
 
   String response;
@@ -2437,10 +3001,306 @@ static void logLoopHealth()
 {
   Serial.print(F("[ALIVE] millis="));
   Serial.print(millis());
+
   Serial.print(F(" heap="));
   Serial.print(ESP.getFreeHeap());
+
   Serial.print(F(" minHeap="));
   Serial.print(ESP.getMinFreeHeap());
+
   Serial.print(F(" loopStackWatermark="));
-  Serial.println(uxTaskGetStackHighWaterMark(nullptr));
+  Serial.print(uxTaskGetStackHighWaterMark(nullptr));
+
+  Serial.print(F(" mqttQueueDrops="));
+  Serial.println((uint32_t)gMqttQueueDropCount);
+}
+
+static Nh3Metrics readNh3Metrics()
+{
+  Nh3Metrics m{};
+  m.valid = false;
+  m.raw = ADS_INVALID;
+  m.vrl = NAN;
+  m.rs_kohm = NAN;
+  m.ratio = NAN;
+  m.ppm = NAN;
+
+  if (!ads2Available || mq137Ro <= 0.0f)
+    return m;
+
+  int16_t raw = readAds2Channel(ADS2_MQ137);
+  if (raw == ADS_INVALID)
+    return m;
+
+  m.raw = raw;
+  m.vrl = ads2.computeVolts(raw);
+
+  float rs = calculateRstFromRaw(raw);
+  if (!(rs > 0.0f) || !isfinite(rs))
+    return m;
+
+  m.rs_kohm = rs;
+  m.ratio = rs / mq137Ro;
+  m.ppm = estimateNh3PpmFromRaw(raw);
+
+  m.valid = isfinite(m.ratio) && (m.ratio > 0.0f);
+  return m;
+}
+
+// Calculate sensor resistance(Rst) from raw ADC value
+float calculateRstFromRaw(int16_t rawValue)
+{
+  if (rawValue == ADS_INVALID)
+    return 0.0f;
+
+  const float VRL = ads2.computeVolts(rawValue);
+  if (!isfinite(VRL) || VRL <= 0.00001f)
+    return 0.0f;
+
+  const float Vc = MQ137_VC;
+
+  if (VRL >= (Vc - 0.01f))
+    return 0.0f;
+
+#if MQ137_DIVIDER_INVERTED
+  // Vc -> RL -> (AO=VRL) -> Rs -> GND
+  // VRL = Vc * (Rs / (RL + Rs))  =>  Rs = RL * VRL / (Vc - VRL)
+  float Rst = MQ137_RL * (VRL / (Vc - VRL)); // kΩ
+#else
+  // Vc -> Rs -> (AO=VRL) -> RL -> GND
+  // VRL = Vc * (RL / (RL + Rs))  =>  Rs = ((Vc/VRL) - 1) * RL
+  float Rst = ((Vc / VRL) - 1.0f) * MQ137_RL; // kΩ
+#endif
+
+  if (!isfinite(Rst) || Rst <= 0.0f)
+    return 0.0f;
+
+  return Rst;
+}
+
+static float estimateNh3PpmFromRaw(int16_t rawValue)
+{
+  if (rawValue == ADS_INVALID || mq137Ro <= 0.0f)
+    return NAN;
+
+  float rs = calculateRstFromRaw(rawValue);
+  if (!(rs > 0.0f) || !isfinite(rs))
+    return NAN;
+
+  float ratio = rs / mq137Ro;
+  if (!(ratio > 0.0f) || !isfinite(ratio))
+    return NAN;
+
+  // Trust region: based on your curve points (10ppm=>0.32, 100ppm=>0.198).
+  // Ratios far below ~0.1 imply very high ppm and/or model mismatch.
+  const float kMinTrustedRatio = 0.10f;
+  const float kMaxTrustedRatio = 10.0f;
+
+  if (ratio < kMinTrustedRatio)
+    return NAN; // out-of-model; prevents absurd ppm
+  if (ratio > kMaxTrustedRatio)
+    ratio = kMaxTrustedRatio;
+
+  float ppm = MQ137_NH3_A * powf(ratio, MQ137_NH3_B);
+  if (!isfinite(ppm) || ppm < 0.0f)
+    return NAN;
+
+  return ppm;
+}
+
+// ==================== ASYNC MQ137 CALIBRATION TASK ====================
+static void mq137CalibrationTask(void *pvParameters)
+{
+  (void)pvParameters;
+
+  mq137CalibrationInProgress = true;
+  mq137CalProgress = 0;
+  mq137CalValidSamples = 0;
+  mq137CalLastRsAvg = NAN;
+
+  float RsSum = 0.0f;
+  uint16_t valid = 0;
+
+  for (int i = 0; i < MQ137_CALIBRATION_CYCLES; i++)
+  {
+    int16_t rawValue = readAds2Channel(ADS2_MQ137);
+    float Rst = calculateRstFromRaw(rawValue);
+
+    if (Rst > 0.0f && isfinite(Rst))
+    {
+      RsSum += Rst;
+      valid++;
+    }
+
+    if ((i % 50) == 0)
+    {
+      Serial.print(F("[MQ137] Reading "));
+      Serial.print(i);
+      Serial.print(F("/"));
+      Serial.print(MQ137_CALIBRATION_CYCLES);
+      Serial.print(F(" - Rst: "));
+      Serial.print(Rst);
+      Serial.print(F(" valid="));
+      Serial.println(valid);
+    }
+
+    mq137CalProgress = (uint16_t)((100UL * (uint32_t)(i + 1)) / (uint32_t)MQ137_CALIBRATION_CYCLES);
+    mq137CalValidSamples = valid;
+
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+
+  if (valid == 0)
+  {
+    Serial.println(F("[MQ137] Calibration failed: no valid samples"));
+    mq137CalibrationInProgress = false;
+    mq137CalTaskHandle = nullptr;
+    vTaskDelete(nullptr);
+    return;
+  }
+
+  float RsAverage = RsSum / (float)valid;
+  mq137CalLastRsAvg = RsAverage;
+
+  mq137Ro = RsAverage / MQ137_CALIBRATION_RATIO;
+
+  // Prefer server time if available; else store 0 (unknown) instead of wrong epoch.
+  uint64_t serverNow = getServerTime();
+  mq137LastCalibration = (serverNow > 0) ? (float)(serverNow / 1000ULL) : 0.0f;
+
+  // Save calibration to SD card
+  if (sdAvailable)
+  {
+    JsonDocument doc;
+    doc["ro"] = mq137Ro;
+    doc["timestamp"] = mq137LastCalibration;
+    doc["rsAverage"] = RsAverage;
+    doc["validSamples"] = valid;
+    doc["calibrationPoint"] = MQ137_CALIBRATION_PPM;
+
+    File file = SD.open(MQ137_CALIBRATION_FILE, FILE_WRITE);
+    if (file)
+    {
+      serializeJson(doc, file);
+      file.close();
+      Serial.println(F("[MQ137] Calibration data saved to SD"));
+    }
+    else
+    {
+      Serial.println(F("[MQ137] Failed to save calibration to SD"));
+    }
+  }
+
+  mq137CalibrationInProgress = false;
+  mq137CalTaskHandle = nullptr;
+
+  Serial.print(F("[MQ137] Calibration complete! Ro = "));
+  Serial.println(mq137Ro);
+
+  vTaskDelete(nullptr);
+}
+
+// ==================== STATE LOCKING (CRITICAL SECTION) ====================
+// Protects shared state touched from loop(), sensorTask(), MQTT callback, and web handlers.
+static inline void setControlModeLocked(ControlMode mode)
+{
+  stateLock();
+  requestedControlMode = mode;
+  if (requestedControlMode == CONTROL_MODE_AUTO)
+  {
+    offlineAutoControlHoldUntil = 0;
+  }
+  stateUnlock();
+}
+
+static inline ControlMode getControlModeLocked()
+{
+  stateLock();
+  ControlMode m = requestedControlMode;
+  stateUnlock();
+  return m;
+}
+
+static inline void recordManualActuatorChangeLocked()
+{
+  stateLock();
+  offlineAutoControlHoldUntil = millis() + OFFLINE_AUTOCONTROL_HOLD_MS;
+  stateUnlock();
+}
+
+static inline unsigned long getOfflineHoldUntilLocked()
+{
+  stateLock();
+  unsigned long t = offlineAutoControlHoldUntil;
+  stateUnlock();
+  return t;
+}
+
+static inline void setLightTimerLocked(bool on, unsigned long endTimeMs)
+{
+  stateLock();
+  lightState = on;
+  lightEndTime = endTimeMs;
+  stateUnlock();
+}
+
+static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs)
+{
+  stateLock();
+  on = lightState;
+  endTimeMs = lightEndTime;
+  stateUnlock();
+}
+
+static bool tlsTryLock(TickType_t waitTicks)
+{
+  if (!gTlsMutex)
+    return false;
+  return xSemaphoreTake(gTlsMutex, waitTicks) == pdTRUE;
+}
+
+static void tlsUnlock()
+{
+  if (gTlsMutex)
+    xSemaphoreGive(gTlsMutex);
+}
+
+static bool canStartTlsNow(const char *tag)
+{
+  uint32_t heap = ESP.getFreeHeap();
+  uint32_t minHeap = ESP.getMinFreeHeap();
+
+  if (heap < TLS_MIN_FREE_HEAP || minHeap < TLS_MIN_FREE_HEAP_MIN)
+  {
+    Serial.print(F("[TLS] Skip "));
+    Serial.print(tag);
+    Serial.print(F(": heap="));
+    Serial.print(heap);
+    Serial.print(F(" minHeap="));
+    Serial.println(minHeap);
+    return false;
+  }
+  return true;
+}
+
+static void sdCountTask(void *pvParameters)
+{
+  (void)pvParameters;
+
+  // Initial fill
+  if (sdAvailable)
+    gSdStoredCountCached = getStoredDataCount();
+  else
+    gSdStoredCountCached = 0;
+
+  for (;;)
+  {
+    // Update every 10s; keep off the async web task
+    if (sdAvailable)
+      gSdStoredCountCached = getStoredDataCount();
+    else
+      gSdStoredCountCached = 0;
+
+    vTaskDelay(pdMS_TO_TICKS(10000));
+  }
 }

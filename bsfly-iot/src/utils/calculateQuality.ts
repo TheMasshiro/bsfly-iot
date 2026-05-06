@@ -49,7 +49,7 @@ export const calculateQuality = (
     return 0;
   };
 
-  const scoresByType: Record<string, number[]> = {};
+  const scores: number[] = [];
 
   sensorsData.forEach((sensor) => {
     if (sensor.value === "--" || typeof sensor.value === "string") {
@@ -63,19 +63,11 @@ export const calculateQuality = (
     }
 
     if (sensorType && thresholds[sensorType]) {
-      const score = calculateScore(sensor.value, sensorType);
-      if (!scoresByType[sensorType]) {
-        scoresByType[sensorType] = [];
-      }
-      scoresByType[sensorType].push(score);
+      scores.push(calculateScore(sensor.value, sensorType));
     }
   });
 
-  const typeScores = Object.values(scoresByType).map(
-    (scores) => scores.reduce((sum, s) => sum + s, 0) / scores.length
-  );
-
-  return typeScores.length > 0
-    ? typeScores.reduce((sum, s) => sum + s, 0) / typeScores.length
+  return scores.length > 0
+    ? scores.reduce((sum, score) => sum + score, 0) / scores.length
     : 0;
 };
