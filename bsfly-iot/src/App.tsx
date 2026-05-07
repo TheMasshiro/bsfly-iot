@@ -1,9 +1,10 @@
 import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import LoadingSkeleton from './components/LoadingSkeleton/LoadingSkeleton';
+import { initializeNotificationChannels } from './services/notificationChannels';
 
 import '@ionic/react/css/core.css';
 
@@ -46,6 +47,11 @@ const PageLoader = () => (
 );
 
 const App: React.FC = () => {
+    useEffect(() => {
+        // Initialize Android notification channels on app startup
+        initializeNotificationChannels();
+    }, []);
+
     return (
         <IonApp>
             <ErrorBoundary>

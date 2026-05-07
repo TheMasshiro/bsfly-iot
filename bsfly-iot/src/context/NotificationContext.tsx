@@ -1,4 +1,5 @@
-import { createContext, FC, ReactNode, useContext, useState, useCallback } from "react";
+import { createContext, FC, ReactNode, useContext, useState, useCallback, useEffect } from "react";
+import { useAndroidNotifications } from "../hooks/useAndroidNotifications";
 
 export interface Notification {
     id: string;
@@ -24,6 +25,7 @@ const NotificationContext = createContext<NotificationContextProps | null>(null)
 
 export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const { sendNativeNotification } = useAndroidNotifications();
 
     const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
         const newNotification: Notification = {
@@ -34,7 +36,17 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
         };
 
         setNotifications(prev => [newNotification, ...prev].slice(0, 50));
-    }, []);
+
+        // Trigger Android native notification for alerts and warnings
+        if (notification.type === 'danger' || notification.type === 'warning' || notification.type === 'info') {
+            sendNativeNotification(
+                notification.title,
+                notification.message,
+                notification.type === 'danger' ? 'danger' : notification.type === 'warning' ? 'warning' : 'info',
+                notification.drawer
+            );
+        }
+    }, [sendNativeNotification]);
 
     const markAsRead = useCallback((id: string) => {
         setNotifications(prev =>
