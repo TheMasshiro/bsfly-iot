@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
-const getDeviceIdFromActuatorId = (actuatorId) => {
+export const getDeviceIdFromActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return null;
   const parts = actuatorId.split(":");
   if (parts.length < 2) return null;
@@ -36,10 +36,19 @@ const verifyActuatorAccess = async (userId, actuatorId) => {
   return device.members.some((m) => m.userId === userId);
 };
 
-const normalizeActuatorId = (actuatorId) => {
+export const normalizeActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return actuatorId;
+  if (actuatorId.endsWith(":dehumidifier1")) {
+    return actuatorId.replace(/:dehumidifier1$/, ":fan1");
+  }
+  if (actuatorId.endsWith(":dehumidifier3")) {
+    return actuatorId.replace(/:dehumidifier3$/, ":fan3");
+  }
   if (actuatorId.endsWith(":dehumidifier")) {
-    return actuatorId.replace(/:dehumidifier$/, ":fan");
+    if (actuatorId.includes(":drawer2:")) {
+      return actuatorId.replace(/:dehumidifier$/, ":fan3");
+    }
+    return actuatorId.replace(/:dehumidifier$/, ":fan1");
   }
   if (actuatorId.endsWith(":pump")) {
     return actuatorId.replace(/:pump$/, ":substrate");
@@ -47,7 +56,7 @@ const normalizeActuatorId = (actuatorId) => {
   return actuatorId;
 };
 
-const getLegacyActuatorId = (actuatorId) => {
+export const getLegacyActuatorId = (actuatorId) => {
   if (!actuatorId || typeof actuatorId !== "string") return null;
   if (actuatorId.endsWith(":substrate")) {
     return actuatorId.replace(/:substrate$/, ":pump");
@@ -252,26 +261,36 @@ const getActuatorDrawerSuffix = (actuatorType) => {
   return match ? match[1] : "";
 };
 
-const buildExclusiveActuatorIds = (deviceId, actuatorType) => {
+export const buildExclusiveActuatorIds = (deviceId, actuatorType) => {
   if (!deviceId || typeof actuatorType !== "string") return [];
 
   const drawerSuffix = getActuatorDrawerSuffix(actuatorType);
-  const fanId = drawerSuffix ? `${deviceId}:fan${drawerSuffix}` : `${deviceId}:fan`;
-  const humidifierId = drawerSuffix
-    ? `${deviceId}:humidifier${drawerSuffix}`
-    : `${deviceId}:humidifier`;
+  const fanId = drawerSuffix ? `${deviceId}:fan${drawerSuffix}` : null;
+  const humidifierId = drawerSuffix ? `${deviceId}:humidifier${drawerSuffix}` : null;
 
   if (actuatorType === "heater") {
-    // Heater is shared across drawers; turning it on should clear both drawer fans.
+    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
+  }
+
+  if (actuatorType === "humidifier") {
     return [`${deviceId}:fan1`, `${deviceId}:fan3`];
   }
 
   if (actuatorType.startsWith("fan")) {
-    return [`${deviceId}:heater`, humidifierId];
+    const exclusions = [`${deviceId}:heater`];
+    if (humidifierId) {
+      exclusions.push(humidifierId);
+    } else {
+      exclusions.push(`${deviceId}:humidifier1`, `${deviceId}:humidifier3`);
+    }
+    return exclusions;
   }
 
   if (actuatorType.startsWith("humidifier")) {
-    return [fanId];
+    if (fanId) {
+      return [fanId];
+    }
+    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
   }
 
   if (MUTUALLY_EXCLUSIVE[actuatorType]) {
@@ -354,6 +373,12 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
           { actuatorId: excludeId, state: false, updatedAt: new Date() },
           { upsert: true }
         );
+
+        const excludedActuatorType = excludeId.split(":").pop();
+        if (excludedActuatorType) {
+          const exclusionTopic = `devices/${device.macAddress}/actuators/${excludedActuatorType}/control`;
+          publishMqtt(exclusionTopic, { state: false });
+        }
       }
     }
 

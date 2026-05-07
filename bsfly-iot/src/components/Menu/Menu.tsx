@@ -44,12 +44,6 @@ const appPages: MenuItemProps[] = [
 
 const morePage: MenuItemProps[] = [
     {
-        title: 'Hardware',
-        url: '/hardware',
-        iosIcon: hardwareChipOutline,
-        mdIcon: hardwareChipSharp
-    },
-    {
         title: 'Devices',
         url: '/devices',
         iosIcon: hardwareChipOutline,

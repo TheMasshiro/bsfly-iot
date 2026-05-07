@@ -55,11 +55,6 @@ const deviceSchema = new mongoose.Schema(
       type: String,
       sparse: true,
     },
-    hardwareInfo: {
-      type: mongoose.Schema.Types.Mixed,
-      sparse: true,
-    },
-    hardwareInfoCachedAt: { type: Date },
     mq137Ro: {
       type: Number,
       default: 3.6,

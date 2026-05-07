@@ -379,12 +379,15 @@ router.get("/device/:deviceId/hourly", requireAuth, requireDeviceMembership, asy
 
             if (hourlyData[hourKey]) {
               const computedMoisture = computeMoisture(reading);
+              const leftSubstrateValue = reading.leftSubstrate ?? reading.leftSoil;
+              const centerSubstrateValue = reading.centerSubstrate ?? reading.centerSoil;
+              const rightSubstrateValue = reading.rightSubstrate ?? reading.rightSoil;
               if (reading.temperature !== undefined) hourlyData[hourKey].temperature.push(reading.temperature);
               if (reading.humidity !== undefined) hourlyData[hourKey].humidity.push(reading.humidity);
               if (computedMoisture !== null) hourlyData[hourKey].moisture.push(computedMoisture);
-              if (reading.leftSubstrate !== undefined) hourlyData[hourKey].leftSubstrate.push(Math.round(reading.leftSubstrate));
-              if (reading.centerSubstrate !== undefined) hourlyData[hourKey].centerSubstrate.push(Math.round(reading.centerSubstrate));
-              if (reading.rightSubstrate !== undefined) hourlyData[hourKey].rightSubstrate.push(Math.round(reading.rightSubstrate));
+              if (typeof leftSubstrateValue === "number") hourlyData[hourKey].leftSubstrate.push(Math.round(leftSubstrateValue));
+              if (typeof centerSubstrateValue === "number") hourlyData[hourKey].centerSubstrate.push(Math.round(centerSubstrateValue));
+              if (typeof rightSubstrateValue === "number") hourlyData[hourKey].rightSubstrate.push(Math.round(rightSubstrateValue));
               if (reading.ammonia !== undefined) hourlyData[hourKey].ammonia.push(reading.ammonia);
             }
           }

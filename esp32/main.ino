@@ -191,7 +191,7 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define MUX_CH_SUBSTRATE3 2
 
 // ==================== TIMING ====================
-#define SENSOR_INTERVAL 30000
+#define SENSOR_INTERVAL 5000
 #define HEARTBEAT_INTERVAL 15000
 #define SD_SYNC_INTERVAL 60000
 #define SD_DATA_FILE "/sensor_data.json"
@@ -2437,13 +2437,21 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
     heaterFanOn = true;
   }
 
-  // Humidity control: humidifier when humidity is low (mutually exclusive with fans)
+  // Humidity control: humidifier when humidity is low.
+  // Keep temperature safety priority: do not disable cooling fans due to low humidity.
   if (humidity < HUMIDITY_OPTIMAL_LOW)
   {
-    humidifierOn = true;
-    fanOn = false; // Turn off fans if humidifier is needed
+    if (!fanOn)
+    {
+      humidifierOn = true;
+    }
   }
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+  {
+    humidifierOn = false;
+  }
+
+  if (fanOn)
   {
     humidifierOn = false;
   }
@@ -2492,13 +2500,20 @@ void autoControlPupaDrawer(float temperature, float humidity)
   // Humidity control: humidify when dry, ventilate when too humid
   if (humidity < HUMIDITY_OPTIMAL_LOW)
   {
-    humidifierOn = true;
-    fanOn = false;
+    if (!fanOn)
+    {
+      humidifierOn = true;
+    }
   }
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
     humidifierOn = false;
     fanOn = true;
+  }
+
+  if (fanOn)
+  {
+    humidifierOn = false;
   }
 
   setPupaFan(fanOn);

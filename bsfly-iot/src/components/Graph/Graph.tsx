@@ -51,6 +51,11 @@ const formatGraphValue = (sensorType: string, value: number): string => {
     return value.toFixed(2);
 };
 
+const isSubstrateKey = (sensorType: string): boolean => {
+    const key = sensorType.toLowerCase().replace(/\s+/g, '');
+    return key === 'moisture' || key === 'leftsubstrate' || key === 'centersubstrate' || key === 'rightsubstrate';
+};
+
 Chart.register(annotationPlugin);
 
 const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimit, unit }) => {
@@ -68,8 +73,8 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     const hasLoadedOnceRef = useRef(false);
 
     const sensorKey = useMemo(() => {
-        const normalized = sensorType.toLowerCase();
-        return Object.keys(SENSOR_KEY_MAP).find(key => normalized.includes(key)) || 'temperature';
+        const normalized = sensorType.toLowerCase().replace(/\s+/g, '');
+        return SENSOR_KEY_MAP[normalized] ?? 'temperature';
     }, [sensorType]);
 
     const getCacheKey = useCallback(() => {
@@ -107,8 +112,38 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 .filter((h: any) => h[sensorKey] !== null)
                 .map((h: any) => ({
                     time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    value: Math.round(h[sensorKey] * 100) / 100
+                    value: isSubstrateKey(sensorType)
+                        ? Math.round(h[sensorKey])
+                        : Math.round(h[sensorKey] * 100) / 100
                 }));
+
+            const { data: currentData } = await api.get(
+                `/api/sensors/device/${currentDeviceId}?drawer=${encodeURIComponent(stage)}`,
+                withToken(token)
+            );
+
+            const currentValueRaw = currentData?.[sensorKey];
+            if (typeof currentValueRaw === 'number') {
+                const currentHourStart = new Date();
+                currentHourStart.setMinutes(0, 0, 0);
+                const currentHourLabel = currentHourStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const currentValue = isSubstrateKey(sensorType)
+                    ? Math.round(currentValueRaw)
+                    : Math.round(currentValueRaw * 100) / 100;
+
+                const existingHourIndex = points.findIndex((point) => point.time === currentHourLabel);
+                if (existingHourIndex >= 0) {
+                    points[existingHourIndex] = {
+                        ...points[existingHourIndex],
+                        value: currentValue,
+                    };
+                } else {
+                    points.push({
+                        time: currentHourLabel,
+                        value: currentValue,
+                    });
+                }
+            }
 
             setChartData(points);
             offlineService.set(getCacheKey(), points);

@@ -5,7 +5,6 @@ import "dotenv/config";
 import userRoutes from "./controllers/UserControllers.js";
 import actuatorRoutes from "./controllers/actuatorRoutes.js";
 import deviceRoutes from "./controllers/deviceRoutes.js";
-import hardwareRoutes from "./controllers/hardwareRoutes.js";
 import sensorRoutes from "./controllers/sensorRoutes.js";
 import webhookRoutes from "./controllers/webhookRoutes.js";
 import { initMqtt } from "./mqttClient.js";
@@ -79,8 +78,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/actuators", actuatorRoutes);
 
 app.use("/api/devices", deviceRoutes);
-
-app.use("/api/devices", hardwareRoutes);
 
 app.use("/api/sensors", sensorRoutes);
 

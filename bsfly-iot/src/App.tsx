@@ -30,7 +30,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard/Dashboard'));
 const Light = lazy(() => import('./pages/Light/Light'));
 const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
 const Devices = lazy(() => import('./pages/Devices/Devices'));
-const Hardware = lazy(() => import('./pages/Hardware/Hardware'));
 const About = lazy(() => import('./pages/About/About'));
 const Backup = lazy(() => import('./pages/Backup/Backup'));
 const Welcome = lazy(() => import('./pages/Welcome/Welcome'));
@@ -76,9 +75,6 @@ const App: React.FC = () => {
                                     <Route path="/devices" exact={true}>
                                         <Suspense fallback={<PageLoader />}><Devices /></Suspense>
                                     </Route>
-                                    <Route path="/hardware" exact={true}>
-                                        <Suspense fallback={<PageLoader />}><Hardware /></Suspense>
-                                    </Route>
                                     <Route path="/about" exact={true}>
                                         <Suspense fallback={<PageLoader />}><About /></Suspense>
                                     </Route>
@@ -95,7 +91,7 @@ const App: React.FC = () => {
                             <Route exact path="/welcome">
                                 <Suspense fallback={<PageLoader />}><Welcome /></Suspense>
                             </Route>
-                            <Route path="/(dashboard|light|analytics|devices|hardware|about|data/backup)">
+                            <Route path="/(dashboard|light|analytics|devices|about|data/backup)">
                                 <Redirect to="/welcome" />
                             </Route>
                             <Route exact path="/">

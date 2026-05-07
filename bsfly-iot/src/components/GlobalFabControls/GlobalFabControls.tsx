@@ -18,16 +18,17 @@ const quickActionIcons: Record<string, string> = {
 };
 
 const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
-    const drawerNum = stage.toLowerCase().replace('drawer ', '');
+    const normalizedStage = stage.trim().toLowerCase();
+    const stageIsDrawer2 = normalizedStage === 'drawer 2';
     const actionMap: Record<string, string> = {
-        Fan: 'fan',
+        Fan: stageIsDrawer2 ? 'fan3' : 'fan1',
         Heater: 'heater',
-        Humidifier: 'humidifier',
+        Humidifier: stageIsDrawer2 ? 'humidifier3' : 'humidifier1',
         'Water Pump': 'substrate',
         'Misting Device': 'misting',
     };
     const actuator = actionMap[actionName] || actionName.toLowerCase();
-    return deviceId ? `${deviceId}:drawer${drawerNum}:${actuator}` : `drawer${drawerNum}:${actuator}`;
+    return deviceId ? `${deviceId}:${actuator}` : actuator;
 };
 
 const getActuatorIds = (deviceId: string | undefined, stage: string, actionName: string): string[] => {

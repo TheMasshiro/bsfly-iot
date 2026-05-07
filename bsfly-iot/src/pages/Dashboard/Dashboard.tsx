@@ -56,16 +56,17 @@ const normalizeDrawerName = (name: unknown): string | null => {
 };
 
 const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
-    const drawerNum = stage.toLowerCase().replace('drawer ', '');
+    const normalizedStage = stage.trim().toLowerCase();
+    const stageIsDrawer2 = normalizedStage === 'drawer 2';
     const actionMap: Record<string, string> = {
-        "Fan": "fan",
+        "Fan": stageIsDrawer2 ? "fan3" : "fan1",
         "Heater": "heater",
-        "Humidifier": "humidifier",
+        "Humidifier": stageIsDrawer2 ? "humidifier3" : "humidifier1",
         "Water Pump": "substrate",
         "Misting Device": "misting",
     };
     const actuator = actionMap[actionName] || actionName.toLowerCase();
-    return deviceId ? `${deviceId}:drawer${drawerNum}:${actuator}` : `drawer${drawerNum}:${actuator}`;
+    return deviceId ? `${deviceId}:${actuator}` : actuator;
 };
 
 const getActuatorIds = (deviceId: string | undefined, stage: string, actionName: string): string[] => {
@@ -428,22 +429,17 @@ const Dashboard: FC = () => {
                     if (parts.length < 2 || parts[0] !== deviceId) return;
 
                     const actuatorSuffix = parts.slice(1).join(':');
-                    const mapping = drawerActuatorMap["Drawer 1" as keyof typeof drawerActuatorMap];
-                    if (!mapping) return;
+                    (Object.keys(drawerActuatorMap) as Array<keyof typeof drawerActuatorMap>).forEach((drawerName) => {
+                        const mapping = drawerActuatorMap[drawerName];
+                        const actionName = Object.keys(mapping).find((name) => {
+                            const mapped = mapping[name as keyof typeof mapping] as readonly string[];
+                            return mapped.includes(actuatorSuffix);
+                        });
 
-                    const actionName = Object.keys(mapping).find((name) => {
-                        const mapped = mapping[name as keyof typeof mapping] as readonly string[];
-                        return mapped.includes(actuatorSuffix);
-                    });
-
-                    if (actionName) {
-                        // Try to infer drawer from actuator suffix (e.g., fan1/humidifier1 = Drawer 1, fan3/humidifier3 = Drawer 2)
-                        const drawerNum = actuatorSuffix.match(/\d+/)?.[0] || '1';
-                        const drawerName = `Drawer ${drawerNum === '1' || drawerNum === '' ? '1' : drawerNum.startsWith('3') ? '2' : '1'}`;
-                        if (updated[drawerName as keyof typeof updated]) {
-                            updated[drawerName as keyof typeof updated][actionName] = Boolean(state);
+                        if (actionName && updated[drawerName]) {
+                            updated[drawerName][actionName] = Boolean(state);
                         }
-                    }
+                    });
                 });
                 return updated;
             });
