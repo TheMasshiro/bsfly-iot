@@ -2010,14 +2010,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
       uint64_t durationMs = (uint64_t)timeSeconds * 1000ULL;
       uint64_t endTimeMs = startTimeMs + durationMs;
 
-      uint64_t localNowMs = millis();
-      uint64_t estimatedRemaining = (endTimeMs > (startTimeMs + localNowMs))
-                                        ? (endTimeMs - (startTimeMs + localNowMs))
-                                        : 0ULL;
+      unsigned long deviceNow = millis();
+      unsigned long deviceEnd = deviceNow + (unsigned long)durationMs;
 
-      if (estimatedRemaining > 0)
+      if (durationMs > 0)
       {
-        setLightTimerLocked(true, (unsigned long)(localNowMs + estimatedRemaining));
+        setLightTimerLocked(true, deviceEnd);
       }
       else
       {

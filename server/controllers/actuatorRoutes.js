@@ -331,7 +331,11 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    if (device.status === "online" && device.controlMode !== "manual") {
+    if (
+      device.status === "online" &&
+      device.controlMode !== "manual" &&
+      actuatorType !== "light"
+    ) {
       return res.status(409).json({
         error: "Manual actuator control is disabled while device is in AUTO mode",
         controlMode: device.controlMode,
