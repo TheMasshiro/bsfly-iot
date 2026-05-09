@@ -862,6 +862,12 @@ void loop()
     {
       updateLightLed();
       publishActuatorStateBool("light", false);
+
+      char clearTopic[160];
+      snprintf(clearTopic, sizeof(clearTopic), "%s/%s/actuators/light/control",
+              MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+      mqttEnqueuePublish(clearTopic, "", true);
+
       Serial.println(F("Light timer expired - Light OFF"));
     }
   }
@@ -1922,7 +1928,7 @@ void publishLightTimerState(int timeSeconds, uint64_t startTimeMs)
   char topic[160];
   snprintf(topic, sizeof(topic), "%s/%s/actuators/light/state", MQTT_BASE_TOPIC, DEVICE_ID.c_str());
 
-  mqttEnqueuePublish(topic, payload, true);
+  mqttEnqueuePublish(topic, payload, false);
 }
 
 // ==================== MQTT CALLBACK & RECONNECT ====================
@@ -2041,6 +2047,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
       setLightTimerLocked(false, 0);
       updateLightLed();
       publishActuatorStateBool("light", false);
+
+      char clearTopic[160];
+      snprintf(clearTopic, sizeof(clearTopic), "%s/%s/actuators/light/control",
+              MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+      mqttEnqueuePublish(clearTopic, "", true);
+
       Serial.println(F("Light (MQTT): OFF"));
     }
     return;
