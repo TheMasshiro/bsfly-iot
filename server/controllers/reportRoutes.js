@@ -105,7 +105,21 @@ router.get("/actuators", requireAuth, async (req, res) => {
     const formatValue = (raw) => {
       if (raw === null || raw === undefined) return "-";
       if (typeof raw === "object") return JSON.stringify(raw);
+      if (typeof raw === "string") {
+        const trimmed = raw.trim();
+        return trimmed.replace(/\s*\((?:ON|OFF)\)\s*$/i, "");
+      }
       return String(raw);
+    };
+
+    const formatState = (event) => {
+      if (typeof event.state === "boolean") {
+        return event.state ? "ON" : "OFF";
+      }
+
+      const valueText = typeof event.value === "string" ? event.value : "";
+      const match = valueText.match(/\((ON|OFF)\)\s*$/i);
+      return match ? match[1].toUpperCase() : "-";
     };
 
     let y = doc.y;
@@ -128,7 +142,7 @@ router.get("/actuators", requireAuth, async (req, res) => {
         const dataTime = ev.dataTime || ev.timestamp.toLocaleString("en-US");
         const parameter = ev.parameter || "-";
         const value = formatValue(ev.value);
-        const state = typeof ev.state === "boolean" ? (ev.state ? "ON" : "OFF") : "-";
+        const state = formatState(ev);
         const actuator = ev.actuator || "-";
 
         const h1 = doc.heightOfString(dataTime, { width: colWidths[0] - 8 });
