@@ -225,10 +225,10 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define MQ137_NH3_B -4.796f                     // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
 #define MQ137_DIVIDER_INVERTED 1                // Set to 1 if your sensor is wired with the load resistor on the high side (Vc) instead of low side (GND)
 
-#define MOISTURE_MIN 40
-#define MOISTURE_MAX 70
-#define MOISTURE_OPTIMAL_LOW 50
-#define MOISTURE_OPTIMAL_HIGH 60
+#define MOISTURE_MIN 50
+#define MOISTURE_MAX 80
+#define MOISTURE_OPTIMAL_LOW 60
+#define MOISTURE_OPTIMAL_HIGH 75
 
 // ==================== GLOBALS ====================
 DHT dhtA11(DHT_A_PIN, DHT11_TYPE);
