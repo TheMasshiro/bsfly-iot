@@ -240,8 +240,8 @@ router.get("/:actuatorId", async (req, res) => {
     }
 
     const responseState = actuatorId.endsWith(":light")
-      ? await syncLightStateOnRead(storedState.state)
-      : storedState.state.state;
+        ? storedState.state.state
+        : storedState.state.state;
 
     res.json({ actuatorId, state: responseState });
   } catch (error) {
@@ -339,7 +339,11 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
     }
 
     const storedState =
-      actuatorType === "light" ? normalizeLightSeconds(state) : state;
+        actuatorType === "light"
+            ? (typeof state === "object" && state !== null && "time" in state)
+                ? state
+                : { time: normalizeLightSeconds(state), startTime: Date.now() }
+            : state;
 
     const storedActuatorId = normalizeActuatorId(actuatorId);
 

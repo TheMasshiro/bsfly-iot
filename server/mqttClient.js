@@ -238,16 +238,40 @@ export async function initMqtt() {
           }
 
           const actuatorId = `${device._id}:${actuator}`;
-          const normalizedState =
-            actuator === "light"
-              ? normalizeLightSeconds(payload.state)
-              : payload.state;
 
-          await ActuatorState.findOneAndUpdate(
-            { actuatorId },
-            { actuatorId, state: normalizedState, updatedAt: new Date() },
-            { upsert: true }
-          );
+          if (actuator === "light") {
+            const incomingState = payload.state;
+
+            if (incomingState === false || incomingState === 0) {
+              const existing = await ActuatorState.findOne({ actuatorId });
+              const storedState = existing?.state;
+
+              if (storedState && typeof storedState === "object" && storedState.time > 0) {
+                const endTimeMs = storedState.startTime + storedState.time * 1000;
+                if (endTimeMs > Date.now()) {
+                  console.log(`[MQTT] Ignoring false/0 ACK for ${actuatorId}, timer still active`);
+                  return;
+                }
+              }
+            }
+
+            const normalizedState =
+              typeof incomingState === "object" && incomingState !== null && "time" in incomingState
+                ? incomingState
+                : normalizeLightSeconds(incomingState);
+
+            await ActuatorState.findOneAndUpdate(
+              { actuatorId },
+              { actuatorId, state: normalizedState, updatedAt: new Date() },
+              { upsert: true }
+            );
+          } else {
+            await ActuatorState.findOneAndUpdate(
+              { actuatorId },
+              { actuatorId, state: payload.state, updatedAt: new Date() },
+              { upsert: true }
+            );
+          }
 
           return;
         }
@@ -265,4 +289,3 @@ export async function initMqtt() {
 }
 
 export default { initMqtt, publishMqtt };
-
