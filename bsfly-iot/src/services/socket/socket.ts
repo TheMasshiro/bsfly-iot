@@ -360,8 +360,9 @@ class ActuatorService {
     for (let i = 0; i < retries; i++) {
       try {
         const config = await this.getAxiosConfig();
-        await api.post(`/api/actuators/${actuatorId}`, { state }, config);
-        this.notifyListeners(actuatorId, state);
+        const { data } = await api.post(`/api/actuators/${actuatorId}`, { state }, config);
+        const returnedState = data && data.state !== undefined ? data.state : state;
+        this.notifyListeners(actuatorId, returnedState);
         return;
       } catch (error) {
         lastError = error as Error;

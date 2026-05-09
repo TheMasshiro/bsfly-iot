@@ -2046,14 +2046,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     return;
   }
 
-  // Parse state for other actuators
   bool state = false;
   if (strcmp(msg, "true") == 0 || strcmp(msg, "1") == 0)
     state = true;
   else if (isJson && d["state"].is<bool>())
     state = d["state"].as<bool>();
 
-  if (WiFi.status() == WL_CONNECTED && requestedControlMode == CONTROL_MODE_AUTO)
+  if (WiFi.status() == WL_CONNECTED && requestedControlMode == CONTROL_MODE_AUTO && strcmp(actuator, "light") != 0)
   {
     Serial.print(F("Ignored manual actuator command while AUTO mode is active: "));
     Serial.println(actuator);
