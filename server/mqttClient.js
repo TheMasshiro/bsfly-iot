@@ -135,6 +135,16 @@ const normalizeLightSeconds = (state, nowMs = Date.now()) => {
   return 0;
 };
 
+const formatDataTime = (date) =>
+  date.toLocaleString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
 export function publishMqtt(topic, payload, options = {}) {
   try {
     if (client && client.connected) {
@@ -271,7 +281,15 @@ export async function initMqtt() {
             try {
               const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
               const eventValue = typeof incomingState === "object" && incomingState !== null && "time" in incomingState ? incomingState : incomingState;
-              await ActuatorEvent.create({ deviceId: device._id, actuator, drawer, value: eventValue, timestamp: new Date() });
+              const ts = new Date();
+              await ActuatorEvent.create({
+                deviceId: device._id,
+                actuator,
+                drawer,
+                value: eventValue,
+                dataTime: formatDataTime(ts),
+                timestamp: ts,
+              });
             } catch (e) {
               console.error("Failed to persist actuator event:", e);
             }
@@ -285,7 +303,15 @@ export async function initMqtt() {
             // Store actuator event for reports
             try {
               const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
-              await ActuatorEvent.create({ deviceId: device._id, actuator, drawer, value: payload.state, timestamp: new Date() });
+              const ts = new Date();
+              await ActuatorEvent.create({
+                deviceId: device._id,
+                actuator,
+                drawer,
+                value: payload.state,
+                dataTime: formatDataTime(ts),
+                timestamp: ts,
+              });
             } catch (e) {
               console.error("Failed to persist actuator event:", e);
             }

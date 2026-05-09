@@ -7,6 +7,7 @@ const actuatorEventSchema = new mongoose.Schema(
     drawer: { type: String },
     parameter: { type: String },
     value: { type: mongoose.Schema.Types.Mixed },
+    dataTime: { type: String },
     timestamp: { type: Date, default: Date.now },
   },
   { timestamps: true }

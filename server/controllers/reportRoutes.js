@@ -6,7 +6,6 @@ import PDFDocument from "pdfkit";
 
 const router = express.Router();
 
-// GET /api/reports/actuators?deviceId=...&from=YYYY-MM-DD&to=YYYY-MM-DD
 router.get("/actuators", requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -30,7 +29,6 @@ router.get("/actuators", requireAuth, async (req, res) => {
       timestamp: { $gte: fromDate, $lte: toDate },
     }).sort({ timestamp: 1 });
 
-    // Stream PDF
     res.setHeader("Content-Type", "application/pdf");
     const filename = `${device.name || device._id}_actuator_report_${from || "all"}_to_${to || "now"}.pdf`;
     res.setHeader("Content-Disposition", `attachment; filename="${filename.replace(/\s+/g, "_")}"`);
@@ -38,36 +36,134 @@ router.get("/actuators", requireAuth, async (req, res) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     doc.pipe(res);
 
-    doc.fontSize(16).text("Actuator Events Report", { align: "center" });
-    doc.moveDown(0.5);
-    doc.fontSize(10).text(`Device: ${device.name || device._id}`);
-    doc.text(`Period: ${fromDate.toISOString()} - ${toDate.toISOString()}`);
-    doc.moveDown(0.5);
+    doc.fontSize(18).font("Helvetica-Bold").text("Actuator Events Report", { align: "center" });
+    doc.moveDown(0.4);
+    doc.fontSize(10).font("Helvetica").fillColor("#4b5563").text(`Device: ${device.name || device._id}`, { align: "center" });
+    doc.text(`Period: ${fromDate.toLocaleString("en-US")} - ${toDate.toLocaleString("en-US")}`, { align: "center" });
+    doc.text(`Generated: ${new Date().toLocaleString("en-US")}`, { align: "center" });
+    doc.fillColor("black");
+    doc.moveDown(0.7);
 
-    // Table header
-    const tableTop = doc.y + 8;
-    const colWidths = [120, 120, 120, 150];
-    doc.fontSize(10).font("Helvetica-Bold");
-    doc.text("Time", { continued: true, width: colWidths[0] });
-    doc.text("Parameter", { continued: true, width: colWidths[1] });
-    doc.text("Value", { continued: true, width: colWidths[2] });
-    doc.text("Actuator/Drawer", { width: colWidths[3] });
-    doc.moveDown(0.5);
-    doc.font("Helvetica");
+    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const startX = doc.page.margins.left;
+    const headers = ["Data Time", "Parameter", "Value", "State", "Actuator"];
+    const colWidths = [120, 90, 105, 55, pageWidth - 120 - 90 - 105 - 55];
+    const colX = [
+      startX,
+      startX + colWidths[0],
+      startX + colWidths[0] + colWidths[1],
+      startX + colWidths[0] + colWidths[1] + colWidths[2],
+      startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3],
+    ];
 
-    for (const ev of events) {
-      const time = ev.timestamp.toISOString();
-      const param = ev.parameter || "";
-      const value = typeof ev.value === "object" ? JSON.stringify(ev.value) : String(ev.value);
-      const act = `${ev.actuator}${ev.drawer ? " • " + ev.drawer : ""}`;
+    const grouped = events.reduce((acc, ev) => {
+      const key = ev.drawer || "Unassigned";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(ev);
+      return acc;
+    }, {});
 
-      doc.text(time, { continued: true, width: colWidths[0] });
-      doc.text(param, { continued: true, width: colWidths[1] });
-      doc.text(value, { continued: true, width: colWidths[2] });
-      doc.text(act, { width: colWidths[3] });
+    const drawerKeys = Object.keys(grouped).sort();
 
-      // Add page break if close to bottom
-      if (doc.y > doc.page.height - 80) doc.addPage();
+    const drawTableHeader = (y) => {
+      const h = 18;
+      doc.save();
+      doc.fillColor("#f3f4f6").rect(startX, y, pageWidth, h).fill();
+      doc.restore();
+
+      doc.lineWidth(0.8).rect(startX, y, pageWidth, h).stroke();
+      let x = startX;
+      for (let i = 0; i < colWidths.length - 1; i += 1) {
+        x += colWidths[i];
+        doc.moveTo(x, y).lineTo(x, y + h).stroke();
+      }
+
+      doc.font("Helvetica-Bold").fontSize(9).fillColor("#111827");
+      for (let i = 0; i < headers.length; i += 1) {
+        doc.text(headers[i], colX[i] + 4, y + 5, { width: colWidths[i] - 8 });
+      }
+      doc.fillColor("black");
+      return y + h;
+    };
+
+    const ensureSpace = (heightNeeded, currentY, sectionTitle = null) => {
+      let y = currentY;
+      if (y + heightNeeded <= doc.page.height - doc.page.margins.bottom) {
+        return y;
+      }
+      doc.addPage();
+      y = doc.page.margins.top;
+      if (sectionTitle) {
+        doc.font("Helvetica-Bold").fontSize(11).fillColor("#1f2937").text(sectionTitle, startX, y);
+        y += 10;
+        doc.fillColor("black");
+      }
+      y = drawTableHeader(y);
+      return y;
+    };
+
+    const formatValue = (raw) => {
+      if (raw === null || raw === undefined) return "-";
+      if (typeof raw === "object") return JSON.stringify(raw);
+      return String(raw);
+    };
+
+    let y = doc.y;
+
+    if (events.length === 0) {
+      doc.font("Helvetica-Oblique").fontSize(10).text("No actuator events found in the selected period.");
+      doc.end();
+      return;
+    }
+
+    for (const drawerName of drawerKeys) {
+      const sectionTitle = drawerName;
+      y = ensureSpace(32, y, null);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#1f2937").text(sectionTitle, startX, y);
+      y += 10;
+      doc.fillColor("black");
+      y = drawTableHeader(y);
+
+      grouped[drawerName].forEach((ev, index) => {
+        const dataTime = ev.dataTime || ev.timestamp.toLocaleString("en-US");
+        const parameter = ev.parameter || "-";
+        const value = formatValue(ev.value);
+        const state = typeof ev.state === "boolean" ? (ev.state ? "ON" : "OFF") : "-";
+        const actuator = ev.actuator || "-";
+
+        const h1 = doc.heightOfString(dataTime, { width: colWidths[0] - 8 });
+        const h2 = doc.heightOfString(parameter, { width: colWidths[1] - 8 });
+        const h3 = doc.heightOfString(value, { width: colWidths[2] - 8 });
+        const h4 = doc.heightOfString(state, { width: colWidths[3] - 8 });
+        const h5 = doc.heightOfString(actuator, { width: colWidths[4] - 8 });
+        const rowHeight = Math.max(18, h1, h2, h3, h4, h5) + 6;
+
+        y = ensureSpace(rowHeight, y, sectionTitle);
+
+        if (index % 2 === 0) {
+          doc.save();
+          doc.fillColor("#fafafa").rect(startX, y, pageWidth, rowHeight).fill();
+          doc.restore();
+        }
+
+        doc.lineWidth(0.5).rect(startX, y, pageWidth, rowHeight).stroke();
+        let x = startX;
+        for (let i = 0; i < colWidths.length - 1; i += 1) {
+          x += colWidths[i];
+          doc.moveTo(x, y).lineTo(x, y + rowHeight).stroke();
+        }
+
+        doc.font("Helvetica").fontSize(9);
+        doc.text(dataTime, colX[0] + 4, y + 4, { width: colWidths[0] - 8 });
+        doc.text(parameter, colX[1] + 4, y + 4, { width: colWidths[1] - 8 });
+        doc.text(value, colX[2] + 4, y + 4, { width: colWidths[2] - 8 });
+        doc.text(state, colX[3] + 4, y + 4, { width: colWidths[3] - 8 });
+        doc.text(actuator, colX[4] + 4, y + 4, { width: colWidths[4] - 8 });
+
+        y += rowHeight;
+      });
+
+      y += 8;
     }
 
     doc.end();
