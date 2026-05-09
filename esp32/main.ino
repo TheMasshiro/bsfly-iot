@@ -206,8 +206,8 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 // ==================== OFFLINE THRESHOLDS ====================
 #define TEMP_MIN 25.0
 #define TEMP_MAX 35.0
-#define TEMP_OPTIMAL_LOW 28.0
-#define TEMP_OPTIMAL_HIGH 31.01
+#define TEMP_OPTIMAL_LOW 27.0
+#define TEMP_OPTIMAL_HIGH 31.0
 
 #define HUMIDITY_MIN 50.0
 #define HUMIDITY_MAX 80.0
@@ -225,10 +225,10 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define MQ137_NH3_B -4.796f                     // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
 #define MQ137_DIVIDER_INVERTED 1                // Set to 1 if your sensor is wired with the load resistor on the high side (Vc) instead of low side (GND)
 
-#define MOISTURE_MIN 50
-#define MOISTURE_MAX 80
-#define MOISTURE_OPTIMAL_LOW 60
-#define MOISTURE_OPTIMAL_HIGH 75
+#define MOISTURE_MIN 40
+#define MOISTURE_MAX 70
+#define MOISTURE_OPTIMAL_LOW 50
+#define MOISTURE_OPTIMAL_HIGH 60
 
 // ==================== GLOBALS ====================
 DHT dhtA11(DHT_A_PIN, DHT11_TYPE);
@@ -447,6 +447,142 @@ inline void setPupaHumidifier(bool state);
 inline void setPupaFan(bool state);
 
 // Offline control / mode
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
+void autoControlPupaDrawer(float temperature, float humidity);
+bool isAutoControlActive();
+void setRequestedControlMode(ControlMode mode);
+const char *getRequestedControlModeName();
+void recordManualActuatorChange();
+void logConnectivityState(const char *source);
+
+// DHT helpers
+bool isValidDrawer1DhtReading(float temperature, float humidity);
+bool isValidDrawer2DhtReading(float temperature, float humidity);
+bool isStableDhtReading(const DhtReading &current, const DhtReading &previous,
+                        float maxTempDelta, float maxHumidityDelta);
+bool readRawDht(DHT &sensor, float &humidity, float &temperature);
+DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11,
+                           bool useDrawer1Validation, bool allowTypeFallback, const char *label);
+
+// SD storage
+void storeSensorToSD(const char *drawerName, float temperature, float humidity,
+                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
+void uploadStoredData();
+int getStoredDataCount();
+
+static void sdCountTask(void *pvParameters);
+
+// Web server
+void setupWebServer();
+void handleHardwarePage(AsyncWebServerRequest *request);
+void handleCalibrateAmmonia(AsyncWebServerRequest *request);
+void handleCalibrationStatus(AsyncWebServerRequest *request);
+void handleCalibrateAllSensors(AsyncWebServerRequest *request);
+void handleStatus(AsyncWebServerRequest *request);
+void handleGetSdData(AsyncWebServerRequest *request);
+void handleClearSdData(AsyncWebServerRequest *request);
+void handleSyncSdData(AsyncWebServerRequest *request);
+void handleReboot(AsyncWebServerRequest *request);
+
+struct Nh3Metrics;
+static Nh3Metrics readNh3Metrics();
+float calculateRstFromRaw(int16_t rawValue);
+static float estimateNh3PpmFromRaw(int16_t rawValue);
+float calibrateMQ137();
+void loadMQ137Calibration();
+
+// Misc
+static void logLoopHealth();
+
+// Inline actuator helpers (definitions)
+inline void setEggLarvaePump(bool state) { setMcpActuator(MCP_EGGLARVAE_PUMP, state); }
+inline void setEggLarvaeHumidifier(bool state) { setMcpActuator(MCP_EGGLARVAE_HUMIDIFIER, state); }
+inline void setEggLarvaeFan(bool state) { setMcpActuator(MCP_EGGLARVAE_FANS, state); }
+inline void setEggLarvaeHeater(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER, state); }
+inline void setEggLarvaeHeaterFan(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER_FANS, state); }
+inline void setPupaHumidifier(bool state) { setMcpActuator(MCP_PUPA_HUMIDIFIER, state); }
+inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
+
+static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
+static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
+static inline unsigned long getOfflineHoldUntilLocked();
+static inline void recordManualActuatorChangeLocked();
+static inline ControlMode getControlModeLocked();
+static inline void setControlModeLocked(ControlMode mode);
+
+static bool canStartTlsNow(const char *tag);
+static void tlsUnlock();
+static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
+
+// Auto Mode for Drawers
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
+void autoControlPupaDrawer(float temperature, float humidity);
+bool isAutoControlActive();
+void setRequestedControlMode(ControlMode mode);
+const char *getRequestedControlModeName();
+void recordManualActuatorChange();
+void logConnectivityState(const char *source);
+
+// DHT helpers
+bool isValidDrawer1DhtReading(float temperature, float humidity);
+bool isValidDrawer2DhtReading(float temperature, float humidity);
+bool isStableDhtReading(const DhtReading &current, const DhtReading &previous,
+                        float maxTempDelta, float maxHumidityDelta);
+bool readRawDht(DHT &sensor, float &humidity, float &temperature);
+DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11,
+                           bool useDrawer1Validation, bool allowTypeFallback, const char *label);
+
+// SD storage
+void storeSensorToSD(const char *drawerName, float temperature, float humidity,
+                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
+void uploadStoredData();
+int getStoredDataCount();
+
+static void sdCountTask(void *pvParameters);
+
+// Web server
+void setupWebServer();
+void handleHardwarePage(AsyncWebServerRequest *request);
+void handleCalibrateAmmonia(AsyncWebServerRequest *request);
+void handleCalibrationStatus(AsyncWebServerRequest *request);
+void handleCalibrateAllSensors(AsyncWebServerRequest *request);
+void handleStatus(AsyncWebServerRequest *request);
+void handleGetSdData(AsyncWebServerRequest *request);
+void handleClearSdData(AsyncWebServerRequest *request);
+void handleSyncSdData(AsyncWebServerRequest *request);
+void handleReboot(AsyncWebServerRequest *request);
+
+struct Nh3Metrics;
+static Nh3Metrics readNh3Metrics();
+float calculateRstFromRaw(int16_t rawValue);
+static float estimateNh3PpmFromRaw(int16_t rawValue);
+float calibrateMQ137();
+void loadMQ137Calibration();
+
+// Misc
+static void logLoopHealth();
+
+// Inline actuator helpers
+inline void setEggLarvaePump(bool state) { setMcpActuator(MCP_EGGLARVAE_PUMP, state); }
+inline void setEggLarvaeHumidifier(bool state) { setMcpActuator(MCP_EGGLARVAE_HUMIDIFIER, state); }
+inline void setEggLarvaeFan(bool state) { setMcpActuator(MCP_EGGLARVAE_FANS, state); }
+inline void setEggLarvaeHeater(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER, state); }
+inline void setEggLarvaeHeaterFan(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER_FANS, state); }
+inline void setPupaHumidifier(bool state) { setMcpActuator(MCP_PUPA_HUMIDIFIER, state); }
+inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
+
+static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
+static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
+static inline unsigned long getOfflineHoldUntilLocked();
+static inline void recordManualActuatorChangeLocked();
+static inline ControlMode getControlModeLocked();
+static inline void setControlModeLocked(ControlMode mode);
+
+static bool canStartTlsNow(const char *tag);
+static void tlsUnlock();
+static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
+
+// Auto Mode for Drawers
 void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
 void autoControlPupaDrawer(float temperature, float humidity);
 bool isAutoControlActive();
@@ -2422,7 +2558,7 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
     heaterOn = false;
     heaterFanOn = false;
   }
-  else if (temperature < TEMP_OPTIMAL_LOW)
+  else if (temperature <= TEMP_OPTIMAL_LOW)
   {
     fanOn = false;
     heaterOn = true;
@@ -2442,15 +2578,9 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
     heaterFanOn = true;
   }
 
-  if (humidity > HUMIDITY_OPTIMAL_HIGH)
-  {
-    fanOn = true;
-    humidifierOn = false;
-  }
-
   // Humidity control: humidifier when humidity is low.
   // Keep temperature safety priority: do not disable cooling fans due to low humidity.
-  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  if (humidity <= HUMIDITY_OPTIMAL_LOW)
   {
     if (!fanOn)
     {
@@ -2459,18 +2589,14 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   }
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
-    humidifierOn = false;
-  }
-
-  if (fanOn)
-  {
+    fanOn = true;
     humidifierOn = false;
   }
 
   // Moisture control
-  if ((leftMoisture >= 0 && leftMoisture < MOISTURE_OPTIMAL_LOW) ||
-      (centerMoisture >= 0 && centerMoisture < MOISTURE_OPTIMAL_LOW) ||
-      (rightMoisture >= 0 && rightMoisture < MOISTURE_OPTIMAL_LOW))
+  if ((leftMoisture >= 0 && leftMoisture <= MOISTURE_OPTIMAL_LOW) ||
+      (centerMoisture >= 0 && centerMoisture <= MOISTURE_OPTIMAL_LOW) ||
+      (rightMoisture >= 0 && rightMoisture <= MOISTURE_OPTIMAL_LOW))
   {
     pumpOn = true;
   }
@@ -2491,8 +2617,12 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   Serial.print(temperature);
   Serial.print(F(" Hum="));
   Serial.print(humidity);
-  Serial.print(F(" Moist="));
-  Serial.println(moisture);
+  Serial.print(F(" L/C/R="));
+  Serial.print(leftMoisture);
+  Serial.print(F("/"));
+  Serial.print(centerMoisture);
+  Serial.print(F("/"));
+  Serial.println(rightMoisture);
   Serial.print(F("  Fan="));
   Serial.print(fanOn ? F("ON") : F("OFF"));
   Serial.print(F(" Heater="));
@@ -2516,22 +2646,14 @@ void autoControlPupaDrawer(float temperature, float humidity)
   }
 
   // Humidity control: humidify when dry, ventilate when too humid
-  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  if (humidity <= HUMIDITY_OPTIMAL_LOW)
   {
-    if (!fanOn)
-    {
-      humidifierOn = true;
-    }
+    humidifierOn = true;
   }
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
     humidifierOn = false;
     fanOn = true;
-  }
-
-  if (fanOn)
-  {
-    humidifierOn = false;
   }
 
   setPupaFan(fanOn);
