@@ -207,7 +207,7 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define TEMP_MIN 25.0
 #define TEMP_MAX 35.0
 #define TEMP_OPTIMAL_LOW 28.0
-#define TEMP_OPTIMAL_HIGH 32.0
+#define TEMP_OPTIMAL_HIGH 31.01
 
 #define HUMIDITY_MIN 50.0
 #define HUMIDITY_MAX 80.0
@@ -225,10 +225,10 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define MQ137_NH3_B -4.796f                     // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
 #define MQ137_DIVIDER_INVERTED 1                // Set to 1 if your sensor is wired with the load resistor on the high side (Vc) instead of low side (GND)
 
-#define MOISTURE_MIN 40
-#define MOISTURE_MAX 70
-#define MOISTURE_OPTIMAL_LOW 50
-#define MOISTURE_OPTIMAL_HIGH 60
+#define MOISTURE_MIN 50
+#define MOISTURE_MAX 80
+#define MOISTURE_OPTIMAL_LOW 60
+#define MOISTURE_OPTIMAL_HIGH 75
 
 // ==================== GLOBALS ====================
 DHT dhtA11(DHT_A_PIN, DHT11_TYPE);
@@ -447,7 +447,7 @@ inline void setPupaHumidifier(bool state);
 inline void setPupaFan(bool state);
 
 // Offline control / mode
-void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture);
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
 void autoControlPupaDrawer(float temperature, float humidity);
 bool isAutoControlActive();
 void setRequestedControlMode(ControlMode mode);
@@ -1175,10 +1175,6 @@ void collectAndProcessEggLarvaeDrawer()
   // ----- Display + publish/store + control -----
   if (!isnan(humidity) && !isnan(temperature))
   {
-    int avgMoisture = -1;
-    if (leftSubstrate >= 0 && centerSubstrate >= 0 && rightSubstrate >= 0)
-      avgMoisture = (leftSubstrate + centerSubstrate + rightSubstrate) / 3;
-
     updateLCD1(temperature, humidity, -1);
 
     updateLCD2SubstratesRow(leftSubstrate, centerSubstrate, rightSubstrate);
@@ -1192,7 +1188,7 @@ void collectAndProcessEggLarvaeDrawer()
       bool offline = WiFi.status() != WL_CONNECTED;
       if (!offline || millis() >= offlineAutoControlHoldUntil)
       {
-        autoControlEggLarvaeDrawer(temperature, humidity, (avgMoisture >= 0 ? avgMoisture : 0));
+        autoControlEggLarvaeDrawer(temperature, humidity, leftSubstrate, centerSubstrate, rightSubstrate);
       }
       else
       {
@@ -2411,7 +2407,7 @@ int getStoredDataCount()
 }
 
 // ==================== OFFLINE AUTO CONTROL ====================
-void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
+void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture)
 {
   bool fanOn = false;
   bool heaterOn = false;
@@ -2420,7 +2416,7 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
   bool pumpOn = false;
 
   // Temperature control: fan for cooling, heater for warming
-  if (temperature > TEMP_OPTIMAL_HIGH)
+  if (temperature >= TEMP_OPTIMAL_HIGH)
   {
     fanOn = true;
     heaterOn = false;
@@ -2446,6 +2442,12 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
     heaterFanOn = true;
   }
 
+  if (humidity > HUMIDITY_OPTIMAL_HIGH)
+  {
+    fanOn = true;
+    humidifierOn = false;
+  }
+
   // Humidity control: humidifier when humidity is low.
   // Keep temperature safety priority: do not disable cooling fans due to low humidity.
   if (humidity < HUMIDITY_OPTIMAL_LOW)
@@ -2466,7 +2468,9 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
   }
 
   // Moisture control
-  if (moisture < MOISTURE_OPTIMAL_LOW || moisture < MOISTURE_MIN)
+  if ((leftMoisture >= 0 && leftMoisture < MOISTURE_OPTIMAL_LOW) ||
+      (centerMoisture >= 0 && centerMoisture < MOISTURE_OPTIMAL_LOW) ||
+      (rightMoisture >= 0 && rightMoisture < MOISTURE_OPTIMAL_LOW))
   {
     pumpOn = true;
   }
@@ -2480,7 +2484,6 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
   publishActuatorStateBool("substrate", pumpOn);
   publishActuatorStateBool("fan1", fanOn);
   publishActuatorStateBool("heater", heaterOn);
-
   publishActuatorStateBool("humidifier1", humidifierOn);
 
   Serial.println(F("Auto control Drawer 1:"));
@@ -2506,7 +2509,7 @@ void autoControlPupaDrawer(float temperature, float humidity)
   bool humidifierOn = false;
 
   // Temperature control: fan for cooling only
-  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  if (temperature >= TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
   {
     fanOn = true;
     humidifierOn = false;
