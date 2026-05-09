@@ -3,6 +3,7 @@ import Device from "./models/User.Device.js";
 import Drawer from "./models/Sensor.Drawer.js";
 import DrawerReading from "./models/Sensor.DrawerReadings.js";
 import ActuatorState from "./models/ActuatorState.js";
+import ActuatorEvent from "./models/ActuatorEvent.js";
 
 const brokerUrl = process.env.MQTT_BROKER_URL;
 const username = process.env.MQTT_USERNAME;
@@ -265,12 +266,29 @@ export async function initMqtt() {
               { actuatorId, state: normalizedState, updatedAt: new Date() },
               { upsert: true }
             );
+
+            // Store actuator event for reports
+            try {
+              const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
+              const eventValue = typeof incomingState === "object" && incomingState !== null && "time" in incomingState ? incomingState : incomingState;
+              await ActuatorEvent.create({ deviceId: device._id, actuator, drawer, value: eventValue, timestamp: new Date() });
+            } catch (e) {
+              console.error("Failed to persist actuator event:", e);
+            }
           } else {
             await ActuatorState.findOneAndUpdate(
               { actuatorId },
               { actuatorId, state: payload.state, updatedAt: new Date() },
               { upsert: true }
             );
+
+            // Store actuator event for reports
+            try {
+              const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
+              await ActuatorEvent.create({ deviceId: device._id, actuator, drawer, value: payload.state, timestamp: new Date() });
+            } catch (e) {
+              console.error("Failed to persist actuator event:", e);
+            }
           }
 
           return;

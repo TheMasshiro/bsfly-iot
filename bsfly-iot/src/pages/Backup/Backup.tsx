@@ -510,6 +510,38 @@ const Backup: FC = () => {
         }
     };
 
+            const handleActuatorReport = async () => {
+                if (!currentDevice) {
+                    present({ message: "Please select a device first", duration: 2000, color: "warning" });
+                    return;
+                }
+
+                setLoading(true);
+                try {
+                    const token = await getToken();
+                    const resp = await api.get(
+                        `/api/reports/actuators?deviceId=${currentDevice._id}&from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
+                        { ...withToken(token), responseType: 'blob' }
+                    );
+
+                    const blob = new Blob([resp.data], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${currentDevice.name.replace(/[^a-z0-9]/gi, '_')}_actuator_report_${formatDateISO(selectedDate)}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    present({ message: 'Actuator PDF downloaded', duration: 2000, color: 'success' });
+                } catch (error: any) {
+                    present({ message: error.response?.data?.message || error.message || 'Failed to download actuator report', duration: 2000, color: 'danger' });
+                } finally {
+                    setLoading(false);
+                }
+            };
+
     const downloadFile = (content: string, filename: string, mimeType: string) => {
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
@@ -843,6 +875,24 @@ const Backup: FC = () => {
                                             slot="start"
                                         />
                                         Generate PDF Report
+                                    </>
+                                )}
+                            </IonButton>
+
+                            <IonButton
+                                expand="block"
+                                onClick={handleActuatorReport}
+                                size="large"
+                                disabled={loading || !currentDevice}
+                                color="tertiary"
+                                className="export-btn"
+                            >
+                                {loading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={hardwareChipOutline} slot="start" />
+                                        Generate Actuator PDF
                                     </>
                                 )}
                             </IonButton>

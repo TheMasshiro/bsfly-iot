@@ -2477,6 +2477,12 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int moisture)
   setEggLarvaeHeaterFan(heaterFanOn);
   setEggLarvaeHumidifier(humidifierOn);
 
+  publishActuatorStateBool("substrate", pumpOn);
+  publishActuatorStateBool("fan1", fanOn);
+  publishActuatorStateBool("heater", heaterOn);
+
+  publishActuatorStateBool("humidifier1", humidifierOn);
+
   Serial.println(F("Auto control Drawer 1:"));
   Serial.print(F("  Temp="));
   Serial.print(temperature);
@@ -2527,6 +2533,10 @@ void autoControlPupaDrawer(float temperature, float humidity)
 
   setPupaFan(fanOn);
   setPupaHumidifier(humidifierOn);
+
+  // Publish actuator states for drawer 2
+  publishActuatorStateBool("fan3", fanOn);
+  publishActuatorStateBool("humidifier3", humidifierOn);
 
   Serial.println(F("Auto control Drawer 2:"));
   Serial.print(F("  Temp="));

@@ -7,6 +7,7 @@ import actuatorRoutes from "./controllers/actuatorRoutes.js";
 import deviceRoutes from "./controllers/deviceRoutes.js";
 import sensorRoutes from "./controllers/sensorRoutes.js";
 import webhookRoutes from "./controllers/webhookRoutes.js";
+import reportRoutes from "./controllers/reportRoutes.js";
 import { initMqtt } from "./mqttClient.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { clerkMiddleware } from "./middleware/auth.js";
@@ -80,6 +81,7 @@ app.use("/api/actuators", actuatorRoutes);
 app.use("/api/devices", deviceRoutes);
 
 app.use("/api/sensors", sensorRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.use((err, _req, res, _next) => {
   if (err?.message === "Not allowed by CORS") {
