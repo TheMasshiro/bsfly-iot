@@ -249,56 +249,7 @@ router.get("/:actuatorId", async (req, res) => {
   }
 });
 
-const MUTUALLY_EXCLUSIVE = {
-  fan: ["heater", "humidifier"],
-  heater: ["fan"],
-  humidifier: ["fan"],
-};
 
-const getActuatorDrawerSuffix = (actuatorType) => {
-  if (typeof actuatorType !== "string") return "";
-  const match = actuatorType.match(/(\d+)$/);
-  return match ? match[1] : "";
-};
-
-export const buildExclusiveActuatorIds = (deviceId, actuatorType) => {
-  if (!deviceId || typeof actuatorType !== "string") return [];
-
-  const drawerSuffix = getActuatorDrawerSuffix(actuatorType);
-  const fanId = drawerSuffix ? `${deviceId}:fan${drawerSuffix}` : null;
-  const humidifierId = drawerSuffix ? `${deviceId}:humidifier${drawerSuffix}` : null;
-
-  if (actuatorType === "heater") {
-    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
-  }
-
-  if (actuatorType === "humidifier") {
-    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
-  }
-
-  if (actuatorType.startsWith("fan")) {
-    const exclusions = [`${deviceId}:heater`];
-    if (humidifierId) {
-      exclusions.push(humidifierId);
-    } else {
-      exclusions.push(`${deviceId}:humidifier1`, `${deviceId}:humidifier3`);
-    }
-    return exclusions;
-  }
-
-  if (actuatorType.startsWith("humidifier")) {
-    if (fanId) {
-      return [fanId];
-    }
-    return [`${deviceId}:fan1`, `${deviceId}:fan3`];
-  }
-
-  if (MUTUALLY_EXCLUSIVE[actuatorType]) {
-    return MUTUALLY_EXCLUSIVE[actuatorType].map((type) => `${deviceId}:${type}`);
-  }
-
-  return [];
-};
 
 router.post("/:actuatorId", requireAuth, async (req, res) => {
   try {
@@ -373,22 +324,7 @@ router.post("/:actuatorId", requireAuth, async (req, res) => {
       console.error("Failed to publish MQTT actuator update", e);
     }
 
-    if (state === true) {
-      const exclusions = buildExclusiveActuatorIds(device._id, actuatorType);
-      for (const excludeId of exclusions) {
-        await ActuatorState.findOneAndUpdate(
-          { actuatorId: excludeId },
-          { actuatorId: excludeId, state: false, updatedAt: new Date() },
-          { upsert: true }
-        );
 
-        const excludedActuatorType = excludeId.split(":").pop();
-        if (excludedActuatorType) {
-          const exclusionTopic = `devices/${device.macAddress}/actuators/${excludedActuatorType}/control`;
-          publishMqtt(exclusionTopic, { state: false });
-        }
-      }
-    }
 
     res.json({ actuatorId: storedActuatorId, state: updated.state });
   } catch (error) {

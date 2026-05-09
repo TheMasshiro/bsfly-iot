@@ -237,38 +237,13 @@ const GlobalFabControls: React.FC = () => {
             return;
         }
 
-        const MUTUALLY_EXCLUSIVE: Record<string, string[]> = {
-            Fan: ['Heater', 'Humidifier'],
-            Heater: ['Fan'],
-            Humidifier: ['Fan'],
-        };
-
         const newState = !Boolean(actuatorStates[stage]?.[actionName]);
         const actuatorIds = getActuatorIds(deviceId, stage, actionName);
 
-        const exclusions = MUTUALLY_EXCLUSIVE[actionName] || [];
-        const updatedStage = { ...(actuatorStates[stage] || {}), [actionName]: newState };
-        if (newState) {
-            exclusions.forEach((ex) => {
-                updatedStage[ex] = false;
-            });
-        }
-
         const updatedStates: Record<string, Record<string, boolean>> = {
             ...actuatorStates,
-            [stage]: updatedStage,
+            [stage]: { ...(actuatorStates[stage] || {}), [actionName]: newState },
         };
-
-        if (actionName === 'Heater') {
-            const otherDrawer = stage === 'Drawer 1' ? 'Drawer 2' : 'Drawer 1';
-            updatedStates[otherDrawer] = {
-                ...(actuatorStates[otherDrawer] || {}),
-                Heater: newState,
-            };
-            if (newState) {
-                updatedStates[otherDrawer].Fan = false;
-            }
-        }
 
         try {
             await Promise.all(actuatorIds.map((id) => actuatorService.emit(id, newState)));
