@@ -2590,7 +2590,6 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
-    humidifierOn = false;
   }
 
   // Moisture control
@@ -2652,7 +2651,6 @@ void autoControlPupaDrawer(float temperature, float humidity)
   }
   else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
-    humidifierOn = false;
     fanOn = true;
   }
 
