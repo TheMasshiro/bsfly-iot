@@ -2551,48 +2551,32 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   bool humidifierOn = false;
   bool pumpOn = false;
 
-  // Temperature control: fan for cooling, heater for warming
-  if (temperature >= TEMP_OPTIMAL_HIGH)
+  // Temperature: fan on when temp is high
+  if (temperature >= TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
   {
     fanOn = true;
-    heaterOn = false;
-    heaterFanOn = false;
   }
-  else if (temperature <= TEMP_OPTIMAL_LOW)
+
+  // Temperature: heater on when temp is low
+  if (temperature <= TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
   {
-    fanOn = false;
     heaterOn = true;
     heaterFanOn = true;
   }
 
-  if (temperature > TEMP_MAX)
-  {
-    fanOn = true;
-    heaterOn = false;
-    heaterFanOn = false;
-  }
-  else if (temperature < TEMP_MIN)
-  {
-    fanOn = false;
-    heaterOn = true;
-    heaterFanOn = true;
-  }
-
-  // Humidity control: humidifier when humidity is low.
-  // Keep temperature safety priority: do not disable cooling fans due to low humidity.
+  // Humidity: humidifier on when humidity is low
   if (humidity <= HUMIDITY_OPTIMAL_LOW)
   {
-    if (!fanOn)
-    {
-      humidifierOn = true;
-    }
+    humidifierOn = true;
   }
-  else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+
+  // Humidity: fan on when humidity is high
+  if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
   }
 
-  // Moisture control
+  // Moisture: pump on when any substrate is low
   if ((leftMoisture >= 0 && leftMoisture <= MOISTURE_OPTIMAL_LOW) ||
       (centerMoisture >= 0 && centerMoisture <= MOISTURE_OPTIMAL_LOW) ||
       (rightMoisture >= 0 && rightMoisture <= MOISTURE_OPTIMAL_LOW))
@@ -2637,19 +2621,20 @@ void autoControlPupaDrawer(float temperature, float humidity)
   bool fanOn = false;
   bool humidifierOn = false;
 
-  // Temperature control: fan for cooling only
+  // Temperature: fan on when temp is high
   if (temperature >= TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
   {
     fanOn = true;
-    humidifierOn = false;
   }
 
-  // Humidity control: humidify when dry, ventilate when too humid
+  // Humidity: humidifier on when humidity is low
   if (humidity <= HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
-  else if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+
+  // Humidity: fan on when humidity is high
+  if (humidity >= HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
   }
@@ -2672,7 +2657,6 @@ void autoControlPupaDrawer(float temperature, float humidity)
 
 bool isValidDrawer1DhtReading(float temperature, float humidity)
 {
-  // Drawer 1 operates in a warm, humid envelope. Tight bounds block cross-type garbage readings.
   return !isnan(temperature) && !isnan(humidity) && temperature >= 15.0f && temperature <= 45.0f && humidity >= 30.0f && humidity <= 95.0f;
 }
 
