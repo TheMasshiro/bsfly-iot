@@ -196,6 +196,12 @@ const Light: React.FC = () => {
 
                 <PagePurpose text="Set and monitor light cycles used to support adult BSF mating activity." />
 
+                <IonText color="medium" className="ion-padding-horizontal ion-text-center">
+                    <p>
+                        Auto mode now starts the 10-hour light cycle at 7:00 PM for online devices.
+                    </p>
+                </IonText>
+
                 <IonGrid>
                     <IonRow className="ion-justify-content-center ion-align-items-center">
                         <IonCol>

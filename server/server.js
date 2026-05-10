@@ -8,7 +8,7 @@ import deviceRoutes from "./controllers/deviceRoutes.js";
 import sensorRoutes from "./controllers/sensorRoutes.js";
 import webhookRoutes from "./controllers/webhookRoutes.js";
 import reportRoutes from "./controllers/reportRoutes.js";
-import { initMqtt } from "./mqttClient.js";
+import { initMqtt, startLightAutoScheduler } from "./mqttClient.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { clerkMiddleware } from "./middleware/auth.js";
 
@@ -64,9 +64,13 @@ app.use("/api", apiLimiter);
 
 await connectDB();
 
-initMqtt().catch((e) =>
-  console.error("MQTT init failed (continuing without broker):", e)
-);
+initMqtt()
+  .then(() => {
+    startLightAutoScheduler();
+  })
+  .catch((e) =>
+    console.error("MQTT init failed (continuing without broker):", e)
+  );
 
 const BACKEND_PORT = process.env.PORT || 5000;
 

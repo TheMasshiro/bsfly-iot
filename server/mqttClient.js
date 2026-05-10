@@ -27,6 +27,109 @@ const normalizeDrawerName = (rawDrawerName) => {
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const MAX_LIGHT_SECONDS = 10 * 3600;
+const LIGHT_AUTO_ON_HOUR = 19;
+
+let lightAutoScheduler = null;
+const lightAutoTriggeredDates = new Set();
+
+const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const isLightEffectivelyOn = (state, nowMs = Date.now()) => {
+  if (typeof state === "boolean") {
+    return state;
+  }
+
+  if (typeof state === "number") {
+    return state > 0;
+  }
+
+  if (typeof state === "object" && state !== null) {
+    return normalizeLightSeconds(state, nowMs) > 0;
+  }
+
+  return false;
+};
+
+const syncEveningLightTimer = async (device, nowMs) => {
+  const deviceId = String(device._id);
+  const dateKey = getLocalDateKey(new Date(nowMs));
+  const triggerKey = `${deviceId}:${dateKey}`;
+
+  if (lightAutoTriggeredDates.has(triggerKey)) {
+    return;
+  }
+
+  const actuatorId = `${deviceId}:light`;
+  const stateDoc = await ActuatorState.findOne({ actuatorId });
+  if (stateDoc && isLightEffectivelyOn(stateDoc.state, nowMs)) {
+    lightAutoTriggeredDates.add(triggerKey);
+    return;
+  }
+
+  const topic = `devices/${device.macAddress}/actuators/light/control`;
+  const payload = {
+    state: {
+      time: MAX_LIGHT_SECONDS,
+      startTime: nowMs,
+    },
+  };
+
+  if (publishMqtt(topic, payload)) {
+    await ActuatorState.findOneAndUpdate(
+      { actuatorId },
+      {
+        actuatorId,
+        state: payload.state,
+        updatedAt: new Date(nowMs),
+      },
+      { upsert: true, new: true }
+    );
+
+    lightAutoTriggeredDates.add(triggerKey);
+    console.log(`[LIGHT] Auto-started evening timer for ${device.macAddress}`);
+  }
+};
+
+const runLightAutoScheduler = async () => {
+  const now = new Date();
+
+  if (now.getHours() < LIGHT_AUTO_ON_HOUR) {
+    return;
+  }
+
+  const devices = await Device.find({ status: "online" });
+  for (const device of devices) {
+    if (device.controlMode === "manual") {
+      continue;
+    }
+
+    try {
+      await syncEveningLightTimer(device, now.getTime());
+    } catch (error) {
+      console.error("[LIGHT] Evening auto-start failed:", error);
+    }
+  }
+};
+
+export function startLightAutoScheduler() {
+  if (lightAutoScheduler) {
+    return;
+  }
+
+  const tick = () => {
+    runLightAutoScheduler().catch((error) => {
+      console.error("[LIGHT] Scheduler tick failed:", error);
+    });
+  };
+
+  tick();
+  lightAutoScheduler = setInterval(tick, 60000);
+}
 
 const markDeviceOnline = async (macAddress) => {
   if (!macAddress) return;
