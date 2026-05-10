@@ -26,44 +26,44 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           cache: 'npm'
 
-      - name: Install global dependencies
-        run: |
-          npm install -g cordova
-          npm install -g @ionic/cli
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
 
       - name: Install app dependencies
         working-directory: ./bsfly-iot
         run: npm install --ci
 
-      - name: Add Android platform
+      - name: Build web assets
         working-directory: ./bsfly-iot
-        run: ionic cordova platform add android
+        run: npm run build
+
+      - name: Sync to Android
+        working-directory: ./bsfly-iot
+        run: npx cap sync android
 
       - name: Build Android Dev APK
-        working-directory: ./bsfly-iot
-        run: ionic cordova build android
+        working-directory: ./bsfly-iot/android
+        run: ./gradlew assembleDebug
 
       - name: Build Android Release APK
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        working-directory: ./bsfly-iot
-        run: ionic cordova build android --release --prod
+        working-directory: ./bsfly-iot/android
+        run: ./gradlew assembleRelease
 
-      - name: Generate Android App Bundle
+      - name: Build Android App Bundle
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        working-directory: ./bsfly-iot/platforms/android/
-        run: ./gradlew bundle
+        working-directory: ./bsfly-iot/android
+        run: ./gradlew bundleRelease
 
       - name: Upload APK artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: |
-            bsfly-iot/platforms/android/app/build/outputs/apk/debug/*.apk
-            bsfly-iot/platforms/android/app/build/outputs/apk/release/*.apk
+          path: bsfly-iot/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
 
       - name: Upload App Bundle
@@ -71,5 +71,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-bundle
-          path: bsfly-iot/platforms/android/app/build/outputs/bundle/release/
+          path: bsfly-iot/android/app/build/outputs/bundle/release/
           retention-days: 30
