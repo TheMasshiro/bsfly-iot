@@ -154,29 +154,6 @@ const Backup: FC = () => {
         return rows.join("\n");
     };
 
-    const generateJSON = (data: DayReading[]): string => {
-        const exportData = {
-            device: currentDevice?.name || "Unknown",
-            deviceId: currentDevice?._id || "",
-            exportDate: new Date().toISOString(),
-            dateRange: {
-                from: formatDateISO(selectedDate),
-                to: formatDateISO(today),
-            },
-            readings: data.flatMap((day) =>
-                day.readings.map((reading) => ({
-                    drawer: day.drawerId,
-                    timestamp: reading.timestamp,
-                    temperature: reading.temperature,
-                    humidity: reading.humidity,
-                    moisture: reading.moisture,
-                    ammonia: reading.ammonia,
-                }))
-            ),
-        };
-        return JSON.stringify(exportData, null, 2);
-    };
-
     interface MetricStats {
         avg: number | null;
         min: number | null;
@@ -554,7 +531,7 @@ const Backup: FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    const handleBackup = async (format: "csv" | "json") => {
+    const handleBackup = async () => {
         if (!currentDevice) {
             present({ message: "Please select a device first", duration: 2000, color: "warning" });
             return;
@@ -572,15 +549,10 @@ const Backup: FC = () => {
             const deviceName = currentDevice.name.replace(/[^a-z0-9]/gi, "_");
             const dateStr = formatDateISO(selectedDate);
 
-            if (format === "csv") {
-                const csv = generateCSV(data);
-                downloadFile(csv, `${deviceName}_backup_${dateStr}.csv`, "text/csv");
-            } else {
-                const json = generateJSON(data);
-                downloadFile(json, `${deviceName}_backup_${dateStr}.json`, "application/json");
-            }
+            const csv = generateCSV(data);
+            downloadFile(csv, `${deviceName}_backup_${dateStr}.csv`, "text/csv");
 
-            present({ message: `Backup exported as ${format.toUpperCase()}`, duration: 2000, color: "success" });
+            present({ message: "Backup exported as CSV", duration: 2000, color: "success" });
         } catch (error: any) {
             present({ message: error.message || "Failed to create backup", duration: 2000, color: "danger" });
         } finally {
@@ -899,7 +871,7 @@ const Backup: FC = () => {
 
                             <IonButton
                                 expand="block"
-                                onClick={() => handleBackup("csv")}
+                                onClick={handleBackup}
                                 size="large"
                                 disabled={loading || !currentDevice}
                                 className="export-btn export-btn-csv"
@@ -913,27 +885,6 @@ const Backup: FC = () => {
                                             slot="start"
                                         />
                                         Export as CSV
-                                    </>
-                                )}
-                            </IonButton>
-
-                            <IonButton
-                                expand="block"
-                                onClick={() => handleBackup("json")}
-                                size="large"
-                                disabled={loading || !currentDevice}
-                                color="secondary"
-                                className="export-btn"
-                            >
-                                {loading ? (
-                                    <IonSpinner name="crescent" />
-                                ) : (
-                                    <>
-                                        <IonIcon
-                                            icon={documentOutline}
-                                            slot="start"
-                                        />
-                                        Export as JSON
                                     </>
                                 )}
                             </IonButton>
