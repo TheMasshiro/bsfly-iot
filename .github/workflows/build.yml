@@ -58,14 +58,6 @@ jobs:
         working-directory: ./bsfly-iot/android
         run: ./gradlew bundleRelease
 
-      - name: Debug - List APK outputs
-        if: always()
-        run: |
-          echo "=== Checking build outputs ==="
-          find bsfly-iot/android/app/build/outputs -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
-          find bsfly-iot/android/app/build/outputs -type f -name "*.aab" 2>/dev/null || echo "No AAB files found"
-          ls -la bsfly-iot/android/app/build/outputs 2>/dev/null || echo "Build outputs directory not found"
-
       - name: Upload APK artifacts
         if: always()
         uses: actions/upload-artifact@v4
