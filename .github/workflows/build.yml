@@ -35,21 +35,25 @@ jobs:
           npm install -g @ionic/cli
 
       - name: Install app dependencies
+        working-directory: ./bsfly-iot
         run: npm install --ci
 
       - name: Add Android platform
+        working-directory: ./bsfly-iot
         run: ionic cordova platform add android
 
       - name: Build Android Dev APK
+        working-directory: ./bsfly-iot
         run: ionic cordova build android
 
       - name: Build Android Release APK
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        working-directory: ./bsfly-iot
         run: ionic cordova build android --release --prod
 
       - name: Generate Android App Bundle
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        working-directory: ./platforms/android/
+        working-directory: ./bsfly-iot/platforms/android/
         run: ./gradlew bundle
 
       - name: Upload APK artifacts
@@ -58,8 +62,8 @@ jobs:
         with:
           name: android-apk
           path: |
-            platforms/android/app/build/outputs/apk/debug/*.apk
-            platforms/android/app/build/outputs/apk/release/*.apk
+            bsfly-iot/platforms/android/app/build/outputs/apk/debug/*.apk
+            bsfly-iot/platforms/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
 
       - name: Upload App Bundle
@@ -67,5 +71,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-bundle
-          path: platforms/android/app/build/outputs/bundle/release/
+          path: bsfly-iot/platforms/android/app/build/outputs/bundle/release/
           retention-days: 30
