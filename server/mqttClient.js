@@ -26,7 +26,7 @@ const normalizeDrawerName = (rawDrawerName) => {
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const MAX_LIGHT_SECONDS = 8 * 3600;
+const MAX_LIGHT_SECONDS = 10 * 3600;
 
 const markDeviceOnline = async (macAddress) => {
   if (!macAddress) return;

@@ -78,7 +78,7 @@ export const timers: TimeProps[] = [
   {
     id: 2,
     name: "On",
-    seconds: 28800,
+    seconds: 36000,
   },
 ];
 

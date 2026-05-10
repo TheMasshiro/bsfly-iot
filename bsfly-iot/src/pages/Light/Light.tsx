@@ -31,14 +31,14 @@ const normalizeLightState = (state: unknown) => {
 
     if (typeof state === 'number') {
         return {
-            time: Math.max(0, Math.min(8 * 3600, Math.round(state))),
+            time: Math.max(0, Math.min(10 * 3600, Math.round(state))),
             startTime: Date.now(),
         };
     }
 
     if (typeof state === 'boolean') {
         return {
-            time: state ? 28800 : 0,
+            time: state ? 36000 : 0,
             startTime: Date.now(),
         };
     }
