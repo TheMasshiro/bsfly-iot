@@ -40,6 +40,10 @@ jobs:
         working-directory: ./bsfly-iot
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_MQTT_BROKER_URL: ${{ secrets.VITE_MQTT_BROKER_URL }}
+          VITE_MQTT_USERNAME: ${{ secrets.VITE_MQTT_USERNAME }}
+          VITE_MQTT_PASSWORD: ${{ secrets.VITE_MQTT_PASSWORD }}
         run: npm run build
 
       - name: Sync to Android
