@@ -37,7 +37,6 @@ export const NotificationProvider: FC<{ children: ReactNode }> = ({ children }) 
 
         setNotifications(prev => [newNotification, ...prev].slice(0, 50));
 
-        // Trigger Android native notification for alerts and warnings
         if (notification.type === 'danger' || notification.type === 'warning' || notification.type === 'info') {
             sendNativeNotification(
                 notification.title,

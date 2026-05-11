@@ -6,24 +6,20 @@ export const useAndroidNotifications = () => {
   useEffect(() => {
     const initNotifications = async () => {
       try {
-        // Request permissions
         const permission = await LocalNotifications.requestPermissions();
         if (permission.display !== 'granted') {
           console.warn('Notification permissions not granted');
         }
 
-        // Handle notification click
         LocalNotifications.addListener(
           'localNotificationActionPerformed',
           (notification) => {
             console.log('Notification clicked:', notification);
-            // Navigate or perform action based on notification
           }
         );
 
-        // Cancel notifications on app exit
         App.addListener('pause', () => {
-          // Keep notifications even when paused
+
         });
       } catch (error) {
         console.error('Failed to initialize notifications:', error);
@@ -51,12 +47,10 @@ export const useAndroidNotifications = () => {
     drawer: 'drawer1' | 'drawer2'
   ) => {
     try {
-      // Determine sound and urgency based on alert type
       const soundUri = type === 'danger' ? 'res://raw/alert_critical' : 'res://raw/alert_notice';
       const smallIcon = 'icon_0';
       const largeIcon = type === 'danger' ? 'icon_danger' : 'icon_warning';
 
-      // Create notification ID based on drawer and timestamp
       const notificationId = parseInt(
         `${drawer === 'drawer1' ? '1' : '2'}${Date.now().toString().slice(-8)}`
       );
@@ -79,10 +73,7 @@ export const useAndroidNotifications = () => {
           },
         ],
       });
-
-      console.log(`Native notification sent: ${title}`);
     } catch (error) {
-      console.error('Failed to send native notification:', error);
     }
   };
 
