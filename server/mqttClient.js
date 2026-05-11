@@ -104,10 +104,6 @@ const runLightAutoScheduler = async () => {
 
   const devices = await Device.find({ status: "online" });
   for (const device of devices) {
-    if (device.controlMode === "manual") {
-      continue;
-    }
-
     try {
       await syncEveningLightTimer(device, now.getTime());
     } catch (error) {

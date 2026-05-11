@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.cpe.bsflyiot",
-  appName: "bsfly-iot",
+  appName: "BSFly IoT",
   webDir: "dist",
   plugins: {
     LocalNotifications: {

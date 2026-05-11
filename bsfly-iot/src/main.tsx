@@ -82,36 +82,10 @@ const clerkAppearance = {
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
-
-const MissingPublishableKey = () => (
-    <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        background: '#0a0a0a',
-        color: '#ffffff',
-        fontFamily: 'system-ui, sans-serif',
-        textAlign: 'center',
-    }}>
-        <div>
-            <h1 style={{ margin: '0 0 12px', fontSize: '1.5rem' }}>App configuration missing</h1>
-            <p style={{ margin: 0, color: '#a0a0a0', lineHeight: 1.5 }}>
-                The Clerk publishable key is not configured. Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> and rebuild the app.
-            </p>
-        </div>
-    </div>
-)
-
 root.render(
     <React.StrictMode>
-        {PUBLISHABLE_KEY ? (
-            <ClerkProvider publishableKey={PUBLISHABLE_KEY} appearance={clerkAppearance}>
-                <App />
-            </ClerkProvider>
-        ) : (
-            <MissingPublishableKey />
-        )}
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY} appearance={clerkAppearance}>
+            <App />
+        </ClerkProvider>
     </React.StrictMode>
 );
