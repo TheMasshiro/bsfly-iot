@@ -41,6 +41,15 @@ interface DayReading {
     readings: SensorReading[];
 }
 
+interface RawReadingRow {
+    drawerId: string;
+    timestamp: string;
+    temperature?: number;
+    humidity?: number;
+    moisture?: number;
+    ammonia?: number;
+}
+
 const Backup: FC = () => {
     const [daysAgo, setDaysAgo] = useState<number>(0);
     const [loading, setLoading] = useState(false);
@@ -113,6 +122,16 @@ const Backup: FC = () => {
         return `${y}-${m}-${d}`;
     };
 
+    const formatTimestamp24 = (date: Date): string => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        const h = String(date.getHours()).padStart(2, "0");
+        const min = String(date.getMinutes()).padStart(2, "0");
+        const s = String(date.getSeconds()).padStart(2, "0");
+        return `${y}-${m}-${d} ${h}:${min}:${s}`;
+    };
+
     const fetchSensorHistory = async (): Promise<DayReading[]> => {
         if (!currentDevice) {
             throw new Error("No device selected");
@@ -128,7 +147,7 @@ const Backup: FC = () => {
     };
 
     const generateCSV = (data: DayReading[]): string => {
-        const headers = ["Drawer", "Date", "Time", "Temperature (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const headers = ["Drawer", "Timestamp", "Temperature (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
         const rows: string[] = [headers.join(",")];
         const csvEscape = (value: string | number): string => {
             const text = String(value);
@@ -140,8 +159,7 @@ const Backup: FC = () => {
                 const date = new Date(reading.timestamp);
                 const row = [
                     day.drawerId,
-                    formatDateISO(date),
-                    date.toLocaleTimeString("en-US", { hour12: false }),
+                    formatTimestamp24(date),
                     reading.temperature ?? "",
                     reading.humidity ?? "",
                     reading.moisture ?? "",
@@ -294,7 +312,7 @@ const Backup: FC = () => {
         y += 6;
         doc.text(`Period: ${formatDate(startDate)} - ${formatDate(today)}`, pageWidth / 2, y, { align: "center" });
         y += 6;
-        doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, y, { align: "center" });
+        doc.text(`Generated: ${new Date().toLocaleString("en-US", { hour12: false })}`, pageWidth / 2, y, { align: "center" });
         y += 15;
 
         doc.setDrawColor(200);
@@ -453,6 +471,108 @@ const Backup: FC = () => {
         return doc;
     };
 
+    const generateRawPDFReport = (data: DayReading[], startDate: Date, JsPdfCtor: any) => {
+        const doc = new JsPdfCtor();
+        const rows: RawReadingRow[] = [];
+
+        data.forEach((day) => {
+            day.readings.forEach((reading) => {
+                rows.push({
+                    drawerId: day.drawerId,
+                    timestamp: reading.timestamp,
+                    temperature: reading.temperature,
+                    humidity: reading.humidity,
+                    moisture: reading.moisture,
+                    ammonia: reading.ammonia,
+                });
+            });
+        });
+
+        rows.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 16;
+        const startX = margin;
+        const headers = ["Drawer", "Timestamp", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const widths = [22, 44, 24, 26, 26, 26];
+        let y = 20;
+
+        const drawHeader = () => {
+            if (y > pageHeight - 20) {
+                doc.addPage();
+                y = 20;
+            }
+
+            let headerX = startX;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8);
+            doc.setFillColor(240, 240, 240);
+            doc.rect(startX - 2, y - 4, widths.reduce((a, b) => a + b, 0), 7, "F");
+            headers.forEach((header, index) => {
+                doc.text(header, headerX, y);
+                headerX += widths[index];
+            });
+            y += 8;
+            doc.setFont("helvetica", "normal");
+        };
+
+        const drawRow = (row: string[]) => {
+            if (y > pageHeight - 20) {
+                doc.addPage();
+                y = 20;
+                drawHeader();
+            }
+
+            let x = startX;
+            doc.setFontSize(7.5);
+            row.forEach((cell, index) => {
+                doc.text(String(cell), x, y);
+                x += widths[index];
+            });
+            y += 6;
+        };
+
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.text("BSF Sensor Raw Data", pageWidth / 2, y, { align: "center" });
+        y += 10;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text(`Device: ${currentDevice?.name || "Unknown"}`, pageWidth / 2, y, { align: "center" });
+        y += 6;
+        doc.text(`Period: ${formatDate(startDate)} - ${formatDate(today)}`, pageWidth / 2, y, { align: "center" });
+        y += 6;
+        doc.text(`Generated: ${new Date().toLocaleString("en-US", { hour12: false })}`, pageWidth / 2, y, { align: "center" });
+        y += 10;
+
+        doc.setTextColor(0);
+        doc.setFontSize(9);
+        doc.text("Raw sensor readings are listed in the order they were recorded, including 5-second interval samples.", startX, y, { maxWidth: pageWidth - margin * 2 });
+        y += 10;
+
+        drawHeader();
+
+        rows.forEach((row) => {
+            drawRow([
+                row.drawerId,
+                formatTimestamp24(new Date(row.timestamp)),
+                row.temperature ?? "",
+                row.humidity ?? "",
+                row.moisture ?? "",
+                row.ammonia ?? "",
+            ]);
+        });
+
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text("Black Soldier Fly IoT Monitoring System", pageWidth / 2, pageHeight - 10, { align: "center" });
+
+        return doc;
+    };
+
     const handlePDFReport = async () => {
         if (!currentDevice) {
             present({ message: "Please select a device first", duration: 2000, color: "warning" });
@@ -482,6 +602,40 @@ const Backup: FC = () => {
             present({ message: "PDF report generated", duration: 2000, color: "success" });
         } catch (error: any) {
             present({ message: error.response?.data?.message || error.message || "Failed to generate report", duration: 2000, color: "danger" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRawPDFReport = async () => {
+        if (!currentDevice) {
+            present({ message: "Please select a device first", duration: 2000, color: "warning" });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = await getToken();
+            const { data } = await api.get(
+                `/api/sensors/device/${currentDevice._id}/history?from=${formatDateISO(selectedDate)}&to=${formatDateISO(today)}`,
+                withToken(token)
+            );
+
+            if (!data || data.length === 0) {
+                present({ message: "No sensor data found for the selected range", duration: 2000, color: "warning" });
+                return;
+            }
+
+            const { jsPDF } = await import("jspdf");
+            const doc = generateRawPDFReport(data, selectedDate, jsPDF);
+            const deviceName = currentDevice.name.replace(/[^a-z0-9]/gi, "_");
+            const fromStr = formatDateISO(selectedDate);
+            const toStr = formatDateISO(today);
+            doc.save(`${deviceName}_raw_${fromStr}_to_${toStr}.pdf`);
+
+            present({ message: "Raw PDF generated", duration: 2000, color: "success" });
+        } catch (error: any) {
+            present({ message: error.response?.data?.message || error.message || "Failed to generate raw PDF", duration: 2000, color: "danger" });
         } finally {
             setLoading(false);
         }
@@ -827,6 +981,9 @@ const Backup: FC = () => {
                                 Export sensor data from{" "}
                                 <strong>{formatDate(selectedDate)}</strong> to today.
                             </p>
+                            <p className="export-description">
+                                CSV exports raw readings with full timestamps, including the 5-second sensor samples.
+                            </p>
                         </IonText>
 
                         <div className="export-buttons">
@@ -847,6 +1004,24 @@ const Backup: FC = () => {
                                             slot="start"
                                         />
                                         Generate PDF Report
+                                    </>
+                                )}
+                            </IonButton>
+
+                            <IonButton
+                                expand="block"
+                                onClick={handleRawPDFReport}
+                                size="large"
+                                disabled={loading || !currentDevice}
+                                color="warning"
+                                className="export-btn"
+                            >
+                                {loading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={documentOutline} slot="start" />
+                                        Export Raw PDF
                                     </>
                                 )}
                             </IonButton>
@@ -884,7 +1059,7 @@ const Backup: FC = () => {
                                             icon={downloadOutline}
                                             slot="start"
                                         />
-                                        Export as CSV
+                                        Export Raw CSV
                                     </>
                                 )}
                             </IonButton>

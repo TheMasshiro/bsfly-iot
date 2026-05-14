@@ -137,7 +137,7 @@ const Analytics: FC = () => {
             }
             if (isAppOnline && !isDeviceOffline) {
                 const now = Date.now();
-                if (now - lastErrorRef.current > 30000) {
+                if (now - lastErrorRef.current > 5000) {
                     lastErrorRef.current = now;
                     present({
                         message: "Failed to load sensor data",
@@ -167,7 +167,7 @@ const Analytics: FC = () => {
 
         const intervalId = window.setInterval(() => {
             fetchCurrentValues(stage);
-        }, 60 * 60 * 1000);
+        }, 5000);
 
         return () => {
             clearInterval(intervalId);

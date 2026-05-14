@@ -239,9 +239,9 @@ const formatDataTime = (date) =>
     month: "numeric",
     day: "numeric",
     year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
+    hour12: false,
   });
 
 export function publishMqtt(topic, payload, options = {}) {

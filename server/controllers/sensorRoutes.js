@@ -60,38 +60,6 @@ const getHourBucket = (timestamp = new Date()) => {
 
 const storeHourlyReading = async (drawerId, readingData) => {
   const hourBucket = getHourBucket(readingData.timestamp);
-  const nextHourBucket = new Date(hourBucket);
-  nextHourBucket.setHours(nextHourBucket.getHours() + 1);
-
-  const existingReading = await DrawerReading.findOne({
-    drawerId,
-    date: { $gte: hourBucket, $lt: nextHourBucket },
-    readings: {
-      $elemMatch: {
-        timestamp: { $gte: hourBucket, $lt: nextHourBucket },
-      },
-    },
-  });
-
-  if (existingReading) {
-    await DrawerReading.updateOne(
-      { _id: existingReading._id },
-      {
-        $set: {
-          "readings.$[reading]": readingData,
-        },
-      },
-      {
-        arrayFilters: [
-          {
-            "reading.timestamp": { $gte: hourBucket, $lt: nextHourBucket },
-          },
-        ],
-      }
-    );
-    return;
-  }
-
   await DrawerReading.findOneAndUpdate(
     { drawerId, date: hourBucket },
     { $push: { readings: readingData } },

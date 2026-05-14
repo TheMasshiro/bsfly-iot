@@ -15,11 +15,9 @@ const Toolbar: FC = () => {
     const statusIntervalRef = useRef<number | null>(null);
 
     useEffect(() => {
-        // Only set up the refresh interval, don't call refreshDevices immediately
-        // Device switching should be instant without waiting for API refresh
         statusIntervalRef.current = window.setInterval(() => {
             refreshDevices();
-        }, 30000);
+        }, 5000);
 
         if (!mqttStarted) {
             mqttStarted = true;

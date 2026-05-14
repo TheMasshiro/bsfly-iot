@@ -111,7 +111,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             const points: ChartDataPoint[] = data
                 .filter((h: any) => h[sensorKey] !== null)
                 .map((h: any) => ({
-                    time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    time: new Date(h.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
                     value: isSubstrateKey(sensorType)
                         ? Math.round(h[sensorKey])
                         : Math.round(h[sensorKey] * 100) / 100
@@ -126,7 +126,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             if (typeof currentValueRaw === 'number') {
                 const currentHourStart = new Date();
                 currentHourStart.setMinutes(0, 0, 0);
-                const currentHourLabel = currentHourStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const currentHourLabel = currentHourStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 const currentValue = isSubstrateKey(sensorType)
                     ? Math.round(currentValueRaw)
                     : Math.round(currentValueRaw * 100) / 100;
@@ -190,7 +190,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
             if (isAppOnline && !isDeviceOffline) {
                 fetchData();
             }
-        }, 60 * 60 * 1000);
+        }, 5000);
 
         return () => clearInterval(interval);
     }, [currentDeviceId, isDeviceOffline, isAppOnline, fetchData, getCacheKey]);
