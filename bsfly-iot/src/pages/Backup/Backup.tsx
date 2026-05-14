@@ -148,28 +148,50 @@ const Backup: FC = () => {
 
     const generateCSV = (data: DayReading[]): string => {
         const headers = ["Drawer", "Timestamp", "Temperature (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
-        const rows: string[] = [headers.join(",")];
         const csvEscape = (value: string | number): string => {
             const text = String(value);
             return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
         };
 
+        // Group readings by drawer, then sort each group's readings by timestamp
+        const groups = new Map<string, Array<string>>();
         data.forEach((day) => {
+            const drawer = day.drawerId;
+            if (!groups.has(drawer)) groups.set(drawer, []);
             day.readings.forEach((reading) => {
                 const date = new Date(reading.timestamp);
                 const row = [
-                    day.drawerId,
+                    drawer,
                     formatTimestamp24(date),
                     reading.temperature ?? "",
                     reading.humidity ?? "",
                     reading.moisture ?? "",
                     reading.ammonia ?? "",
                 ];
-                rows.push(row.map(csvEscape).join(","));
+                groups.get(drawer)!.push(row.map(csvEscape).join(","));
             });
         });
 
-        return rows.join("\n");
+        const drawerOrder: Array<"Drawer 1" | "Drawer 2"> = ["Drawer 1", "Drawer 2"];
+        const outRows: string[] = [headers.join(",")];
+
+        drawerOrder.forEach((drawer) => {
+            const group = groups.get(drawer) || [];
+            // sort by timestamp string (ISO-like) to ensure chronological order
+            group.sort((a, b) => {
+                const ta = a.split(",")[1];
+                const tb = b.split(",")[1];
+                return ta.localeCompare(tb);
+            });
+
+            // prepend a blank line and drawer header row for readability
+            if (group.length > 0) {
+                outRows.push(`"${drawer} Raw Readings"`);
+                outRows.push(...group);
+            }
+        });
+
+        return outRows.join("\n");
     };
 
     interface MetricStats {
@@ -488,14 +510,12 @@ const Backup: FC = () => {
             });
         });
 
-        rows.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 16;
         const startX = margin;
-        const headers = ["Drawer", "Timestamp", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
-        const widths = [22, 44, 24, 26, 26, 26];
+        const headers = ["Timestamp", "Temp (°C)", "Humidity (%)", "Moisture (%)", "Ammonia (ppm)"];
+        const widths = [48, 28, 28, 28, 28];
         let y = 20;
 
         const drawHeader = () => {
@@ -550,20 +570,41 @@ const Backup: FC = () => {
 
         doc.setTextColor(0);
         doc.setFontSize(9);
-        doc.text("Raw sensor readings are listed in the order they were recorded, including 5-second interval samples.", startX, y, { maxWidth: pageWidth - margin * 2 });
+        doc.text("Raw sensor readings are grouped by drawer and listed in timestamp order.", startX, y, { maxWidth: pageWidth - margin * 2 });
         y += 10;
 
-        drawHeader();
+        const drawerOrder: Array<"Drawer 1" | "Drawer 2"> = ["Drawer 1", "Drawer 2"];
 
-        rows.forEach((row) => {
-            drawRow([
-                String(row.drawerId ?? ""),
-                formatTimestamp24(new Date(row.timestamp)),
-                row.temperature !== undefined && row.temperature !== null ? String(row.temperature) : "",
-                row.humidity !== undefined && row.humidity !== null ? String(row.humidity) : "",
-                row.moisture !== undefined && row.moisture !== null ? String(row.moisture) : "",
-                row.ammonia !== undefined && row.ammonia !== null ? String(row.ammonia) : "",
-            ]);
+        drawerOrder.forEach((drawerName) => {
+            const drawerRows = rows.filter((r) => r.drawerId === drawerName);
+            if (drawerRows.length === 0) return;
+
+            // sort readings within the drawer by timestamp
+            drawerRows.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+            // drawer section title
+            if (y > pageHeight - 30) {
+                doc.addPage();
+                y = 20;
+            }
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text(drawerName, startX, y);
+            y += 8;
+
+            drawHeader();
+
+            drawerRows.forEach((row) => {
+                drawRow([
+                    formatTimestamp24(new Date(row.timestamp)),
+                    row.temperature !== undefined && row.temperature !== null ? String(row.temperature) : "",
+                    row.humidity !== undefined && row.humidity !== null ? String(row.humidity) : "",
+                    row.moisture !== undefined && row.moisture !== null ? String(row.moisture) : "",
+                    row.ammonia !== undefined && row.ammonia !== null ? String(row.ammonia) : "",
+                ]);
+            });
+
+            y += 6;
         });
 
         doc.setFontSize(8);
