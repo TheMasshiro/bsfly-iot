@@ -557,12 +557,12 @@ const Backup: FC = () => {
 
         rows.forEach((row) => {
             drawRow([
-                row.drawerId,
+                String(row.drawerId ?? ""),
                 formatTimestamp24(new Date(row.timestamp)),
-                row.temperature ?? "",
-                row.humidity ?? "",
-                row.moisture ?? "",
-                row.ammonia ?? "",
+                row.temperature !== undefined && row.temperature !== null ? String(row.temperature) : "",
+                row.humidity !== undefined && row.humidity !== null ? String(row.humidity) : "",
+                row.moisture !== undefined && row.moisture !== null ? String(row.moisture) : "",
+                row.ammonia !== undefined && row.ammonia !== null ? String(row.ammonia) : "",
             ]);
         });
 
