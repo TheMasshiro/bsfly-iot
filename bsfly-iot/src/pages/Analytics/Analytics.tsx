@@ -323,7 +323,7 @@ const Analytics: FC = () => {
                                             aria-label={`${sensor.sensor}: ${sensor.latestValue}${sensor.unit}`}
                                         >
                                             <IonIcon icon={sensor.icon} className="sensor-quick-icon" />
-                                            <IonChip className={`sensor-quick-value status-${sensor.status}`}>
+                                            <IonChip color={sensor.status} className={`sensor-quick-value status-${sensor.status}`}>
                                                 {formatAnalyticsValue(sensor.sensor, typeof sensor.latestValue === 'number' ? sensor.latestValue : null)}{sensor.unit}
                                             </IonChip>
                                         </div>
