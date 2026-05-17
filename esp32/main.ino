@@ -230,20 +230,32 @@ const uint8_t IP_DNS[] = {192, 168, 100, 1};
 #define MODE_DEBUG_INTERVAL_MS 15000
 
 // ==================== OFFLINE THRESHOLDS ====================
-#define TEMP_MIN 25.0
-#define TEMP_MAX 35.0
-#define TEMP_OPTIMAL_LOW 27.0
-#define TEMP_OPTIMAL_HIGH 31.0
+#define DRAWER1_TEMP_MIN 27.0
+#define DRAWER1_TEMP_MAX 31.0
+#define DRAWER1_TEMP_OPTIMAL_LOW 27.0
+#define DRAWER1_TEMP_OPTIMAL_HIGH 31.0
 
-#define HUMIDITY_MIN 50.0
-#define HUMIDITY_MAX 80.0
-#define HUMIDITY_OPTIMAL_LOW 60.0
-#define HUMIDITY_OPTIMAL_HIGH 70.0
+#define DRAWER1_HUMIDITY_MIN 60.0
+#define DRAWER1_HUMIDITY_MAX 70.0
+#define DRAWER1_HUMIDITY_OPTIMAL_LOW 60.0
+#define DRAWER1_HUMIDITY_OPTIMAL_HIGH 70.0
 
-#define MOISTURE_MIN 40
-#define MOISTURE_MAX 75
-#define MOISTURE_OPTIMAL_LOW 50
-#define MOISTURE_OPTIMAL_HIGH 70
+#define DRAWER1_MOISTURE_MIN 60
+#define DRAWER1_MOISTURE_MAX 75
+#define DRAWER1_MOISTURE_OPTIMAL_LOW 60
+#define DRAWER1_MOISTURE_OPTIMAL_HIGH 75
+
+#define DRAWER1_AMMONIA_MAX 25.0f
+
+#define DRAWER2_TEMP_MIN 27.0
+#define DRAWER2_TEMP_MAX 30.0
+#define DRAWER2_TEMP_OPTIMAL_LOW 27.0
+#define DRAWER2_TEMP_OPTIMAL_HIGH 30.0
+
+#define DRAWER2_HUMIDITY_MIN 60.0
+#define DRAWER2_HUMIDITY_MAX 70.0
+#define DRAWER2_HUMIDITY_OPTIMAL_LOW 60.0
+#define DRAWER2_HUMIDITY_OPTIMAL_HIGH 70.0
 
 // ==================== MQ137 CALIBRATION ====================
 #define MQ137_RL 4.7f                           // Load resistance in kOhm
@@ -1772,6 +1784,14 @@ void updateLCD1(float temp, float humidity, int ammonia)
       lcd1.print((int)(nh3.ppm + 0.5f)); // e.g. 12, 105
 
     lcd1.print("ppm");
+
+    if (nh3.ppm > DRAWER1_AMMONIA_MAX)
+    {
+      Serial.print(F("[WARN] Drawer 1 ammonia above threshold: "));
+      Serial.print(nh3.ppm, 2);
+      Serial.print(F(" ppm > "));
+      Serial.println(DRAWER1_AMMONIA_MAX, 0);
+    }
   }
   else if (isfinite(nh3.ratio))
   {
@@ -2445,43 +2465,48 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   bool pumpOn = false;
 
   // Temperature: fan on when temp is high
-  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  if (temperature > DRAWER1_TEMP_OPTIMAL_HIGH || temperature > DRAWER1_TEMP_MAX)
   {
     fanOn = true;
   }
-  else if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  else if (temperature < DRAWER1_TEMP_OPTIMAL_LOW || temperature < DRAWER1_TEMP_MIN)
   {
     fanOn = false;
   }
 
   // Temperature: heater on when temp is low
-  if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  if (temperature < DRAWER1_TEMP_OPTIMAL_LOW || temperature < DRAWER1_TEMP_MIN)
   {
     heaterOn = true;
     heaterFanOn = true;
   }
-  else if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  else if (temperature > DRAWER1_TEMP_OPTIMAL_HIGH || temperature > DRAWER1_TEMP_MAX)
   {
     heaterOn = false;
     heaterFanOn = false;
   }
 
   // Humidity: humidifier on when humidity is low
-  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  if (humidity < DRAWER1_HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
 
   // Humidity: fan on when humidity is high
-  if (humidity > HUMIDITY_OPTIMAL_HIGH)
+  if (humidity > DRAWER1_HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
   }
 
+  if (fanOn)
+  {
+    humidifierOn = false;
+  }
+
   // Moisture: pump on when any substrate is low
-  if ((leftMoisture >= 0 && leftMoisture <= MOISTURE_OPTIMAL_LOW) ||
-      (centerMoisture >= 0 && centerMoisture <= MOISTURE_OPTIMAL_LOW) ||
-      (rightMoisture >= 0 && rightMoisture <= MOISTURE_OPTIMAL_LOW))
+  if ((leftMoisture >= 0 && leftMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW) ||
+      (centerMoisture >= 0 && centerMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW) ||
+      (rightMoisture >= 0 && rightMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW))
   {
     pumpOn = true;
   }
@@ -2524,33 +2549,38 @@ void autoControlPupaDrawer(float temperature, float humidity)
   bool humidifierOn = false;
 
   // Temperature: fan on when temp is high
-  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  if (temperature > DRAWER2_TEMP_OPTIMAL_HIGH || temperature > DRAWER2_TEMP_MAX)
   {
     fanOn = true;
   }
-  else if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  else if (temperature < DRAWER2_TEMP_OPTIMAL_LOW || temperature < DRAWER2_TEMP_MIN)
   {
     fanOn = false;
   }
 
   // Humidity: humidifier on when humidity is low
-  if (humidity < HUMIDITY_OPTIMAL_LOW)
+  if (humidity < DRAWER2_HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
-  else if (humidity > HUMIDITY_OPTIMAL_HIGH)
+  else if (humidity > DRAWER2_HUMIDITY_OPTIMAL_HIGH)
   {
     humidifierOn = false;
   }
 
   // Humidity: fan on when humidity is high
-  if (humidity > HUMIDITY_OPTIMAL_HIGH || humidity > HUMIDITY_MAX)
+  if (humidity > DRAWER2_HUMIDITY_OPTIMAL_HIGH || humidity > DRAWER2_HUMIDITY_MAX)
   {
     fanOn = true;
   }
-  else if (humidity < HUMIDITY_OPTIMAL_LOW)
+  else if (humidity < DRAWER2_HUMIDITY_OPTIMAL_LOW)
   {
     fanOn = false;
+  }
+
+  if (fanOn)
+  {
+    humidifierOn = false;
   }
 
   setPupaFan(fanOn);

@@ -1,13 +1,13 @@
 export const lifecycleThresholds = {
   "Drawer 1": {
-    temperature: { min: 20, max: 35, optimal: [27, 31] },
-    humidity: { min: 50, max: 80, optimal: [60, 70] },
-    moisture: { min: 50, max: 80, optimal: [60, 75] },
-    ammonia: { min: 0, max: 30, optimal: [0, 10] },
+    temperature: { min: 27, max: 31, optimal: [27, 31] },
+    humidity: { min: 60, max: 70, optimal: [60, 70] },
+    moisture: { min: 60, max: 75, optimal: [60, 75] },
+    ammonia: { min: 0, max: 25, optimal: [0, 25] },
   },
   "Drawer 2": {
-    temperature: { min: 20, max: 35, optimal: [26, 30] },
-    humidity: { min: 40, max: 60, optimal: [40, 50] },
+    temperature: { min: 27, max: 30, optimal: [27, 30] },
+    humidity: { min: 60, max: 70, optimal: [60, 70] },
   },
 };
 
