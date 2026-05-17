@@ -7,7 +7,7 @@
   --bottom: 0;
   position: fixed;
   right: var(--right);
-  bottom: calc(60px + var(--ion-safe-area-bottom, 0px));
+  bottom: calc(75px + var(--ion-safe-area-bottom, 0px));
   z-index: 30;
 }
 
