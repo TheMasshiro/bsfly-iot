@@ -72,6 +72,9 @@
   margin: 8px 0;
   --background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .analytics-page .analytics-graph-segment ion-segment-button {
@@ -79,6 +82,8 @@
   --color: rgba(255, 255, 255, 0.6);
   --color-checked: #2dd55b;
   --background-checked: rgba(45, 213, 91, 0.15);
+  flex: 1;
+  min-width: 60px;
 }
 
 .analytics-page .analytics-graph-segment ion-segment-button::part(indicator-background) {
