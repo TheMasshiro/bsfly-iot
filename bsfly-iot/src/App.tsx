@@ -48,7 +48,6 @@ const PageLoader = () => (
 
 const App: React.FC = () => {
     useEffect(() => {
-        // Initialize Android notification channels on app startup
         initializeNotificationChannels();
     }, []);
 

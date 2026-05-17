@@ -376,7 +376,6 @@ export async function initMqtt() {
               { upsert: true }
             );
 
-            // Store actuator event for reports
             try {
               const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
               const eventValue = typeof incomingState === "object" && incomingState !== null && "time" in incomingState ? incomingState : incomingState;
@@ -399,7 +398,6 @@ export async function initMqtt() {
               { upsert: true }
             );
 
-            // Store actuator event for reports
             try {
               const drawer = actuator.includes("3") || actuator === "fan3" || actuator === "humidifier3" ? "Drawer 2" : "Drawer 1";
               const ts = new Date();

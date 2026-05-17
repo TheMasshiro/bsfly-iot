@@ -1,7 +1,3 @@
-/**
- * Logger Utility
- * Centralized logging with structured format including timestamp, level, and context
- */
 
 const LOG_LEVELS = {
   DEBUG: "DEBUG",

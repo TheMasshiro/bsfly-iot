@@ -1,10 +1,6 @@
 import React from "react";
 import { IonSkeletonText, IonItem, IonLabel, IonList } from "@ionic/react";
 
-/**
- * Component: Skeleton loader for calibration card
- * Shows placeholder while calibration data is loading
- */
 export const CalibrationSkeleton: React.FC = () => {
   return (
     <IonList style={{ width: "100%", paddingLeft: 0, paddingRight: 0 }}>

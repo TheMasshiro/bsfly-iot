@@ -1,17 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
-/**
- * Initialize Android Notification Channels
- * Required for Android 8.0+ (API level 26+)
- */
 export const initializeNotificationChannels = async () => {
   if (Capacitor.getPlatform() !== 'android') {
     return;
   }
 
   try {
-    // Critical alerts channel (high priority, sound + vibration)
     await LocalNotifications.createChannel({
       id: 'alerts_critical',
       name: 'Critical Alerts',
@@ -23,7 +18,6 @@ export const initializeNotificationChannels = async () => {
       lightColor: '#FF0000',
     });
 
-    // General alerts channel (normal priority)
     await LocalNotifications.createChannel({
       id: 'alerts_general',
       name: 'General Alerts',
@@ -35,7 +29,6 @@ export const initializeNotificationChannels = async () => {
       lightColor: '#FFA500',
     });
 
-    // Data updates channel (low priority, silent)
     await LocalNotifications.createChannel({
       id: 'updates_data',
       name: 'Data Updates',

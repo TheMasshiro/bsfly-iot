@@ -9,10 +9,6 @@ interface DataIndicatorProps {
   staleThresholdMs?: number;
 }
 
-/**
- * Component: Displays when data was last updated
- * Shows warning if data is stale (e.g., >1 hour old)
- */
 export const DataIndicator: React.FC<DataIndicatorProps> = ({
   lastUpdated,
   isStale,

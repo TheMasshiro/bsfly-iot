@@ -1,11 +1,4 @@
-/**
- * Time Utilities
- * Functions for formatting and calculating time-related data
- */
 
-/**
- * Format a date as relative time (e.g., "2 minutes ago")
- */
 export const formatRelativeTime = (date: Date | string | null): string => {
   if (!date) return "Never";
 
@@ -28,10 +21,6 @@ export const formatRelativeTime = (date: Date | string | null): string => {
   return targetDate.toLocaleDateString();
 };
 
-/**
- * Format uptime in seconds to human-readable format
- * e.g., 3661 seconds -> "1h 1m"
- */
 export const formatUptime = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -42,9 +31,6 @@ export const formatUptime = (seconds: number): string => {
   return `${hours}h ${minutes}m`;
 };
 
-/**
- * Check if cached data is stale
- */
 export const isDataStale = (
   lastUpdate: Date | string | null | undefined,
   staleAfterMs: number
@@ -59,9 +45,6 @@ export const isDataStale = (
   return diffMs > staleAfterMs;
 };
 
-/**
- * Get time until data becomes stale
- */
 export const getTimeUntilStale = (
   lastUpdate: Date | string | null | undefined,
   staleAfterMs: number

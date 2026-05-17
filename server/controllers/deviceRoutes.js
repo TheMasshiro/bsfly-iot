@@ -289,7 +289,6 @@ router.post("/:deviceId/heartbeat", async (req, res) => {
     device.status = "online";
     device.lastSeen = new Date();
     
-    // Update IP address if provided and valid
     if (ipAddress && /^\d+\.\d+\.\d+\.\d+$/.test(ipAddress)) {
       device.ipAddress = ipAddress;
     }
@@ -339,7 +338,6 @@ router.get("/:deviceId/api-key", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "Only the owner can view the API key" });
     }
 
-    // Return a masked API key to avoid exposing the full secret via API responses.
     const maskKey = (k) => {
       if (!k || k.length < 8) return '****';
       return `${k.slice(0,4)}...${k.slice(-4)}`;
@@ -366,7 +364,6 @@ router.post("/:deviceId/regenerate-api-key", requireAuth, async (req, res) => {
 
     await device.regenerateApiKey();
 
-    // Return masked key by default to reduce risk of accidental exposure.
     const maskKey = (k) => {
       if (!k || k.length < 8) return '****';
       return `${k.slice(0,4)}...${k.slice(-4)}`;

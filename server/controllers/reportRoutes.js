@@ -21,7 +21,6 @@ router.get("/actuators", requireAuth, async (req, res) => {
 
     const fromDate = from ? new Date(String(from)) : new Date(0);
     let toDate = to ? new Date(String(to)) : new Date();
-    // Include full day when date-only provided
     toDate.setHours(23, 59, 59, 999);
 
     const events = await ActuatorEvent.find({

@@ -153,7 +153,6 @@ const Backup: FC = () => {
             return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
         };
 
-        // Group readings by drawer, then sort each group's readings by timestamp
         const groups = new Map<string, Array<string>>();
         data.forEach((day) => {
             const drawer = day.drawerId;
@@ -177,14 +176,12 @@ const Backup: FC = () => {
 
         drawerOrder.forEach((drawer) => {
             const group = groups.get(drawer) || [];
-            // sort by timestamp string (ISO-like) to ensure chronological order
             group.sort((a, b) => {
                 const ta = a.split(",")[1];
                 const tb = b.split(",")[1];
                 return ta.localeCompare(tb);
             });
 
-            // prepend a blank line and drawer header row for readability
             if (group.length > 0) {
                 outRows.push(`"${drawer} Raw Readings"`);
                 outRows.push(...group);
@@ -579,10 +576,8 @@ const Backup: FC = () => {
             const drawerRows = rows.filter((r) => r.drawerId === drawerName);
             if (drawerRows.length === 0) return;
 
-            // sort readings within the drawer by timestamp
             drawerRows.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-            // drawer section title
             if (y > pageHeight - 30) {
                 doc.addPage();
                 y = 20;

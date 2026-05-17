@@ -1,18 +1,3 @@
-/**
- * Example: Sensor Alert Handler Component
- * 
- * This example demonstrates how to integrate Android notifications
- * with your sensor monitoring logic.
- * 
- * Usage in your component:
- * 
- * import { useSensorAlertHandler } from './useSensorAlertHandler';
- * 
- * function Dashboard() {
- *   useSensorAlertHandler(readings);
- *   // ... rest of component
- * }
- */
 
 import { useEffect, useRef } from 'react';
 import { useNotification } from '../context/NotificationContext';
@@ -33,9 +18,6 @@ export interface Thresholds {
   ammonia?: { min: number; max: number; optimal: [number, number] };
 }
 
-/**
- * Hook to monitor sensor readings and trigger alerts
- */
 export const useSensorAlertHandler = (
   reading: SensorReading | null,
   thresholds?: Thresholds
@@ -43,7 +25,6 @@ export const useSensorAlertHandler = (
   const { addNotification } = useNotification();
   const lastAlertTimeRef = useRef<{ [key: string]: number }>({});
 
-  // Debounce notifications (max 1 per 5 minutes per alert type)
   const shouldAlert = (alertType: string): boolean => {
     const key = `${reading?.drawer}-${alertType}`;
     const lastTime = lastAlertTimeRef.current[key] || 0;
@@ -60,7 +41,6 @@ export const useSensorAlertHandler = (
   useEffect(() => {
     if (!reading || !thresholds) return;
 
-    // Check Temperature
     if (reading.temperature > thresholds.temperature.max) {
       if (shouldAlert('temp-high')) {
         addNotification({
@@ -81,7 +61,6 @@ export const useSensorAlertHandler = (
       }
     }
 
-    // Check Humidity
     if (reading.humidity > thresholds.humidity.max) {
       if (shouldAlert('humidity-high')) {
         addNotification({
@@ -102,7 +81,6 @@ export const useSensorAlertHandler = (
       }
     }
 
-    // Check Moisture (if applicable)
     if (thresholds.moisture && reading.moisture !== undefined) {
       if (reading.moisture > thresholds.moisture.max) {
         if (shouldAlert('moisture-high')) {
@@ -125,7 +103,6 @@ export const useSensorAlertHandler = (
       }
     }
 
-    // Check Ammonia (if applicable)
     if (thresholds.ammonia && reading.ammonia !== undefined) {
       if (reading.ammonia > thresholds.ammonia.max) {
         if (shouldAlert('ammonia-high')) {
@@ -141,26 +118,3 @@ export const useSensorAlertHandler = (
   }, [reading, thresholds, addNotification, shouldAlert]);
 };
 
-/**
- * Example: Integration with Dashboard component
- * 
- * function Dashboard() {
- *   const { currentReading } = useDeviceContext();
- *   const drawer1Thresholds = lifecycleThresholds['Drawer 1'];
- *   
- *   // Automatically monitor and alert
- *   useSensorAlertHandler(currentReading, drawer1Thresholds);
- *   
- *   return (
- *     <div>
- *       <h1>Dashboard</h1>
- *       {currentReading && (
- *         <div>
- *           <p>Temperature: {currentReading.temperature}°C</p>
- *           <p>Humidity: {currentReading.humidity}%</p>
- *         </div>
- *       )}
- *     </div>
- *   );
- * }
- */

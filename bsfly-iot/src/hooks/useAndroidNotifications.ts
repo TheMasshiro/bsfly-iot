@@ -33,13 +33,6 @@ export const useAndroidNotifications = () => {
     };
   }, []);
 
-  /**
-   * Trigger an Android native notification
-   * @param title - Notification title
-   * @param body - Notification message
-   * @param type - Alert type: 'danger' (critical), 'warning' (caution), 'info' (informational)
-   * @param drawer - Drawer identifier: 'drawer1' or 'drawer2'
-   */
   const sendNativeNotification = async (
     title: string,
     body: string,

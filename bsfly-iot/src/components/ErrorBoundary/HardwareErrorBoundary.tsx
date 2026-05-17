@@ -17,10 +17,6 @@ interface ErrorBoundaryState {
   error: ErrorInfo | null;
 }
 
-/**
- * Component: Error Boundary for catching and displaying hardware errors
- * Distinguishes between network errors, device offline, and auth errors
- */
 export class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -73,12 +69,7 @@ export class ErrorBoundary extends React.Component<
   }
 }
 
-/**
- * Parse error objects into user-friendly ErrorInfo
- * Distinguishes between different error types
- */
 export function parseError(error: any): ErrorInfo {
-  // Network timeout error
   if (error?.code === "ECONNABORTED") {
     return {
       title: "Connection Timeout",
@@ -87,7 +78,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Device offline (503/504)
   if (error?.response?.status === 503 || error?.response?.status === 504) {
     return {
       title: "Device Offline",
@@ -96,7 +86,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Authorization failed
   if (error?.response?.status === 401) {
     return {
       title: "Authentication Failed",
@@ -105,7 +94,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Permission denied
   if (error?.response?.status === 403) {
     return {
       title: "Access Denied",
@@ -114,7 +102,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Not found
   if (error?.response?.status === 404) {
     return {
       title: "Device Not Found",
@@ -124,7 +111,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Server error
   if (error?.response?.status >= 500) {
     return {
       title: "Server Error",
@@ -133,7 +119,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Network error (no response at all)
   if (error?.message === "Network Error" || !error?.response) {
     return {
       title: "Network Error",
@@ -143,7 +128,6 @@ export function parseError(error: any): ErrorInfo {
     };
   }
 
-  // Default error
   return {
     title: "Operation Failed",
     message: error?.message || error?.response?.data?.error || "An unexpected error occurred.",
