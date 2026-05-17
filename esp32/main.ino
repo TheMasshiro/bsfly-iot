@@ -1,93 +1,123 @@
 /**
- * BSFLY IoT - Main Control Firmware
+ * BSFLY IoT - Main Control Firmware (ESP32)
  *
- * This firmware manages a multi-drawer environmental monitoring and control system
- * for BSF (Black Soldier Fly) larvae cultivation. It handles:
- * - Temperature and humidity monitoring via 3x DHT sensors (Drawer 1: A, B, C)
- * - Temperature and humidity monitoring via 2x DHT sensors (Drawer 2: D, E)
- * - Substrate moisture sensing via analog inputs (Drawer 1 only)
- * - Ammonia detection via MQ137 sensor (Drawer 1 only)
- * - Actuator control (heaters, humidifiers, fans)
- * - Data transmission via WiFi (HTTP/MQTT) and local storage (SD card)
- * - Automatic environmental control when offline
+ * Purpose
+ * -------
+ * Firmware for a Black Soldier Fly (BSF) multi-drawer incubator controller. It monitors
+ * environmental conditions (temperature, humidity, substrate moisture, ammonia/NH3) and
+ * drives actuators (fans, heater, humidifiers, pump, enclosure light). It is designed
+ * to remain functional when the network is unavailable by buffering readings to SD and
+ * continuing autonomous control.
  *
- * Hardware:
- * - ESP32 microcontroller
- * - TCA9548A I2C multiplexer (dual LCD displays)
- * - ADS1115 ADC modules (substrate moisture and ammonia)
- * - MCP23017 I/O expander (actuator control)
- * - CD74HC4067 analog multiplexer (substrate sensors)
- * - DHT11/DHT22 temperature/humidity sensors
- * - MicroSD card module
+ * Key Capabilities
+ * ----------------
+ * Sensors
+ *  - Drawer 1 (Egg/Larvae):
+ *      * 3x DHT sensors (A/B/C): temperature + humidity
+ *      * 3x substrate moisture channels via ADS1115 #1 (A0/A1/A2)
+ *      * MQ137 ammonia sensor via ADS1115 #2 (A0), reported as NH3 PPM (via Rs/Ro curve)
+ *  - Drawer 2 (Pupa):
+ *      * 2x DHT sensors (D/E): temperature + humidity
  *
- * Network:
- * - WiFi: MQTT
- * - Fallback: Local SD card storage and autonomous control
+ * Actuators (via MCP23017, active-low outputs in this project)
+ *  - Enclosure light
+ *  - Drawer 1: pump, humidifier, fans, heater, heater-fans
+ *  - Drawer 2: humidifier, fan
  *
- * ==================== PIN MAPPING ====================
- * ESP32 Pin Mapping:
- * | Function/Peripheral    | Macro       | ESP32 GPIO |
- * |------------------------|-------------|------------|
- * | I2C SDA                | I2C_SDA     | 21         |
- * | I2C SCL                | I2C_SCL     | 22         |
- * | SPI SCK (SD Card)      | SPI_SCK     | 18         |
- * | SPI MISO (SD Card)     | SPI_MISO    | 19         |
- * | SPI MOSI (SD Card)     | SPI_MOSI    | 23         |
- * | SPI CS (SD Card)       | SPI_CS_SD   | 15         |
- * | LED                    | LED_PIN     | 4          |
- * | MUX SIG (analog in)    | MUX_SIG     | 35         |
- * | MUX S0                 | MUX_S0      | 17         |
- * | MUX S1                 | MUX_S1      | 5          |
- * | MUX S2                 | MUX_S2      | 32         |
- * | MUX S3                 | MUX_S3      | 33         |
- * | DHT Sensor A           | DHT_A_PIN   | 16         |
- * | DHT Sensor B           | DHT_B_PIN   | 26         |
- * | DHT Sensor C           | DHT_C_PIN   | 25         |
- * | DHT Sensor D           | DHT_D_PIN   | 14         |
- * | DHT Sensor E           | DHT_E_PIN   | 27         |
+ * Connectivity / Data Path
+ *  - WiFi is provisioned via WiFiManager.
+ *  - MQTT publishes sensor readings and actuator state; receives actuator commands.
+ *  - HTTPS: heartbeat + time endpoint; SD upload uses HTTPS when online.
+ *  - SD card: append-only line-delimited JSON buffer for offline storage and retry upload.
  *
- * I2C Device Addresses:
- * | Device                 | Macro            | Address |
- * |------------------------|------------------|---------|
- * | ADS1115 #1             | ADS1115_ADDR_1   | 0x48    |
- * | ADS1115 #2             | ADS1115_ADDR_2   | 0x49    |
- * | MCP23017               | MCP23017_ADDR    | 0x20    |
- * | TCA9548A               | TCA9548A_ADDR    | 0x70    |
- * | LCD (I2C)              | LCD_ADDR         | 0x27    |
+ * Concurrency Model (ESP32 / FreeRTOS)
+ * -----------------------------------
+ *  - loop(): connectivity supervision, MQTT loop/drain, light timer expiry, health logging.
+ *  - sensorTask(): periodic sensor collection and local control decisions.
+ *  - heartbeatTask(): periodic HTTPS heartbeat, with cooldown after actuator activity.
+ *  - sdUploadTask(): uploads buffered SD readings when kicked.
+ *  - sdCountTask(): periodically counts buffered SD readings for the web UI.
  *
- * TCA9548A Channels:
- * | Device | Macro       | Channel |
- * |--------|-------------|---------|
- * | LCD #1 | TCA_CH_LCD1 | 0       |
- * | LCD #2 | TCA_CH_LCD2 | 1       |
+ * Robustness / Degraded Operation
+ * -------------------------------
+ *  - If MCP23017 missing: actuators/light are disabled, firmware continues sensing/networking.
+ *  - If TCA9548A missing: LCD output is disabled, firmware continues otherwise.
+ *  - TLS/HTTPS protected by a mutex to serialize requests and reduce heap fragmentation.
+ *  - DHT reads protected by a mutex to avoid concurrent access timing issues.
+ *  - Offline auto-control stays active when WiFi is down, with a manual-override holdoff timer.
  *
- * MCP23017 Pin Mapping (Actuators):
- * | Actuator               | Macro                     | MCP23017 Pin |
- * |------------------------|---------------------------|--------------|
- * | Enclosure Light        | MCP_ENCLOSURE_LIGHT       | 0            |
- * | Egg/Larvae Pump        | MCP_EGGLARVAE_PUMP        | 1            |
- * | Egg/Larvae Humidifier  | MCP_EGGLARVAE_HUMIDIFIER  | 2            |
- * | Egg/Larvae Fans        | MCP_EGGLARVAE_FANS        | 3            |
- * | Egg/Larvae Heater      | MCP_EGGLARVAE_HEATER      | 4            |
- * | Egg/Larvae Heater Fans | MCP_EGGLARVAE_HEATER_FANS | 5            |
- * | Pupa Humidifier        | MCP_PUPA_HUMIDIFIER       | 6            |
- * | Pupa Fan               | MCP_PUPA_FAN              | 7            |
+ * Notes on Measurements
+ * ---------------------
+ *  - Substrate moisture is derived from ADS raw values mapped to percent using calibrated
+ *    dry/wet endpoints (gMoistureRawDry/gMoistureRawWet).
+ *  - MQ137:
+ *      * Ro calibration is stored on SD (/mq137_ro.json).
+ *      * NH3 PPM is estimated from Rs/Ro using a power-law curve (MQ137_NH3_A / MQ137_NH3_B).
+ *      * The term "ammonia" in the payload is treated as NH3 PPM for backend compatibility.
  *
- * ADS1115 Channels:
- * | Function               | Macro            | ADS / Channel |
- * |------------------------|------------------|---------------|
- * | Substrate 1            | ADS1_SUBSTRATE_1 | ADS#1 / A0    |
- * | Substrate 2            | ADS1_SUBSTRATE_2 | ADS#1 / A1    |
- * | Substrate 3            | ADS1_SUBSTRATE_3 | ADS#1 / A2    |
- * | Ammonia (MQ137)        | ADS2_MQ137       | ADS#2 / A0    |
+ * ================================== PIN / BUS MAPPING ====================================
  *
- * CD74HC4067 Channels:
- * | Function               | Macro             | MUX Channel |
- * |------------------------|-------------------|-------------|
- * | Substrate 1 (MUX)      | MUX_CH_SUBSTRATE1 | 0           |
- * | Substrate 2 (MUX)      | MUX_CH_SUBSTRATE2 | 1           |
- * | Substrate 3 (MUX)      | MUX_CH_SUBSTRATE3 | 2           |
- * ==================================================
+ * GPIO (ESP32)
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Module/Component   | Signal      | GPIO     | Notes                                        |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | I2C Bus            | SDA         | 21       | I2C_SDA                                      |
+ * | I2C Bus            | SCL         | 22       | I2C_SCL                                      |
+ * | SPI (microSD)      | SCK         | 18       | SPI_SCK                                      |
+ * | SPI (microSD)      | MISO        | 19       | SPI_MISO                                     |
+ * | SPI (microSD)      | MOSI        | 23       | SPI_MOSI                                     |
+ * | SPI (microSD)      | CS          | 15       | SPI_CS_SD                                    |
+ * | LED/Light Control  | LED_PIN     | 4        | Project-defined LED pin (MCP controls light) |
+ * | DHT Drawer 1       | Sensor A    | 16       | DHT_A_PIN                                    |
+ * | DHT Drawer 1       | Sensor B    | 26       | DHT_B_PIN                                    |
+ * | DHT Drawer 1       | Sensor C    | 25       | DHT_C_PIN                                    |
+ * | DHT Drawer 2       | Sensor D    | 14       | DHT_D_PIN                                    |
+ * | DHT Drawer 2       | Sensor E    | 27       | DHT_E_PIN                                    |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ *
+ * I2C Devices
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Module/Component   | Part        | Addr     | Usage                                        |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | ADC #1             | ADS1115     | 0x48     | Substrate moisture (3 ch)                    |
+ * | ADC #2             | ADS1115     | 0x49     | MQ137 (NH3) input                            |
+ * | IO Expander        | MCP23017    | 0x20     | Actuators (active-low)                       |
+ * | I2C Mux            | TCA9548A    | 0x70     | LCD bus multiplexing                         |
+ * | LCD Modules (x2)   | 16x2 LCD    | 0x27     | Behind TCA9548A channels                     |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ *
+ * MCP23017 Outputs (active-low)
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Module/Component   | Actuator    | Pin      | Notes                                        |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Enclosure          | Light       | 0        | MCP_ENCLOSURE_LIGHT                          |
+ * | Drawer 1           | Pump        | 1        | MCP_EGGLARVAE_PUMP                           |
+ * | Drawer 1           | Humidifier  | 2        | MCP_EGGLARVAE_HUMIDIFIER                     |
+ * | Drawer 1           | Fans        | 3        | MCP_EGGLARVAE_FANS                           |
+ * | Drawer 1           | Heater      | 4        | MCP_EGGLARVAE_HEATER                         |
+ * | Drawer 1           | Heater Fans | 5        | MCP_EGGLARVAE_HEATER_FANS                    |
+ * | Drawer 2           | Humidifier  | 6        | MCP_PUPA_HUMIDIFIER                          |
+ * | Drawer 2           | Fan         | 7        | MCP_PUPA_FAN                                 |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ *
+ * ADS1115 Channel Assignments
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Module/Component   | Device      | Channel  | Usage                                        |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ * | Substrate Sensors  | ADS1115#1   | A0 (0)   | ADS1_SUBSTRATE_1                             |
+ * | Substrate Sensors  | ADS1115#1   | A1 (1)   | ADS1_SUBSTRATE_2                             |
+ * | Substrate Sensors  | ADS1115#1   | A2 (2)   | ADS1_SUBSTRATE_3                             |
+ * | MQ137 NH3 Sensor   | ADS1115#2   | A0 (0)   | ADS2_MQ137                                   |
+ * +--------------------+-------------+----------+----------------------------------------------+
+ *
+ * TCA9548A Channels
+ * +--------------------+-------------+------------------+
+ * | Module/Component   | Channel     | Notes            |
+ * +--------------------+-------------+------------------+
+ * | LCD #1             | 0           | TCA_CH_LCD1      |
+ * | LCD #2             | 1           | TCA_CH_LCD2      |
+ * +--------------------+-------------+------------------+
+ *
  */
 
 // Include necessary libraries
@@ -118,13 +148,14 @@
 
 #define MQTT_BASE_TOPIC "devices"
 
+// ==================== DEVICE ID / NETWORK ====================
 String DEVICE_ID;
 String DEVICE_ID_CLEAN;
 
-const u_int8_t IP_STA[] = {192, 168, 100, 200};
-const u_int8_t IP_GW[] = {192, 168, 100, 1};
-const u_int8_t SUBNET[] = {255, 255, 255, 0};
-const u_int8_t IP_DNS[] = {192, 168, 100, 1};
+const uint8_t IP_STA[] = {192, 168, 100, 200};
+const uint8_t IP_GW[] = {192, 168, 100, 1};
+const uint8_t SUBNET[] = {255, 255, 255, 0};
+const uint8_t IP_DNS[] = {192, 168, 100, 1};
 
 // ==================== I2C BUS ====================
 #define I2C_SDA GPIO_NUM_21
@@ -136,13 +167,8 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define SPI_MOSI GPIO_NUM_23
 #define SPI_CS_SD GPIO_NUM_15
 
-// ==================== LED ====================
+// ==================== LED / MUX ====================
 #define LED_PIN GPIO_NUM_4
-#define MUX_SIG GPIO_NUM_35
-#define MUX_S0 GPIO_NUM_17
-#define MUX_S1 GPIO_NUM_5
-#define MUX_S2 GPIO_NUM_32
-#define MUX_S3 GPIO_NUM_33
 
 // ==================== DHT SENSORS ====================
 // Drawer 1
@@ -192,8 +218,8 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 
 // ==================== TIMING ====================
 #define SENSOR_INTERVAL 5000
-#define HEARTBEAT_INTERVAL 15000
-#define SD_SYNC_INTERVAL 60000
+#define HEARTBEAT_INTERVAL 10000
+#define SD_SYNC_INTERVAL 30000
 #define SD_DATA_FILE "/sensor_data.json"
 #define OFFLINE_AUTOCONTROL_HOLD_MS 120000
 #define HEARTBEAT_TIMEOUT_MS 1500
@@ -214,6 +240,11 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define HUMIDITY_OPTIMAL_LOW 60.0
 #define HUMIDITY_OPTIMAL_HIGH 70.0
 
+#define MOISTURE_MIN 40
+#define MOISTURE_MAX 75
+#define MOISTURE_OPTIMAL_LOW 50
+#define MOISTURE_OPTIMAL_HIGH 70
+
 // ==================== MQ137 CALIBRATION ====================
 #define MQ137_RL 4.7f                           // Load resistance in kOhm
 #define MQ137_VC 5.0f                           // Supply voltage in V
@@ -221,16 +252,52 @@ const u_int8_t IP_DNS[] = {192, 168, 100, 1};
 #define MQ137_CALIBRATION_RATIO 3.6f            // Rst/Ro ratio in fresh air (from datasheet)
 #define MQ137_CALIBRATION_CYCLES 500            // Number of readings to average
 #define MQ137_CALIBRATION_FILE "/mq137_ro.json" // File to store calibration data
-#define MQ137_NH3_A 23.7f                       // Coefficient A for NH3 ppm calculation (from log-log plot of datasheet)
-#define MQ137_NH3_B -4.796f                     // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
+#define MQ137_NH3_A 1.5f                        // Coefficient A for NH3 ppm calculation (from log-log plot of datasheet)
+#define MQ137_NH3_B 0.8f                        // Coefficient B for NH3 ppm calculation (from log-log plot of datasheet)
 #define MQ137_DIVIDER_INVERTED 1                // Set to 1 if your sensor is wired with the load resistor on the high side (Vc) instead of low side (GND)
 
-#define MOISTURE_MIN 50
-#define MOISTURE_MAX 80
-#define MOISTURE_OPTIMAL_LOW 60
-#define MOISTURE_OPTIMAL_HIGH 75
+// ==================== TYPES ====================
+enum ControlMode
+{
+  CONTROL_MODE_AUTO = 0,
+  CONTROL_MODE_MANUAL = 1,
+};
 
-// ==================== GLOBALS ====================
+struct DhtReading
+{
+  float temperature;
+  float humidity;
+  bool valid;
+  uint8_t sourceType;
+};
+
+struct Nh3Metrics
+{
+  bool valid;
+  int16_t raw;
+  float vrl;
+  float rs_kohm;
+  float ratio;
+  float ppm;
+};
+
+struct MqttPublishItem
+{
+  char topic[160];
+  char payload[384];
+  bool retain;
+};
+
+// ==================== STATE LOCKING (CRITICAL SECTION) ====================
+// Protects shared state touched from loop(), sensorTask(), MQTT callback, and web handlers.
+static portMUX_TYPE gStateMux = portMUX_INITIALIZER_UNLOCKED;
+static inline void stateLock() { portENTER_CRITICAL(&gStateMux); }
+static inline void stateUnlock() { portEXIT_CRITICAL(&gStateMux); }
+
+// ==================== ADS1115 VARIABLES ====================
+static constexpr int16_t ADS_INVALID = INT16_MIN;
+
+// ==================== GLOBALS (HW OBJECTS) ====================
 DHT dhtA11(DHT_A_PIN, DHT11_TYPE);
 DHT dhtA22(DHT_A_PIN, DHT22_TYPE);
 DHT dhtB11(DHT_B_PIN, DHT11_TYPE);
@@ -249,6 +316,16 @@ Adafruit_MCP23X17 mcp;
 LiquidCrystal_I2C lcd1(LCD_ADDR, 16, 2);
 LiquidCrystal_I2C lcd2(LCD_ADDR, 16, 2);
 
+AsyncWebServer server(80);
+
+// ==================== MQTT (optional) ====================
+WiFiClientSecure espClient;
+PubSubClient mqttClient(espClient);
+static QueueHandle_t gMqttPublishQueue = nullptr;
+static volatile uint32_t gMqttQueueDropCount = 0;
+bool mqttEnabled = false;
+
+// ==================== AVAILABILITY FLAGS ====================
 bool ads1Available = false;
 bool ads2Available = false;
 bool mcpAvailable = false;
@@ -256,38 +333,17 @@ bool sdAvailable = false;
 bool lcd1Available = false;
 bool lcd2Available = false;
 
+bool tcaAvailable = false;
+unsigned int i2cErrorCount = 0;
+unsigned int sdErrorCount = 0;
+
+// ==================== TIMERS / STATE ====================
 unsigned long lastSensorTime = 0;
 unsigned long lastHeartbeatTime = 0;
 unsigned long lastSdSyncTime = 0;
 unsigned long lastActuatorCommandTime = 0;
 unsigned long lastMqttReconnectAttempt = 0;
 unsigned long lastModeDebugTime = 0;
-
-// ==================== TLS / HTTPS ROBUSTNESS ====================
-static constexpr uint32_t TLS_MIN_FREE_HEAP = 65000;
-static constexpr uint32_t TLS_MIN_FREE_HEAP_MIN = 50000;
-
-static SemaphoreHandle_t gTlsMutex = nullptr;
-static WiFiClientSecure gHttpsClient;
-static unsigned long gTlsFailCooldownUntilMs = 0;
-
-// ==================== HEARTBEAT & SENSOR UPLOAD TASK ====================
-TaskHandle_t heartbeatTaskHandle = nullptr;
-TaskHandle_t sensorTaskHandle = nullptr;
-
-// ==================== SD UPLOAD TASK ====================
-static TaskHandle_t sdUploadTaskHandle = nullptr;
-static volatile bool sdUploadKick = false;
-
-static volatile int gSdStoredCountCached = -1;
-static TaskHandle_t sdCountTaskHandle = nullptr;
-static void sdCountTask(void *pvParameters);
-
-// ==================== STATE LOCKING (CRITICAL SECTION) ====================
-// Protects shared state touched from loop(), sensorTask(), MQTT callback, and web handlers.
-static portMUX_TYPE gStateMux = portMUX_INITIALIZER_UNLOCKED;
-static inline void stateLock() { portENTER_CRITICAL(&gStateMux); }
-static inline void stateUnlock() { portEXIT_CRITICAL(&gStateMux); }
 
 int lastHeartbeatHttpCode = 0;
 bool lastWifiConnected = false;
@@ -297,29 +353,35 @@ bool lightState = false;
 unsigned long lightEndTime = 0;
 unsigned long offlineAutoControlHoldUntil = 0;
 
-enum ControlMode
-{
-  CONTROL_MODE_AUTO = 0,
-  CONTROL_MODE_MANUAL = 1,
-};
-
 ControlMode requestedControlMode = CONTROL_MODE_AUTO;
 
-struct DhtReading
-{
-  float temperature;
-  float humidity;
-  bool valid;
-  uint8_t sourceType;
-};
-
+// ==================== DHT LAST READINGS ====================
 DhtReading lastDrawer1SensorA = {NAN, NAN, false, 0};
 DhtReading lastDrawer1SensorB = {NAN, NAN, false, 0};
 DhtReading lastDrawer1SensorC = {NAN, NAN, false, 0};
 DhtReading lastDrawer2SensorD = {NAN, NAN, false, 0};
 DhtReading lastDrawer2SensorE = {NAN, NAN, false, 0};
 
-AsyncWebServer server(80);
+// ==================== TLS / HTTPS ROBUSTNESS ====================
+static constexpr uint32_t TLS_MIN_FREE_HEAP = 65000;
+static constexpr uint32_t TLS_MIN_FREE_HEAP_MIN = 50000;
+
+static SemaphoreHandle_t gTlsMutex = nullptr;
+static WiFiClientSecure gHttpsClient;
+static unsigned long gTlsFailCooldownUntilMs = 0;
+
+// ==================== TASK HANDLES ====================
+TaskHandle_t heartbeatTaskHandle = nullptr;
+TaskHandle_t sensorTaskHandle = nullptr;
+
+// SD upload task
+static TaskHandle_t sdUploadTaskHandle = nullptr;
+static volatile bool sdUploadKick = false;
+
+// SD count task cache + handle
+static volatile int gSdStoredCountCached = -1;
+static TaskHandle_t sdCountTaskHandle = nullptr;
+static void sdCountTask(void *pvParameters);
 
 // ==================== MQ137 CALIBRATION VARIABLES ====================
 float mq137Ro = 0.0f;                    // Ro in kΩ (0 = not calibrated yet)
@@ -332,44 +394,13 @@ static volatile uint16_t mq137CalProgress = 0; // 0..100
 static volatile uint16_t mq137CalValidSamples = 0;
 static volatile float mq137CalLastRsAvg = NAN;
 
-struct Nh3Metrics
-{
-  bool valid;
-  int16_t raw;
-  float vrl;
-  float rs_kohm;
-  float ratio;
-  float ppm;
-};
-
 // ==================== MOISTURE CALIBRATION (raw endpoints) ====================
 // These defaults are placeholders; you should calibrate for your setup.
 static int gMoistureRawDry = 28000; // raw reading in air/dry
 static int gMoistureRawWet = 12000; // raw reading in water/very wet
 
+// ==================== DHT MUTEX ====================
 static SemaphoreHandle_t gDhtMutex = nullptr;
-
-// ==================== ADS1115 VARIABLES ====================
-static constexpr int16_t ADS_INVALID = INT16_MIN;
-
-// MQTT client (optional)
-WiFiClientSecure espClient;
-PubSubClient mqttClient(espClient);
-
-struct MqttPublishItem
-{
-  char topic[160];
-  char payload[384];
-  bool retain;
-};
-
-static QueueHandle_t gMqttPublishQueue = nullptr;
-static volatile uint32_t gMqttQueueDropCount = 0;
-bool mqttEnabled = false;
-
-bool tcaAvailable = false;
-unsigned int i2cErrorCount = 0;
-unsigned int sdErrorCount = 0;
 
 // ==================== FUNCTION PROTOTYPES ====================
 void setup();
@@ -412,9 +443,7 @@ bool sendSensorReading(const char *drawerName, float temperature, float humidity
 static inline int moisturePercentFromRaw(int raw);
 static inline void printAds1MoistureDebug(int16_t r0, int16_t r1, int16_t r2);
 
-// MUX / I2C helpers
-void selectMuxChannel(uint8_t channel);
-int readMuxAnalog(uint8_t channel);
+// LCD I2C helpers
 void selectTcaChannel(uint8_t channel);
 
 // LCD helpers
@@ -447,142 +476,6 @@ inline void setPupaHumidifier(bool state);
 inline void setPupaFan(bool state);
 
 // Offline control / mode
-void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
-void autoControlPupaDrawer(float temperature, float humidity);
-bool isAutoControlActive();
-void setRequestedControlMode(ControlMode mode);
-const char *getRequestedControlModeName();
-void recordManualActuatorChange();
-void logConnectivityState(const char *source);
-
-// DHT helpers
-bool isValidDrawer1DhtReading(float temperature, float humidity);
-bool isValidDrawer2DhtReading(float temperature, float humidity);
-bool isStableDhtReading(const DhtReading &current, const DhtReading &previous,
-                        float maxTempDelta, float maxHumidityDelta);
-bool readRawDht(DHT &sensor, float &humidity, float &temperature);
-DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11,
-                           bool useDrawer1Validation, bool allowTypeFallback, const char *label);
-
-// SD storage
-void storeSensorToSD(const char *drawerName, float temperature, float humidity,
-                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
-void uploadStoredData();
-int getStoredDataCount();
-
-static void sdCountTask(void *pvParameters);
-
-// Web server
-void setupWebServer();
-void handleHardwarePage(AsyncWebServerRequest *request);
-void handleCalibrateAmmonia(AsyncWebServerRequest *request);
-void handleCalibrationStatus(AsyncWebServerRequest *request);
-void handleCalibrateAllSensors(AsyncWebServerRequest *request);
-void handleStatus(AsyncWebServerRequest *request);
-void handleGetSdData(AsyncWebServerRequest *request);
-void handleClearSdData(AsyncWebServerRequest *request);
-void handleSyncSdData(AsyncWebServerRequest *request);
-void handleReboot(AsyncWebServerRequest *request);
-
-struct Nh3Metrics;
-static Nh3Metrics readNh3Metrics();
-float calculateRstFromRaw(int16_t rawValue);
-static float estimateNh3PpmFromRaw(int16_t rawValue);
-float calibrateMQ137();
-void loadMQ137Calibration();
-
-// Misc
-static void logLoopHealth();
-
-// Inline actuator helpers (definitions)
-inline void setEggLarvaePump(bool state) { setMcpActuator(MCP_EGGLARVAE_PUMP, state); }
-inline void setEggLarvaeHumidifier(bool state) { setMcpActuator(MCP_EGGLARVAE_HUMIDIFIER, state); }
-inline void setEggLarvaeFan(bool state) { setMcpActuator(MCP_EGGLARVAE_FANS, state); }
-inline void setEggLarvaeHeater(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER, state); }
-inline void setEggLarvaeHeaterFan(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER_FANS, state); }
-inline void setPupaHumidifier(bool state) { setMcpActuator(MCP_PUPA_HUMIDIFIER, state); }
-inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
-
-static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
-static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
-static inline unsigned long getOfflineHoldUntilLocked();
-static inline void recordManualActuatorChangeLocked();
-static inline ControlMode getControlModeLocked();
-static inline void setControlModeLocked(ControlMode mode);
-
-static bool canStartTlsNow(const char *tag);
-static void tlsUnlock();
-static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
-
-// Auto Mode for Drawers
-void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
-void autoControlPupaDrawer(float temperature, float humidity);
-bool isAutoControlActive();
-void setRequestedControlMode(ControlMode mode);
-const char *getRequestedControlModeName();
-void recordManualActuatorChange();
-void logConnectivityState(const char *source);
-
-// DHT helpers
-bool isValidDrawer1DhtReading(float temperature, float humidity);
-bool isValidDrawer2DhtReading(float temperature, float humidity);
-bool isStableDhtReading(const DhtReading &current, const DhtReading &previous,
-                        float maxTempDelta, float maxHumidityDelta);
-bool readRawDht(DHT &sensor, float &humidity, float &temperature);
-DhtReading readDhtAutoType(DHT &dht11, DHT &dht22, bool preferDht11,
-                           bool useDrawer1Validation, bool allowTypeFallback, const char *label);
-
-// SD storage
-void storeSensorToSD(const char *drawerName, float temperature, float humidity,
-                     int leftSubstrate, int centerSubstrate, int rightSubstrate, int ammonia);
-void uploadStoredData();
-int getStoredDataCount();
-
-static void sdCountTask(void *pvParameters);
-
-// Web server
-void setupWebServer();
-void handleHardwarePage(AsyncWebServerRequest *request);
-void handleCalibrateAmmonia(AsyncWebServerRequest *request);
-void handleCalibrationStatus(AsyncWebServerRequest *request);
-void handleCalibrateAllSensors(AsyncWebServerRequest *request);
-void handleStatus(AsyncWebServerRequest *request);
-void handleGetSdData(AsyncWebServerRequest *request);
-void handleClearSdData(AsyncWebServerRequest *request);
-void handleSyncSdData(AsyncWebServerRequest *request);
-void handleReboot(AsyncWebServerRequest *request);
-
-struct Nh3Metrics;
-static Nh3Metrics readNh3Metrics();
-float calculateRstFromRaw(int16_t rawValue);
-static float estimateNh3PpmFromRaw(int16_t rawValue);
-float calibrateMQ137();
-void loadMQ137Calibration();
-
-// Misc
-static void logLoopHealth();
-
-// Inline actuator helpers
-inline void setEggLarvaePump(bool state) { setMcpActuator(MCP_EGGLARVAE_PUMP, state); }
-inline void setEggLarvaeHumidifier(bool state) { setMcpActuator(MCP_EGGLARVAE_HUMIDIFIER, state); }
-inline void setEggLarvaeFan(bool state) { setMcpActuator(MCP_EGGLARVAE_FANS, state); }
-inline void setEggLarvaeHeater(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER, state); }
-inline void setEggLarvaeHeaterFan(bool state) { setMcpActuator(MCP_EGGLARVAE_HEATER_FANS, state); }
-inline void setPupaHumidifier(bool state) { setMcpActuator(MCP_PUPA_HUMIDIFIER, state); }
-inline void setPupaFan(bool state) { setMcpActuator(MCP_PUPA_FAN, state); }
-
-static inline void getLightTimerLocked(bool &on, unsigned long &endTimeMs);
-static inline void setLightTimerLocked(bool on, unsigned long endTimeMs);
-static inline unsigned long getOfflineHoldUntilLocked();
-static inline void recordManualActuatorChangeLocked();
-static inline ControlMode getControlModeLocked();
-static inline void setControlModeLocked(ControlMode mode);
-
-static bool canStartTlsNow(const char *tag);
-static void tlsUnlock();
-static bool tlsTryLock(TickType_t waitTicks = pdMS_TO_TICKS(1000));
-
-// Auto Mode for Drawers
 void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoisture, int centerMoisture, int rightMoisture);
 void autoControlPupaDrawer(float temperature, float humidity);
 bool isAutoControlActive();
@@ -732,7 +625,7 @@ void setup()
   }
 
   // ADS1115 #2
-  ads2Available = ads2.begin(ADS1115_ADDR_2);
+  ads2Available = ads2.begin(ADS1115_ADDR_2, &Wire);
   if (!ads2Available)
   {
     Serial.println(F("ADS1115 #2 not found"));
@@ -812,12 +705,6 @@ void setup()
   {
     lcd2Available = false;
   }
-
-  // CD74HC4067
-  pinMode(MUX_S0, OUTPUT);
-  pinMode(MUX_S1, OUTPUT);
-  pinMode(MUX_S2, OUTPUT);
-  pinMode(MUX_S3, OUTPUT);
 
   // DHTs
   dhtA11.begin();
@@ -1001,7 +888,7 @@ void loop()
 
       char clearTopic[160];
       snprintf(clearTopic, sizeof(clearTopic), "%s/%s/actuators/light/control",
-              MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+               MQTT_BASE_TOPIC, DEVICE_ID.c_str());
       mqttEnqueuePublish(clearTopic, "", true);
 
       Serial.println(F("Light timer expired - Light OFF"));
@@ -1821,22 +1708,6 @@ uint64_t getServerTime()
   return serverTime;
 }
 
-// ==================== MUX HELPERS ====================
-void selectMuxChannel(uint8_t channel)
-{
-  digitalWrite(MUX_S0, channel & 0x01);
-  digitalWrite(MUX_S1, (channel >> 1) & 0x01);
-  digitalWrite(MUX_S2, (channel >> 2) & 0x01);
-  digitalWrite(MUX_S3, (channel >> 3) & 0x01);
-  delayMicroseconds(100);
-}
-
-int readMuxAnalog(uint8_t channel)
-{
-  selectMuxChannel(channel);
-  return analogRead(MUX_SIG);
-}
-
 // ==================== TCA9548A HELPER ====================
 void selectTcaChannel(uint8_t channel)
 {
@@ -1896,7 +1767,7 @@ void updateLCD1(float temp, float humidity, int ammonia)
   {
     lcd1.print("NH3:");
     if (nh3.ppm < 10.0f)
-      lcd1.print(nh3.ppm, 1); // e.g. 0.1, 2.3
+      lcd1.print(nh3.ppm, 2); // e.g. 0.1, 2.3
     else
       lcd1.print((int)(nh3.ppm + 0.5f)); // e.g. 12, 105
 
@@ -1925,7 +1796,7 @@ static void updateLCD2SubstratesRow(int leftPct, int centerPct, int rightPct)
   // Example: "S 68/63/100 "
   // Keep it within 16 chars.
   char row0[17];
-  snprintf(row0, sizeof(row0), "S %3d/%3d/%3d",
+  snprintf(row0, sizeof(row0), "S:%3d/%3d/%3d",
            (leftPct >= 0 && leftPct <= 100) ? leftPct : -1,
            (centerPct >= 0 && centerPct <= 100) ? centerPct : -1,
            (rightPct >= 0 && rightPct <= 100) ? rightPct : -1);
@@ -2182,7 +2053,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
       char clearTopic[160];
       snprintf(clearTopic, sizeof(clearTopic), "%s/%s/actuators/light/control",
-              MQTT_BASE_TOPIC, DEVICE_ID.c_str());
+               MQTT_BASE_TOPIC, DEVICE_ID.c_str());
       mqttEnqueuePublish(clearTopic, "", true);
 
       Serial.println(F("Light (MQTT): OFF"));
@@ -2190,6 +2061,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     return;
   }
 
+  // Parse state for other actuators
   bool state = false;
   if (strcmp(msg, "true") == 0 || strcmp(msg, "1") == 0)
     state = true;
@@ -2337,7 +2209,7 @@ void storeSensorToSD(const char *drawerName, float temperature, float humidity,
 
   doc["timestamp"] = millis();
 
-  char line[384];
+  char line[1024];
   size_t n = serializeJson(doc, line, sizeof(line));
   if (n > 0)
     file.println(line);
@@ -2378,7 +2250,7 @@ void uploadStoredData()
   int processedThisCycle = 0;
   bool hasPendingData = false;
 
-  char lineBuf[384];
+  char lineBuf[1024];
 
   auto readLine = [&](File &f, char *buf, size_t bufLen) -> bool
   {
@@ -2504,7 +2376,7 @@ int getStoredDataCount()
   if (!file)
     return 0;
 
-  char buf[384];
+  char buf[1024];
 
   auto readLine = [&](File &f, char *out, size_t outLen) -> bool
   {
@@ -2552,26 +2424,35 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   bool pumpOn = false;
 
   // Temperature: fan on when temp is high
-  if (temperature >= TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
   {
     fanOn = true;
   }
+  else if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  {
+    fanOn = false;
+  }
 
   // Temperature: heater on when temp is low
-  if (temperature <= TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
   {
     heaterOn = true;
     heaterFanOn = true;
   }
+  else if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  {
+    heaterOn = false;
+    heaterFanOn = false;
+  }
 
   // Humidity: humidifier on when humidity is low
-  if (humidity <= HUMIDITY_OPTIMAL_LOW)
+  if (humidity < HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
 
   // Humidity: fan on when humidity is high
-  if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+  if (humidity > HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
   }
@@ -2622,21 +2503,33 @@ void autoControlPupaDrawer(float temperature, float humidity)
   bool humidifierOn = false;
 
   // Temperature: fan on when temp is high
-  if (temperature >= TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
+  if (temperature > TEMP_OPTIMAL_HIGH || temperature > TEMP_MAX)
   {
     fanOn = true;
+  }
+  else if (temperature < TEMP_OPTIMAL_LOW || temperature < TEMP_MIN)
+  {
+    fanOn = false;
   }
 
   // Humidity: humidifier on when humidity is low
-  if (humidity <= HUMIDITY_OPTIMAL_LOW)
+  if (humidity < HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
+  else if (humidity > HUMIDITY_OPTIMAL_HIGH)
+  {
+    humidifierOn = false;
+  }
 
   // Humidity: fan on when humidity is high
-  if (humidity >= HUMIDITY_OPTIMAL_HIGH)
+  if (humidity > HUMIDITY_OPTIMAL_HIGH || humidity > HUMIDITY_MAX)
   {
     fanOn = true;
+  }
+  else if (humidity < HUMIDITY_OPTIMAL_LOW)
+  {
+    fanOn = false;
   }
 
   setPupaFan(fanOn);
@@ -2657,6 +2550,7 @@ void autoControlPupaDrawer(float temperature, float humidity)
 
 bool isValidDrawer1DhtReading(float temperature, float humidity)
 {
+  // Drawer 1 operates in a warm, humid envelope. Tight bounds block cross-type garbage readings.
   return !isnan(temperature) && !isnan(humidity) && temperature >= 15.0f && temperature <= 45.0f && humidity >= 30.0f && humidity <= 95.0f;
 }
 
@@ -2959,7 +2853,16 @@ static const char HARDWARE_HTML[] PROGMEM = R"HTML(
 
 void handleHardwarePage(AsyncWebServerRequest *request)
 {
-  request->send_P(200, "text/html", HARDWARE_HTML);
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+  request->send_P(200, "text/html", HARDWARE_HTML, nullptr);
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 void handleStatus(AsyncWebServerRequest *request)
