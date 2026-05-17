@@ -217,7 +217,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 datasets: [{
                     label: `${sensorType} ${unit}`,
                     data: chartData.map((row) => row.value),
-                    backgroundColor: 'rgba(40, 187, 80, 0.2)',
+                    backgroundColor: 'rgba(40, 187, 80, 0.35)',
                     borderColor: 'rgba(40, 187, 80, 1)',
                     borderWidth: 2,
                     fill: true,

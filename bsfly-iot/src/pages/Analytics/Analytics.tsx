@@ -336,14 +336,14 @@ const Analytics: FC = () => {
                         <IonCol>
                             <IonSegment className="analytics-graph-segment" value={selectedSegment} onIonChange={e => setSelectedSegment(e.detail.value as string)}>
                                 {sensorGraphs.map((graph) => (
-                                    <IonSegmentButton key={graph.id} value={graph.sensor} contentId={graph.sensor}>
+                                    <IonSegmentButton key={graph.id} value={graph.sensor} contentId={graph.id}>
                                         <IonIcon icon={graph.icon} />
                                     </IonSegmentButton>
                                 ))}
                             </IonSegment>
                             <IonSegmentView>
                                 {sensorGraphs.map((graph) => (
-                                    <IonSegmentContent key={graph.id} id={graph.sensor}>
+                                    <IonSegmentContent key={graph.id} id={graph.id}>
                                         <Graph
                                             sensorType={graph.sensor}
                                             upperLimit={graph.max}
