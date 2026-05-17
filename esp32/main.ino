@@ -2207,7 +2207,8 @@ void storeSensorToSD(const char *drawerName, float temperature, float humidity,
     }
   }
 
-  doc["timestamp"] = millis();
+  // Store device-local millis so we can attach accurate server-time timestamps when uploading
+  doc["deviceTimestampMs"] = (uint64_t)millis();
 
   char line[1024];
   size_t n = serializeJson(doc, line, sizeof(line));
@@ -2287,6 +2288,24 @@ void uploadStoredData()
     if (deserializeJson(doc, lineBuf) != DeserializationError::Ok)
       continue;
 
+    // Attempt to adjust timestamps to server time if available
+    // We'll get server time once before processing lines (see above)
+    if (serverNowMs > 0 && doc.containsKey("deviceTimestampMs"))
+    {
+      uint64_t deviceTs = doc["deviceTimestampMs"] | 0ULL;
+      if (deviceTs > 0)
+      {
+        // approximate original event time as: serverNow - (nowMs - deviceTs)
+        uint64_t corrected = (serverNowMs > nowMs && serverNowMs - nowMs > 0) ? (serverNowMs - (nowMs - deviceTs)) : (serverNowMs - (nowMs - deviceTs));
+        doc["timestamp"] = corrected; // send epoch ms
+      }
+    }
+
+    // Re-serialize potentially-updated doc into a buffer for POST
+    char postBuf[1024];
+    size_t postLen = serializeJson(doc, postBuf, sizeof(postBuf));
+    if (postLen == 0) continue;
+
     HTTPClient http;
     http.setTimeout(SD_UPLOAD_HTTP_TIMEOUT_MS);
 
@@ -2295,7 +2314,7 @@ void uploadStoredData()
     {
       if (tempFile)
       {
-        tempFile.println(lineBuf);
+        tempFile.println(postBuf);
         hasPendingData = true;
       }
       failed++;
@@ -2304,7 +2323,7 @@ void uploadStoredData()
     }
 
     http.addHeader("Content-Type", "application/json");
-    int httpCode = http.POST((uint8_t *)lineBuf, strlen(lineBuf));
+    int httpCode = http.POST((uint8_t *)postBuf, postLen);
     http.end();
 
     if (httpCode == 200 || httpCode == 201)

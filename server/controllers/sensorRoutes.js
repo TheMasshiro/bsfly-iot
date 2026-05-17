@@ -125,8 +125,9 @@ router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
       });
     }
 
+    const incomingTimestamp = req.body.timestamp;
     const readingData = {
-      timestamp: new Date(),
+      timestamp: incomingTimestamp ? new Date(incomingTimestamp) : new Date(),
     };
 
     if (temperature !== undefined) readingData.temperature = temperature;
@@ -136,6 +137,11 @@ router.post("/", requireDeviceAuth, sensorLimiter, async (req, res) => {
     if (centerSubstrateValue !== undefined) readingData.centerSubstrate = centerSubstrateValue;
     if (rightSubstrateValue !== undefined) readingData.rightSubstrate = rightSubstrateValue;
     if (ammonia !== undefined) readingData.ammonia = ammonia;
+
+    // If client provided a timestamp that is invalid, fall back to server time
+    if (!(readingData.timestamp instanceof Date) || isNaN(readingData.timestamp.getTime())) {
+      readingData.timestamp = new Date();
+    }
 
     await storeHourlyReading(drawer._id, readingData);
 
