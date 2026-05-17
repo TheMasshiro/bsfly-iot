@@ -2250,6 +2250,8 @@ void uploadStoredData()
   int failed = 0;
   int processedThisCycle = 0;
   bool hasPendingData = false;
+  uint64_t serverNowMs = getServerTime();
+  uint64_t nowMs = (uint64_t)millis();
 
   char lineBuf[1024];
 
