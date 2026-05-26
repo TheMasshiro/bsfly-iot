@@ -2464,7 +2464,6 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
   bool humidifierOn = false;
   bool pumpOn = false;
 
-  // Temperature: fan on when temp is high
   if (temperature > DRAWER1_TEMP_OPTIMAL_HIGH || temperature > DRAWER1_TEMP_MAX)
   {
     fanOn = true;
@@ -2474,7 +2473,6 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
     fanOn = false;
   }
 
-  // Temperature: heater on when temp is low
   if (temperature < DRAWER1_TEMP_OPTIMAL_LOW || temperature < DRAWER1_TEMP_MIN)
   {
     heaterOn = true;
@@ -2486,13 +2484,11 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
     heaterFanOn = false;
   }
 
-  // Humidity: humidifier on when humidity is low
   if (humidity < DRAWER1_HUMIDITY_OPTIMAL_LOW)
   {
     humidifierOn = true;
   }
 
-  // Humidity: fan on when humidity is high
   if (humidity > DRAWER1_HUMIDITY_OPTIMAL_HIGH)
   {
     fanOn = true;
@@ -2503,10 +2499,9 @@ void autoControlEggLarvaeDrawer(float temperature, float humidity, int leftMoist
     humidifierOn = false;
   }
 
-  // Moisture: pump on when any substrate is low
-  if ((leftMoisture >= 0 && leftMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW) ||
-      (centerMoisture >= 0 && centerMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW) ||
-      (rightMoisture >= 0 && rightMoisture <= DRAWER1_MOISTURE_OPTIMAL_LOW))
+  if ((leftMoisture >= 0 && leftMoisture < DRAWER1_MOISTURE_OPTIMAL_LOW) ||
+      (centerMoisture >= 0 && centerMoisture < DRAWER1_MOISTURE_OPTIMAL_LOW) ||
+      (rightMoisture >= 0 && rightMoisture < DRAWER1_MOISTURE_OPTIMAL_LOW))
   {
     pumpOn = true;
   }
