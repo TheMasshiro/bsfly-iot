@@ -1,19 +1,19 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip,  IonContent,  IonHeader, IonIcon, IonLabel, IonPage, IonRefresher, IonRefresherContent,  IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
+import { IonIcon, useIonToast } from '@ionic/react';
 import { lifecycleThresholds } from '../../config/thresholds';
 import { FC, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { cloudOutline, thermometerOutline, waterOutline } from 'ionicons/icons';
-import { useLifeCycle } from '../../context/LifeCycleContext';
+import { Stage, useLifeCycle } from '../../context/LifeCycleContext';
 import { useDevice } from '../../context/DeviceContext';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { offlineService } from '../../services/offline/OfflineService';
 import Graph from '../../components/Graph/Graph';
-import Segments from '../../components/Segments/Segments';
-import GlobalFabControls from '../../components/GlobalFabControls/GlobalFabControls';
-import "./Analytics.css"
-import Toolbar from '../../components/Toolbar/Toolbar';
-import PagePurpose from '../../components/PagePurpose/PagePurpose';
+import Page from '../../components/ui/Page';
+import Segmented from '../../components/ui/Segmented';
+import StatusPill from '../../components/ui/StatusPill';
+import { statusOf, statusText } from '../../components/ui/status';
 import { api, withToken } from '../../utils/api';
 import { actuatorService } from '../../services/socket/socket';
+import './Analytics.css';
 
 interface SensorValues {
     temperature: number | null;
@@ -40,8 +40,9 @@ const formatAnalyticsValue = (sensor: string, value: number | null): string => {
     if (sensor === 'Left Substrate' || sensor === 'Center Substrate' || sensor === 'Right Substrate' || sensor === 'Moisture') {
         return Math.round(value).toString();
     }
-    return value.toFixed(2);
+    return value.toFixed(1);
 };
+
 
 const normalizeDrawerName = (name: unknown): string | null => {
     if (typeof name !== 'string') return null;
@@ -203,10 +204,6 @@ const Analytics: FC = () => {
         };
     }, [currentDeviceId, isDeviceOffline, stage, fetchCurrentValues, normalizeSensorValues, getCacheKey]);
 
-    const handleRefresh = async (event: CustomEvent) => {
-        await Promise.all([fetchCurrentValues(), refreshDevices()]);
-        event.detail.complete();
-    };
 
     const sensorGraphs = useMemo(() => {
         const moisture = 'moisture' in thresholds ? thresholds.moisture : null;
@@ -286,96 +283,84 @@ const Analytics: FC = () => {
             else if (latestValue <= graph.min) status = 'primary';
             else status = 'success';
 
-            return { ...graph, latestValue, status };
+            const thresholdKey = graph.sensor === 'Temperature' ? 'temperature' : graph.sensor === 'Humidity' ? 'humidity' : 'moisture';
+            const threshold = (thresholds as Record<string, { min: number; max: number; optimal: number[] }>)[thresholdKey];
+            const reading = graph.sensor === 'Temperature' ? sensorValues.temperature
+                : graph.sensor === 'Humidity' ? sensorValues.humidity
+                : graph.sensor === 'Left Substrate' ? sensorValues.leftSubstrate
+                : graph.sensor === 'Center Substrate' ? sensorValues.centerSubstrate
+                : sensorValues.rightSubstrate;
+            const tile = { status: statusOf(reading, threshold), label: statusText(reading, threshold) };
+
+            return { ...graph, latestValue, status, tile };
         });
-    }, [sensorGraphs, sensorValues]);
+    }, [sensorGraphs, sensorValues, thresholds]);
+
+    const handleRefresh = () => Promise.all([fetchCurrentValues(), refreshDevices()]);
+
+    const activeGraph = sensorCurrentValues.find((s) => s.sensor === selectedSegment) ?? sensorCurrentValues[0];
 
     return (
-        <IonPage className="analytics-page">
-            <IonHeader>
-                <Toolbar />
-            </IonHeader>
-
-            <IonContent fullscreen>
-                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                    <IonRefresherContent />
-                </IonRefresher>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">Analytics</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-
-                <PagePurpose text="Analyze historical trends and threshold status to evaluate drawer environmental performance." />
-
-                <div className="page-container">
-                    <div className="stack">
-                        <IonCard className="sensor-quick-switch-card">
-                                <IonCardHeader className="ion-no-padding">
-                                    <IonCardTitle>Current {stage}</IonCardTitle>
-                                </IonCardHeader>
-                                <IonCardContent className="sensor-buttons-container">
-                                    {sensorCurrentValues.map((sensor) => (
-                                        <div
-                                            key={sensor.id}
-                                            className="sensor-quick-btn"
-                                            aria-label={`${sensor.sensor}: ${sensor.latestValue}${sensor.unit}`}
-                                        >
-                                            <IonIcon icon={sensor.icon} className="sensor-quick-icon" />
-                                            <IonChip color={sensor.status} className={`sensor-quick-value status-${sensor.status}`}>
-                                                {formatAnalyticsValue(sensor.sensor, typeof sensor.latestValue === 'number' ? sensor.latestValue : null)}{sensor.unit}
-                                            </IonChip>
-                                        </div>
-                                    ))}
-                                </IonCardContent>
-                            </IonCard>
-
-                    <IonCard className="analytics-graph-card">
-                        <IonSegment className="analytics-graph-segment" value={selectedSegment} onIonChange={e => setSelectedSegment(e.detail.value as string)}>
-                                {sensorGraphs.map((graph) => (
-                                    <IonSegmentButton key={graph.id} value={graph.sensor} contentId={graph.id}>
-                                        <IonIcon icon={graph.icon} />
-                                    </IonSegmentButton>
-                                ))}
-                            </IonSegment>
-                            <IonSegmentView>
-                                {sensorGraphs.map((graph) => (
-                                    <IonSegmentContent key={graph.id} id={graph.id}>
-                                        <Graph
-                                            sensorType={graph.sensor}
-                                            upperLimit={graph.max}
-                                            lowerLimit={graph.min}
-                                            warningLimit={graph.warn}
-                                            unit={graph.unit} />
-
-                                        <div className="legends-row">
-                                            <IonChip color="danger">
-                                                <IonLabel>Upper: {graph.max}{graph.unit}</IonLabel>
-                                            </IonChip>
-                                            <IonChip color="warning">
-                                                <IonLabel>Warning: {graph.warn}{graph.unit}</IonLabel>
-                                            </IonChip>
-                                            <IonChip color="secondary">
-                                                <IonLabel>Lower: {graph.min}{graph.unit}</IonLabel>
-                                            </IonChip>
-                                        </div>
-                                    </IonSegmentContent>
-                                ))}
-                            </IonSegmentView>
-                    </IonCard>
-                    </div>
-
-                <Segments
-                    stage={stage}
-                    setStage={setStage}
+        <Page
+            title="Trends"
+            subtitle={`${stage} · hourly readings`}
+            onRefresh={handleRefresh}
+        >
+            <div className="drawer-switch">
+                <Segmented<Stage>
+                    block
+                    label="Drawer"
+                    value={stage}
+                    onChange={setStage}
+                    options={[
+                        { value: 'Drawer 1', label: 'Drawer 1' },
+                        { value: 'Drawer 2', label: 'Drawer 2' },
+                    ]}
                 />
+            </div>
+
+            <div className="trends-layout">
+                <div className="metric-list" role="group" aria-label="Readings">
+                    {sensorCurrentValues.map((sensor) => {
+                        const tile = sensor.tile;
+                        return (
+                            <button
+                                key={sensor.id}
+                                type="button"
+                                className="metric-tile"
+                                data-status={tile.status}
+                                aria-pressed={sensor.sensor === activeGraph?.sensor}
+                                onClick={() => setSelectedSegment(sensor.sensor)}
+                            >
+                                <span className="metric-tile-top">
+                                    <IonIcon icon={sensor.icon} aria-hidden="true" />
+                                    {sensor.sensor}
+                                </span>
+                                <span className="metric-tile-value mono">
+                                    {formatAnalyticsValue(sensor.sensor, typeof sensor.latestValue === 'number' ? sensor.latestValue : null)}
+                                    <small>{sensor.unit}</small>
+                                </span>
+                                <StatusPill status={tile.status}>{tile.label}</StatusPill>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                <GlobalFabControls />
-            </IonContent>
-        </IonPage >
+                <div className="trend-chart">
+                    {activeGraph && (
+                        <Graph
+                            key={activeGraph.sensor}
+                            sensorType={activeGraph.sensor}
+                            upperLimit={activeGraph.max}
+                            lowerLimit={activeGraph.min}
+                            warningLimit={activeGraph.warn}
+                            unit={activeGraph.unit}
+                        />
+                    )}
+                </div>
+            </div>
+        </Page>
     );
 };
 
 export default Analytics;
-

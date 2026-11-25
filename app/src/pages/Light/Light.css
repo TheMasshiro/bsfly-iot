@@ -1,169 +1,167 @@
-.timer-page ion-content {
-  --background: #0a0a0a;
-}
-
-.timer-page .circular-progress-container {
+.light-layout {
   display: grid;
-  place-items: center;
-  width: 100%;
-  padding: 16px 0;
+  gap: 12px;
+  min-width: 0;
 }
 
-.timer-page .circular-progress-wrapper {
+.light-main,
+.light-side {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+
+.light-state {
+  display: grid;
+  gap: 8px;
+  padding: 18px 16px;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+}
+
+.light-state-top {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 }
 
-.timer-page .circular-background-md {
-  background-color: transparent;
-  box-shadow: none !important;
+.light-state-top ion-icon {
+  font-size: 24px;
+  color: var(--bs-text-3);
 }
 
-.timer-page .circular-progress-container.circular-background-md {
-  background-color: transparent;
-  box-shadow: none !important;
+.light-state[data-on="true"] .light-state-top ion-icon {
+  color: var(--bs-warn);
 }
 
-.timer-page .circular-progress {
-  width: min(260px, 70vw);
-  height: min(260px, 70vw);
-}
-
-.timer-page .timer-text {
-  font-weight: 700;
-  font-size: 2.5rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 16px;
-}
-
-.timer-page .light-on .timer-text {
-  color: #ff5252;
-}
-
-.timer-page .light-bulb-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  transition: all 0.4s ease;
-}
-
-.timer-page .light-bulb-icon {
-  font-size: 80px;
-  transition: all 0.4s ease;
-}
-
-.timer-page .light-off .light-bulb-icon {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.timer-page .light-on {
-  background: rgba(255, 82, 82, 0.12);
-}
-
-.timer-page .light-on .light-bulb-icon {
-  color: #ff5252;
-  filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.6));
-}
-
-.timer-page .light-status-text {
-  font-size: 0.9rem;
+.light-time {
+  margin: 8px 0 4px;
+  font-size: clamp(48px, 16vw, 72px);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--bs-text-3);
+}
+
+.light-state[data-on="true"] .light-time {
+  color: var(--bs-text);
+}
+
+.light-time-label,
+.light-note {
+  margin: 0;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+.light-note {
+  color: var(--bs-warn);
+}
+
+.light-state ion-button {
   margin-top: 8px;
 }
 
-.timer-page .timer-card {
-  margin: 0;
-  border-radius: 18px;
+.light-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.light-preset {
+  appearance: none;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 150ms var(--bs-ease), background 150ms var(--bs-ease);
 }
 
-.timer-page .timer-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.05);
+.light-preset ion-icon {
+  font-size: 24px;
+  color: var(--bs-text-3);
 }
 
-.timer-page .timer-card:active {
-  transform: translateY(0);
+.light-preset strong {
+  font-size: var(--bs-fs-base);
+  font-weight: 600;
 }
 
-.timer-page .timer-card-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.light-preset span {
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-2);
+}
+
+.light-preset:hover {
+  border-color: var(--bs-border-strong);
+}
+
+.light-preset[aria-pressed="true"] {
+  background: var(--bs-brand-soft);
+  border-color: var(--bs-brand);
+}
+
+.light-preset[aria-pressed="true"] ion-icon {
+  color: var(--bs-brand);
+}
+
+.light-preset[aria-disabled="true"] {
+  cursor: default;
+}
+
+.light-card {
+  display: grid;
+  gap: 12px;
   padding: 16px;
+  min-width: 0;
 }
 
-.timer-page .timer-card-primary .timer-value {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.timer-page .timer-card-selected {
-  border: 2px solid #ff5252;
-  background: rgba(255, 82, 82, 0.1);
-}
-
-.timer-page .timer-card-active-option {
-  cursor: not-allowed;
-  opacity: 0.72;
-  transform: none !important;
-}
-
-.timer-page .timer-card-selected:hover {
-  background: rgba(255, 82, 82, 0.15);
-}
-
-.timer-page .timer-card-active-option:hover {
-  background: rgba(255, 82, 82, 0.1);
-}
-
-.timer-page .timer-card-selected .timer-value {
-  color: #ff5252;
-}
-
-.timer-page .timer-info {
-  flex: 1;
-}
-
-.timer-page .timer-name {
+.light-card h2 {
   margin: 0;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: var(--bs-fs-base);
+  font-weight: 600;
 }
 
-.timer-page .timer-value {
-  margin: 8px 0 0;
-  padding-right: 8px;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: rgba(255, 255, 255, 0.8);
+.light-card p {
+  margin: 0;
+  font-size: var(--bs-fs-sm);
+  line-height: 1.5;
+  color: var(--bs-text-2);
 }
 
-.timer-page ion-radio::part(container),
-.timer-page ion-radio.radio-checked::part(container) {
-  border-color: transparent;
+@media (min-width: 768px) {
+  .light-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+  }
+
+  .light-presets {
+    gap: 12px;
+  }
 }
 
-.timer-page ion-radio::part(mark),
-.timer-page ion-radio.radio-checked::part(mark) {
-  background: none;
-  transition: none;
-  transform: none;
-  border-radius: 8px;
-  border-color: transparent;
+@media (min-width: 1200px) {
+  .light-layout {
+    gap: 20px;
+  }
+
+  .light-state {
+    padding: 24px;
+  }
+
+  .light-time {
+    font-size: 96px;
+  }
 }

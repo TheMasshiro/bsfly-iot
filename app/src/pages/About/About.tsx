@@ -1,38 +1,8 @@
-import {
-    IonAccordion,
-    IonAccordionGroup,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonPage,
-    IonText,
-    IonToolbar,
-    IonTitle,
-} from "@ionic/react";
-import {
-    bugOutline,
-    chevronForward,
-    codeSlashOutline,
-    documentTextOutline,
-    globeOutline,
-    logoGithub,
-    mailOutline,
-    peopleOutline,
-    personOutline,
-    ribbonOutline,
-} from "ionicons/icons";
+import { IonIcon } from "@ionic/react";
+import { bugOutline, chevronForward, documentTextOutline, globeOutline, logoGithub, peopleOutline, personOutline, ribbonOutline } from "ionicons/icons";
 import { FC } from "react";
-import Toolbar from "../../components/Toolbar/Toolbar";
-import PagePurpose from "../../components/PagePurpose/PagePurpose";
+import Card from "../../components/ui/Card";
+import Page from "../../components/ui/Page";
 import "./About.css";
 
 const APP_VERSION = "1.0.0";
@@ -46,195 +16,92 @@ const researchers = [
     "Vicente, John Christian",
 ];
 
-const About: FC = () => {
-    return (
-        <IonPage className="about-page">
-            <IonHeader class="ion-no-border">
-                <Toolbar />
-            </IonHeader>
+const stack = [
+    { label: "Frontend", value: "React, Ionic, TypeScript, Capacitor" },
+    { label: "Backend", value: "Node.js, Express, PostgreSQL" },
+    { label: "Hardware", value: "ESP32, DHT11/DHT22, MQ-137, substrate moisture sensors" },
+];
 
-            <IonContent fullscreen>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">About</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-                <PagePurpose text="System overview, team and support resources." />
+const links = [
+    { href: "https://github.com/TheMasshiro/bsfly-iot/issues", icon: bugOutline, title: "Report an issue", detail: "Open a GitHub issue" },
+    { href: "https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md", icon: documentTextOutline, title: "Documentation", detail: "Setup guide and usage instructions" },
+    { href: "https://github.com/TheMasshiro/bsfly-iot", icon: logoGithub, title: "Source code", detail: "View on GitHub" },
+    { href: "https://github.com/TheMasshiro/bsfly-iot/blob/main/LICENSE", icon: ribbonOutline, title: "MIT License", detail: "Open source software" },
+];
 
-                <div className="page-container">
-                    <IonCard className="hero-card">
-                        <IonCardHeader className="ion-text-center ion-padding">
-                            <div className="about-logo">
-                                <IonIcon icon={bugOutline} className="about-logo-icon" />
-                            </div>
-                            <IonCardTitle>
-                                <h1>Black Soldier Fly IoT</h1>
-                            </IonCardTitle>
-                            <IonCardSubtitle>Monitoring system</IonCardSubtitle>
-                            <p className="version-text">v{APP_VERSION}</p>
-                        </IonCardHeader>
-                        <IonCardContent className="ion-text-center">
-                            <IonText color="medium">
-                                <p className="description-text">
-                                    Environmental monitoring and control for Black Soldier Fly larvae cultivation.
-                                </p>
-                            </IonText>
-                        </IonCardContent>
-                    </IonCard>
+const About: FC = () => (
+    <Page
+        className="about-page"
+        title="About"
+        subtitle="What the system does, who built it, and where to get help."
+    >
+        <div className="card-grid">
+            <Card className="card-wide about-intro">
+                <p className="about-name">Black Soldier Fly IoT</p>
+                <p className="about-version mono">Version {APP_VERSION}</p>
+                <p className="about-text">
+                    Monitors temperature, humidity, substrate moisture and ammonia in the larvae drawers.
+                    Lets you switch the fans, heater, humidifier, pump and light from your phone.
+                </p>
+            </Card>
 
-                    <IonAccordionGroup>
-                        <IonAccordion value="developer">
-                            <IonItem slot="header">
-                                <IonIcon icon={codeSlashOutline} slot="start" color="primary" />
-                                <IonLabel>Developer</IonLabel>
-                            </IonItem>
-                            <IonList slot="content">
-                                <IonItem lines="none">
-                                    <IonIcon icon={personOutline} slot="start" />
-                                    <IonLabel>John Christian Vicente</IonLabel>
-                                </IonItem>
-                                <IonItem lines="none">
-                                    <IonIcon icon={mailOutline} slot="start" />
-                                    <IonLabel>johnc.vicente1@gmail.com</IonLabel>
-                                </IonItem>
-                                <IonItem
-                                    button
-                                    href="https://github.com/TheMasshiro"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    detail
-                                    detailIcon={chevronForward}
-                                    lines="none"
-                                >
-                                    <IonIcon icon={logoGithub} slot="start" />
-                                    <IonLabel>@TheMasshiro</IonLabel>
-                                </IonItem>
-                            </IonList>
-                        </IonAccordion>
-
-                        <IonAccordion value="researchers">
-                            <IonItem slot="header">
-                                <IonIcon icon={peopleOutline} slot="start" color="primary" />
-                                <IonLabel>Research Team</IonLabel>
-                                <IonChip slot="end" color="medium">
-                                    <IonLabel>{researchers.length}</IonLabel>
-                                </IonChip>
-                            </IonItem>
-                            <IonList slot="content">
-                                {researchers.map((name, index) => (
-                                    <IonItem key={index} lines="none">
-                                        <IonIcon icon={personOutline} slot="start" color="medium" />
-                                        <IonLabel color="medium">{name}</IonLabel>
-                                    </IonItem>
-                                ))}
-                            </IonList>
-                        </IonAccordion>
-
-                        <IonAccordion value="tech">
-                            <IonItem slot="header">
-                                <IonIcon icon={globeOutline} slot="start" color="primary" />
-                                <IonLabel>Technology Stack</IonLabel>
-                            </IonItem>
-                            <IonList slot="content">
-                                <IonItem lines="none">
-                                    <IonLabel>
-                                        <h3>Frontend</h3>
-                                        <p>React, Ionic, TypeScript, Capacitor</p>
-                                    </IonLabel>
-                                </IonItem>
-                                <IonItem lines="none">
-                                    <IonLabel>
-                                        <h3>Backend</h3>
-                                        <p>Node.js, Express, PostgreSQL</p>
-                                    </IonLabel>
-                                </IonItem>
-                                <IonItem lines="none">
-                                    <IonLabel>
-                                        <h3>Hardware</h3>
-                                        <p>ESP32, DHT11/DHT22, MQ-137, substrate moisture sensors</p>
-                                    </IonLabel>
-                                </IonItem>
-                            </IonList>
-                        </IonAccordion>
-
-                        <IonAccordion value="support">
-                            <IonItem slot="header">
-                                <IonIcon icon={bugOutline} slot="start" color="primary" />
-                                <IonLabel>Support &amp; Resources</IonLabel>
-                            </IonItem>
-                            <IonList slot="content">
-                                <IonItem
-                                    button
-                                    href="https://github.com/TheMasshiro/bsfly-iot/issues"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    detail
-                                    detailIcon={chevronForward}
-                                >
-                                    <IonIcon icon={bugOutline} slot="start" color="warning" />
-                                    <IonLabel>
-                                        <h3>Report an Issue</h3>
-                                        <p>Open a GitHub issue</p>
-                                    </IonLabel>
-                                </IonItem>
-                                <IonItem
-                                    button
-                                    href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    detail
-                                    detailIcon={chevronForward}
-                                >
-                                    <IonIcon icon={documentTextOutline} slot="start" color="tertiary" />
-                                    <IonLabel>
-                                        <h3>Documentation</h3>
-                                        <p>Setup guide and usage instructions</p>
-                                    </IonLabel>
-                                </IonItem>
-                                <IonItem
-                                    button
-                                    href="https://github.com/TheMasshiro/bsfly-iot"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    detail
-                                    detailIcon={chevronForward}
-                                >
-                                    <IonIcon icon={logoGithub} slot="start" />
-                                    <IonLabel>
-                                        <h3>Source Code</h3>
-                                        <p>View on GitHub</p>
-                                    </IonLabel>
-                                </IonItem>
-                                <IonItem
-                                    button
-                                    href="https://github.com/TheMasshiro/bsfly-iot/blob/main/LICENSE"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    detail
-                                    detailIcon={chevronForward}
-                                    lines="none"
-                                >
-                                    <IonIcon icon={ribbonOutline} slot="start" color="success" />
-                                    <IonLabel>
-                                        <h3>MIT License</h3>
-                                        <p>Open source software</p>
-                                    </IonLabel>
-                                </IonItem>
-                            </IonList>
-                        </IonAccordion>
-                    </IonAccordionGroup>
-
-                    <div className="ion-text-center ion-padding footer-text">
-                        <IonText color="medium">
-                            <p>
-                                © {new Date().getFullYear()} Black Soldier Fly IoT
-                            </p>
-                        </IonText>
-                    </div>
+            <Card title="Team">
+                <div className="about-block">
+                    <p className="about-label">
+                        <IonIcon icon={personOutline} aria-hidden="true" />
+                        Developer
+                    </p>
+                    <p className="about-person">John Christian Vicente</p>
+                    <p className="about-contact">
+                        <a href="mailto:johnc.vicente1@gmail.com">johnc.vicente1@gmail.com</a>
+                        <a href="https://github.com/TheMasshiro" target="_blank" rel="noopener noreferrer">@TheMasshiro</a>
+                    </p>
                 </div>
-            </IonContent>
-        </IonPage>
-    );
-};
+                <div className="about-block">
+                    <p className="about-label">
+                        <IonIcon icon={peopleOutline} aria-hidden="true" />
+                        Research team
+                        <span className="mono">{researchers.length}</span>
+                    </p>
+                    <ul className="about-names">
+                        {researchers.map((name) => (
+                            <li key={name}>{name}</li>
+                        ))}
+                    </ul>
+                </div>
+            </Card>
+
+            <Card title="Technology">
+                <dl className="about-stack">
+                    {stack.map((item) => (
+                        <div key={item.label}>
+                            <dt>{item.label}</dt>
+                            <dd>{item.value}</dd>
+                        </div>
+                    ))}
+                </dl>
+            </Card>
+
+            <Card title="Links" className="about-links-card">
+                <ul className="about-links">
+                    {links.map((link) => (
+                        <li key={link.title}>
+                            <a href={link.href} target="_blank" rel="noopener noreferrer" className="about-link-row">
+                                <IonIcon icon={link.icon} aria-hidden="true" />
+                                <span>
+                                    <strong>{link.title}</strong>
+                                    <small>{link.detail}</small>
+                                </span>
+                                <IonIcon icon={chevronForward} aria-hidden="true" />
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </Card>
+        </div>
+
+        <p className="about-footer">© {new Date().getFullYear()} Black Soldier Fly IoT</p>
+    </Page>
+);
 
 export default About;

@@ -43,17 +43,17 @@ export function reading(drawer: string, t = Date.now()) {
   const d1 = drawer !== "Drawer 2";
   const base = {
     drawerName: d1 ? "Drawer 1" : "Drawer 2",
-    temperature: +(29.1 + wave(t, 3.6e6, 1.4) + (d1 ? 0 : 0.8)).toFixed(2),
-    humidity: +(64 + wave(t, 2.7e6, 5) + (d1 ? 0 : 3.2)).toFixed(2),
+    temperature: +(29.1 + wave(t, 2.2e7, 1.4) + wave(t, 7.9e6, 0.4) + (d1 ? 0 : 0.8)).toFixed(2),
+    humidity: +(64 + wave(t, 1.9e7, 5) + wave(t, 5.3e6, 1.5) + (d1 ? 0 : 3.2)).toFixed(2),
     timestamp: t,
   };
   if (!d1) return { ...base, leftSubstrate: null, centerSubstrate: null, rightSubstrate: null, ammonia: null };
   return {
     ...base,
-    leftSubstrate: Math.round(66 + wave(t, 5e6, 6)),
-    centerSubstrate: Math.round(58 + wave(t, 4.2e6, 4)),
-    rightSubstrate: Math.round(70 + wave(t, 3.1e6, 5)),
-    ammonia: +(14 + wave(t, 6e6, 9)).toFixed(2),
+    leftSubstrate: Math.round(66 + wave(t, 2.6e7, 6)),
+    centerSubstrate: Math.round(64 + wave(t, 1.7e7, 5)),
+    rightSubstrate: Math.round(70 + wave(t, 2.3e7, 4)),
+    ammonia: +(14 + wave(t, 3.1e7, 8)).toFixed(2),
   };
 }
 

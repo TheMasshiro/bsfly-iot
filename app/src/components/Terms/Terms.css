@@ -1,0 +1,19 @@
+.terms-body h2 {
+  margin: 24px 0 6px;
+  font-size: var(--bs-fs-base);
+  font-weight: 600;
+  color: var(--bs-text);
+}
+
+.terms-body p,
+.terms-body li {
+  margin: 0 0 8px;
+  font-size: var(--bs-fs-sm);
+  line-height: 1.6;
+  color: var(--bs-text-2);
+}
+
+.terms-body ul {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}

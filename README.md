@@ -52,6 +52,7 @@ cd app
 cp .env.example .env        # VITE_BACKEND_URL=http://localhost:5000
 npm install
 npm run dev                 # http://localhost:5173
+npm run dev:demo            # fake data, no login needed
 ```
 
 ### 3. Firmware

@@ -1,30 +1,11 @@
 import { Capacitor } from "@capacitor/core";
-import {
-    IonAlert,
-    IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonPage,
-    IonRange,
-    IonText,
-    IonSpinner,
-    IonToolbar,
-    IonTitle,
-    useIonToast,
-} from "@ionic/react";
-import { calendarOutline, cloudUpload, timeOutline, documentOutline, downloadOutline, documentTextOutline, hardwareChipOutline, cloudDownloadOutline, syncOutline, trashOutline } from "ionicons/icons";
+import { IonAlert, IonButton, IonIcon, IonLabel, IonRange, IonSpinner, useIonToast } from "@ionic/react";
+import { calendarOutline, timeOutline, documentOutline, documentTextOutline, downloadOutline, hardwareChipOutline, cloudDownloadOutline, syncOutline, trashOutline } from "ionicons/icons";
 import { FC, useState, useMemo, useEffect } from "react";
-import Toolbar from "../../components/Toolbar/Toolbar";
-import PagePurpose from "../../components/PagePurpose/PagePurpose";
+import Card from "../../components/ui/Card";
+import Metric from "../../components/ui/Metric";
+import Page from "../../components/ui/Page";
+import StatusPill from "../../components/ui/StatusPill";
 import { useDevice } from "../../context/DeviceContext";
 import { api, withToken } from "../../utils/api";
 import "./Backup.css";
@@ -921,86 +902,48 @@ const Backup: FC = () => {
     };
 
     return (
-        <IonPage className="backup-page">
-            <IonHeader class="ion-no-border">
-                <Toolbar />
-            </IonHeader>
-
-            <IonContent fullscreen>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">Backup Data</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-                <div className="page-container">
-                <PagePurpose text="Export sensor history, generate reports, and retrieve offline records from the ESP32 SD card." />
-
-                <IonCard className="ion-margin info-card">
-                    <IonCardHeader>
-                        <IonCardTitle>
-                            <IonIcon
-                                icon={hardwareChipOutline}
-                                className="subtitle-icon"
-                            />
-                            Selected Device
-                        </IonCardTitle>
-                        <IonCardSubtitle>
-                            Backup uses the currently selected device and its cached IP
-                        </IonCardSubtitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        <div className="hardware-hints">
-                            <IonChip color={currentDevice ? "success" : "warning"}>
-                                <IonLabel>
-                                    {currentDevice
-                                        ? `${currentDevice.name || "Selected device"} • ${currentDevice.macAddress || currentDevice._id}`
-                                        : "Select a device from the device menu to begin"}
-                                </IonLabel>
-                            </IonChip>
-                            {currentDevice?.status === "offline" && (
-                                <IonChip color="danger">
-                                    <IonLabel>Device Offline</IonLabel>
-                                </IonChip>
+        <Page
+            className="backup-page"
+            title="Export data"
+            subtitle="Download sensor history and reports for the selected device."
+        >
+            <div className="backup-layout">
+                <Card title="Device" className="backup-device">
+                    {currentDevice ? (
+                        <div className="backup-device-body">
+                            <div>
+                                <p className="backup-device-name">{currentDevice.name || "Selected device"}</p>
+                                <p className="backup-device-mac mono">{currentDevice.macAddress || currentDevice._id}</p>
+                            </div>
+                            {currentDevice.status === "online" ? (
+                                <StatusPill status="ok">Online</StatusPill>
+                            ) : (
+                                <StatusPill status="crit">Offline</StatusPill>
                             )}
-                            <IonText color="medium">
-                                <p>
-                                    {resolvedIp
-                                        ? `Using cached IP ${resolvedIp} from the selected device.`
-                                        : "This device has no cached IP yet. The ESP32 must report its IP before offline data can be extracted."}
-                                </p>
-                            </IonText>
+                            <p className="card-help">
+                                {resolvedIp ? (
+                                    <>Cached IP <span className="mono">{resolvedIp}</span></>
+                                ) : (
+                                    "No cached IP yet. The ESP32 must report its IP before offline data can be extracted."
+                                )}
+                            </p>
                         </div>
-                    </IonCardContent>
-                </IonCard>
-
-                <IonCard className="ion-margin">
-                    <IonCardHeader>
-                        <IonCardSubtitle>
-                            <IonIcon
-                                icon={calendarOutline}
-                                className="subtitle-icon"
-                            />
-                            Select Date Range
-                        </IonCardSubtitle>
-                        <IonCardTitle className="ion-text-center ion-padding-top">
-                            <IonText color="primary">
-                                <h1 className="date-title">
-                                    {formatDate(selectedDate)}
-                                </h1>
-                            </IonText>
-                        </IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                        <div className="ion-text-center ion-padding-bottom">
-                            <IonChip color={daysAgo === 0 ? "primary" : "medium"}>
-                                <IonIcon icon={timeOutline} />
-                                <IonLabel>
-                                    {selectedRangeLabel}
-                                </IonLabel>
-                            </IonChip>
+                    ) : (
+                        <div className="backup-device-body">
+                            <p className="card-help">No device selected.</p>
+                            <IonButton expand="block" fill="outline" routerLink="/devices">
+                                Choose a device
+                            </IonButton>
                         </div>
+                    )}
+                </Card>
 
+                <Card title="Export" className="backup-export">
+                    <div className="range">
+                        <div className="range-head">
+                            <p className="range-title">From {formatDate(selectedDate)} to today</p>
+                            <StatusPill status="idle" plain>{selectedRangeLabel}</StatusPill>
+                        </div>
                         <IonRange
                             min={0}
                             max={30}
@@ -1010,206 +953,139 @@ const Backup: FC = () => {
                             pin
                             pinFormatter={(value: number) => `${value}d`}
                         >
-                            <IonLabel slot="start" color="medium">
-                                Today
-                            </IonLabel>
-                            <IonLabel slot="end" color="medium">
-                                30 days
-                            </IonLabel>
+                            <IonLabel slot="start" color="medium">Today</IonLabel>
+                            <IonLabel slot="end" color="medium">30 days</IonLabel>
                         </IonRange>
+                    </div>
 
-                        <div className="date-range-labels">
-                            <IonText color="medium">
-                                <small>From: {formatDate(selectedDate)}</small>
-                            </IonText>
-                            <IonText color="medium">
-                                <small>
-                                    To: {formatDate(today)}
-                                </small>
-                            </IonText>
-                        </div>
-                    </IonCardContent>
-                </IonCard>
+                    <div className="metric-pair">
+                        <Metric
+                            label="Days selected"
+                            icon={calendarOutline}
+                            value={daysAgo + 1}
+                            digits={0}
+                            unit={daysAgo === 0 ? "day" : "days"}
+                            hint={`From ${formatDate(selectedDate)}`}
+                        />
+                        <Metric
+                            label="Sample interval"
+                            icon={timeOutline}
+                            value={5}
+                            digits={0}
+                            unit="s"
+                            hint="Raw CSV keeps every sample"
+                        />
+                    </div>
 
-                <IonCard className="ion-margin">
-                    <IonCardHeader>
-                        <IonCardSubtitle>
-                            <IonIcon
-                                icon={cloudUpload}
-                                className="subtitle-icon"
-                            />
-                            Export Options
-                        </IonCardSubtitle>
-                        <IonCardTitle>Backup & Reports</IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                        <IonText color="medium">
-                            <p className="export-description">
-                                Export sensor data from{" "}
-                                <strong>{formatDate(selectedDate)}</strong> to today.
-                            </p>
-                            <p className="export-description">
-                                CSV exports raw readings with full timestamps, including the 5-second sensor samples.
-                            </p>
-                        </IonText>
-
-                        <div className="export-buttons">
+                    <div className="export-section">
+                        <p className="card-help">
+                            CSV has every raw reading with its timestamp. PDF reports summarize each day.
+                        </p>
+                        <div className="export-actions">
+                            <IonButton expand="block" size="large" onClick={handleBackup} disabled={loading || !currentDevice}>
+                                {loading ? (
+                                    <IonSpinner name="crescent" />
+                                ) : (
+                                    <>
+                                        <IonIcon icon={downloadOutline} slot="start" />
+                                        Export CSV
+                                    </>
+                                )}
+                            </IonButton>
                             <IonButton
                                 expand="block"
+                                size="large"
+                                fill="outline"
                                 onClick={handlePDFReport}
-                                size="large"
                                 disabled={loading || !currentDevice}
-                                color="danger"
-                                className="export-btn"
                             >
                                 {loading ? (
                                     <IonSpinner name="crescent" />
                                 ) : (
                                     <>
-                                        <IonIcon
-                                            icon={documentTextOutline}
-                                            slot="start"
-                                        />
-                                        Generate PDF Report
-                                    </>
-                                )}
-                            </IonButton>
-
-                            <IonButton
-                                expand="block"
-                                onClick={handleRawPDFReport}
-                                size="large"
-                                disabled={loading || !currentDevice}
-                                color="warning"
-                                className="export-btn"
-                            >
-                                {loading ? (
-                                    <IonSpinner name="crescent" />
-                                ) : (
-                                    <>
-                                        <IonIcon icon={documentOutline} slot="start" />
-                                        Export Raw PDF
-                                    </>
-                                )}
-                            </IonButton>
-
-                            <IonButton
-                                expand="block"
-                                onClick={handleActuatorReport}
-                                size="large"
-                                disabled={loading || !currentDevice}
-                                color="tertiary"
-                                className="export-btn"
-                            >
-                                {loading ? (
-                                    <IonSpinner name="crescent" />
-                                ) : (
-                                    <>
-                                        <IonIcon icon={hardwareChipOutline} slot="start" />
-                                        Generate Actuator PDF
-                                    </>
-                                )}
-                            </IonButton>
-
-                            <IonButton
-                                expand="block"
-                                onClick={handleBackup}
-                                size="large"
-                                disabled={loading || !currentDevice}
-                                className="export-btn export-btn-csv"
-                            >
-                                {loading ? (
-                                    <IonSpinner name="crescent" />
-                                ) : (
-                                    <>
-                                        <IonIcon
-                                            icon={downloadOutline}
-                                            slot="start"
-                                        />
-                                        Export Raw CSV
+                                        <IonIcon icon={documentTextOutline} slot="start" />
+                                        PDF report
                                     </>
                                 )}
                             </IonButton>
                         </div>
 
-                        {!currentDevice && (
-                            <IonText color="warning" className="ion-text-center">
-                                <p className="no-device-warning">
-                                    Please select a device in Devices to export data.
-                                </p>
-                            </IonText>
-                        )}
-                    </IonCardContent>
-                </IonCard>
+                        <div className="export-more">
+                            <p className="more-label">More reports</p>
+                            <div className="export-actions">
+                                <IonButton expand="block" fill="outline" onClick={handleRawPDFReport} disabled={loading || !currentDevice}>
+                                    {loading ? (
+                                        <IonSpinner name="crescent" />
+                                    ) : (
+                                        <>
+                                            <IonIcon icon={documentOutline} slot="start" />
+                                            Raw PDF
+                                        </>
+                                    )}
+                                </IonButton>
+                                <IonButton expand="block" fill="outline" onClick={handleActuatorReport} disabled={loading || !currentDevice}>
+                                    {loading ? (
+                                        <IonSpinner name="crescent" />
+                                    ) : (
+                                        <>
+                                            <IonIcon icon={hardwareChipOutline} slot="start" />
+                                            Actuator PDF
+                                        </>
+                                    )}
+                                </IonButton>
+                            </div>
+                        </div>
+
+                        {!currentDevice && <p className="card-help warn">Please select a device in Devices to export data.</p>}
+                    </div>
+                </Card>
 
                 {isNative ? (
-<IonCard>
-                    <IonCardHeader>
-                        <IonCardSubtitle>
-                            <IonIcon
-                                icon={hardwareChipOutline}
-                                className="subtitle-icon"
-                            />
-                            Device storage (LAN)
-                        </IonCardSubtitle>
-                        <IonCardTitle>Extract Offline Data</IonCardTitle>
-                    </IonCardHeader>
-
-                    <IonCardContent>
-                        <IonText color="medium">
-                            <p className="export-description">
-                                Connect to your ESP32 directly to extract data stored while offline.
-                                Make sure your phone is on the same WiFi network as the ESP32.
-                            </p>
-                        </IonText>
-
-                        <div className="sd-connect-row">
-                            <IonText color="medium">
-                                <p className="export-description">
-                                    {resolvedIp
-                                        ? `Using cached IP ${resolvedIp} from the selected device.`
-                                        : "This device has no cached IP yet. The ESP32 must report its IP before offline data can be extracted."}
-                                </p>
-                            </IonText>
-                        </div>
+                    <Card title="Device storage" className="backup-storage">
+                        <p className="card-help">
+                            Connect to your ESP32 directly to extract data stored while offline.
+                            Make sure your phone is on the same WiFi network as the ESP32.
+                        </p>
+                        <p className="card-help">
+                            {resolvedIp ? (
+                                <>Using cached IP <span className="mono">{resolvedIp}</span> from the selected device.</>
+                            ) : (
+                                "This device has no cached IP yet. The ESP32 must report its IP before offline data can be extracted."
+                            )}
+                        </p>
 
                         {sdStatus && (
-                            <div className="sd-status ion-margin-top">
-                                <IonChip color={sdStatus.sdAvailable ? "success" : "danger"}>
-                                    <IonLabel>SD Card: {sdStatus.sdAvailable ? "Available" : "Not Found"}</IonLabel>
-                                </IonChip>
-                                <IonChip color={sdStatus.storedCount > 0 ? "warning" : "medium"}>
-                                    <IonLabel>{sdStatus.storedCount} Stored Readings</IonLabel>
-                                </IonChip>
+                            <div className="sd-status">
+                                <StatusPill status={sdStatus.sdAvailable ? "ok" : "crit"}>
+                                    {sdStatus.sdAvailable ? "SD card available" : "SD card not found"}
+                                </StatusPill>
+                                <StatusPill status={sdStatus.storedCount > 0 ? "warn" : "idle"}>
+                                    {sdStatus.storedCount} stored {sdStatus.storedCount === 1 ? "reading" : "readings"}
+                                </StatusPill>
                             </div>
                         )}
 
-                        <div className="export-buttons">
+                        <div className="export-actions">
                             <IonButton
                                 expand="block"
                                 onClick={syncSdToCloud}
-                                size="large"
                                 disabled={sdLoading || !resolvedIp || !sdStatus?.sdAvailable || currentDevice?.status === "offline"}
-                                color="success"
-                                className="export-btn"
                             >
                                 {sdLoading ? (
                                     <IonSpinner name="crescent" />
                                 ) : (
                                     <>
                                         <IonIcon icon={syncOutline} slot="start" />
-                                        Sync to Cloud
+                                        Sync to cloud
                                     </>
                                 )}
                             </IonButton>
 
                             <IonButton
                                 expand="block"
+                                fill="outline"
                                 onClick={downloadSdData}
-                                size="large"
                                 disabled={sdLoading || !resolvedIp || !sdStatus?.sdAvailable || currentDevice?.status === "offline"}
-                                className="export-btn"
                             >
                                 {sdLoading ? (
                                     <IonSpinner name="crescent" />
@@ -1223,57 +1099,53 @@ const Backup: FC = () => {
 
                             <IonButton
                                 expand="block"
-                                onClick={() => runWithAdmin(clearSdData)}
-                                size="large"
-                                disabled={sdLoading || !resolvedIp || !sdStatus?.sdAvailable || currentDevice?.status === "offline"}
                                 color="danger"
-                                className="export-btn"
+                                fill="outline"
+                                onClick={() => runWithAdmin(clearSdData)}
+                                disabled={sdLoading || !resolvedIp || !sdStatus?.sdAvailable || currentDevice?.status === "offline"}
                             >
                                 {sdLoading ? (
                                     <IonSpinner name="crescent" />
                                 ) : (
                                     <>
                                         <IonIcon icon={trashOutline} slot="start" />
-                                        Clear SD Data
+                                        Clear SD data
                                     </>
                                 )}
                             </IonButton>
                         </div>
-                    </IonCardContent>
-                </IonCard>
-) : (
-                    <IonText color="medium">
-                        <p className="no-device-warning">Device storage tools are available in the Android app.</p>
-                    </IonText>
+                    </Card>
+                ) : (
+                    <p className="card-help backup-hint">Device storage tools are available in the Android app.</p>
                 )}
-                            </div>
-                <IonAlert
-                    isOpen={showAuthAlert}
-                    onDidDismiss={() => setShowAuthAlert(false)}
-                    header="Device admin login"
-                    message="Required to clear the SD card. Forgotten when you leave this page."
-                    inputs={[
-                        { name: "username", type: "text", placeholder: "Username" },
-                        { name: "password", type: "password", placeholder: "Password" }
-                    ]}
-                    buttons={[
-                        { text: "Cancel", role: "cancel", handler: () => setAuthAction(null) },
-                        {
-                            text: "Continue",
-                            handler: (values) => {
-                                const creds = { username: String(values.username ?? ""), password: String(values.password ?? "") };
-                                if (!creds.username || !creds.password) return false;
-                                const action = authAction;
-                                setAdminCreds(creds);
-                                setAuthAction(null);
-                                if (action) void action(creds);
-                                return true;
-                            }
+            </div>
+
+            <IonAlert
+                isOpen={showAuthAlert}
+                onDidDismiss={() => setShowAuthAlert(false)}
+                header="Device admin login"
+                message="Required to clear the SD card. Forgotten when you leave this page."
+                inputs={[
+                    { name: "username", type: "text", placeholder: "Username" },
+                    { name: "password", type: "password", placeholder: "Password" }
+                ]}
+                buttons={[
+                    { text: "Cancel", role: "cancel", handler: () => setAuthAction(null) },
+                    {
+                        text: "Continue",
+                        handler: (values) => {
+                            const creds = { username: String(values.username ?? ""), password: String(values.password ?? "") };
+                            if (!creds.username || !creds.password) return false;
+                            const action = authAction;
+                            setAdminCreds(creds);
+                            setAuthAction(null);
+                            if (action) void action(creds);
+                            return true;
                         }
-                    ]}
-                />
-            </IonContent>
-        </IonPage>
+                    }
+                ]}
+            />
+        </Page>
     );
 };
 

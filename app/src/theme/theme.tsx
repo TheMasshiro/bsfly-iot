@@ -3,14 +3,18 @@ import { createContext, FC, ReactNode, useContext, useEffect, useState } from "r
 export type ThemePref = "system" | "light" | "dark";
 
 const KEY = "bsfly-theme";
-const media = () => window.matchMedia("(prefers-color-scheme: dark)");
+const media = () => (typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null);
 
 const readPref = (): ThemePref => {
-  const stored = localStorage.getItem(KEY);
-  return stored === "light" || stored === "dark" ? stored : "system";
+  try {
+    const stored = window.localStorage?.getItem(KEY);
+    return stored === "light" || stored === "dark" ? stored : "system";
+  } catch {
+    return "system";
+  }
 };
 
-const resolve = (pref: ThemePref) => (pref === "system" ? (media().matches ? "dark" : "light") : pref);
+const resolve = (pref: ThemePref) => (pref === "system" ? (media()?.matches ? "dark" : "light") : pref);
 
 export const applyTheme = (pref: ThemePref = readPref()) => {
   const mode = resolve(pref);
@@ -35,13 +39,19 @@ export const ThemeProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setMode(applyTheme(pref));
     if (pref !== "system") return;
     const mq = media();
+    if (!mq || typeof mq.addEventListener !== "function") return;
     const onChange = () => setMode(applyTheme("system"));
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, [pref]);
 
   const setPref = (next: ThemePref) => {
-    localStorage.setItem(KEY, next);
+    try {
+      window.localStorage?.setItem(KEY, next);
+    } catch {
+      setPrefState(next);
+      return;
+    }
     setPrefState(next);
   };
 

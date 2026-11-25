@@ -1,24 +1,28 @@
-import {
-    IonBadge,
-    IonButton,
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonItemOption,
-    IonItemOptions,
-    IonItemSliding,
-    IonLabel,
-    IonList,
-    IonMenu,
-    IonSegment,
-    IonSegmentButton,
-} from '@ionic/react';
-import './Notifications.css';
+import { IonButton, IonContent, IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonList, IonMenu } from '@ionic/react';
 import { FC, useMemo, useRef, useState } from 'react';
-import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, fileTrayOutline, informationCircleOutline, listOutline, trashOutline, warningOutline } from 'ionicons/icons';
+import { notificationsOutline, trashOutline } from 'ionicons/icons';
 import { useNotification } from '../../context/NotificationContext';
+import EmptyState from '../ui/EmptyState';
+import Segmented from '../ui/Segmented';
+import StatusPill from '../ui/StatusPill';
+import { Status } from '../ui/status';
+import './Notifications.css';
 
 type Drawer = 'all' | 'drawer1' | 'drawer2';
+
+const TYPE_STATUS: Record<string, Status> = {
+    success: 'ok',
+    warning: 'warn',
+    danger: 'crit',
+    info: 'idle',
+};
+
+const TYPE_LABEL: Record<string, string> = {
+    success: 'Resolved',
+    warning: 'Warning',
+    danger: 'Critical',
+    info: 'Info',
+};
 
 const Notifications: FC = () => {
     const [selectedDrawer, setSelectedDrawer] = useState<Drawer>('all');
@@ -31,34 +35,6 @@ const Notifications: FC = () => {
             await slidingEl.close();
         }
         deleteNotification(id);
-    };
-
-    const getNotificationIcon = (type: string) => {
-        switch (type) {
-            case 'success':
-                return checkmarkCircleOutline;
-            case 'warning':
-                return warningOutline;
-            case 'danger':
-                return alertCircleOutline;
-            case 'info':
-            default:
-                return informationCircleOutline;
-        }
-    };
-
-    const getNotificationColor = (type: string) => {
-        switch (type) {
-            case 'success':
-                return 'success';
-            case 'warning':
-                return 'warning';
-            case 'danger':
-                return 'danger';
-            case 'info':
-            default:
-                return 'primary';
-        }
     };
 
     const formatTimestamp = (date: Date) => {
@@ -87,107 +63,81 @@ const Notifications: FC = () => {
     );
 
     return (
-        <IonMenu menuId="open-notifications" contentId="main" type="overlay" side="end" className="notifications-menu">
+        <IonMenu menuId="open-notifications" contentId="main" type="overlay" side="end" className="alerts-menu">
             <IonContent>
-                <IonList id="notification-header">
-                    <IonItem lines="none" button={false}>
-                        <IonLabel>
-                            <h1>Notifications</h1>
-                        </IonLabel>
+                <div className="alerts">
+                    <header className="alerts-head">
+                        <div>
+                            <h2>Alerts</h2>
+                            <p>{unreadCount > 0 ? `${unreadCount} unread` : 'Nothing unread'}</p>
+                        </div>
                         {unreadCount > 0 && (
-                            <IonBadge color="danger" slot="end">
-                                {unreadCount} unread
-                            </IonBadge>
-                        )}
-                        {unreadCount > 0 && (
-                            <IonButton
-                                fill="clear"
-                                size="small"
-                                slot="end"
-                                onClick={markAllAsRead}
-                                title="Mark all as read"
-                            >
-                                <IonIcon icon={checkmarkDoneOutline} />
+                            <IonButton fill="clear" onClick={markAllAsRead}>
+                                Mark all read
                             </IonButton>
                         )}
-                    </IonItem>
+                    </header>
 
-                    <IonItem lines="none">
-                        <IonSegment
-                            value={selectedDrawer}
-                            onIonChange={(e) => setSelectedDrawer(e.detail.value as Drawer)}
-                            className="notification-segment"
-                        >
-                            <IonSegmentButton value="all">
-                                <IonIcon icon={listOutline} size="small" />
-                            </IonSegmentButton>
-                            <IonSegmentButton value="drawer1">
-                                <IonIcon icon={fileTrayOutline} size="small" />
-                                <IonLabel>1</IonLabel>
-                            </IonSegmentButton>
-                            <IonSegmentButton value="drawer2">
-                                <IonIcon icon={fileTrayOutline} size="small" />
-                                <IonLabel>2</IonLabel>
-                            </IonSegmentButton>
-                        </IonSegment>
-                    </IonItem>
-                </IonList>
+                    <Segmented<Drawer>
+                        block
+                        label="Drawer"
+                        value={selectedDrawer}
+                        onChange={setSelectedDrawer}
+                        options={[
+                            { value: 'all', label: 'All' },
+                            { value: 'drawer1', label: 'Drawer 1' },
+                            { value: 'drawer2', label: 'Drawer 2' },
+                        ]}
+                    />
 
-                <IonList id="notification-list">
                     {filteredNotifications.length === 0 ? (
-                        <IonItem lines="none">
-                            <IonLabel className="ion-text-center" color="medium">
-                                <p>No notifications</p>
-                            </IonLabel>
-                        </IonItem>
+                        <EmptyState icon={notificationsOutline} title="No alerts">
+                            Readings that go out of range show up here.
+                        </EmptyState>
                     ) : (
-                        filteredNotifications.map((notification) => (
-                            <IonItemSliding
-                                key={notification.id}
-                                ref={(el) => {
-                                    if (el) {
-                                        slidingRefs.current.set(notification.id, el);
-                                    } else {
-                                        slidingRefs.current.delete(notification.id);
-                                    }
-                                }}
-                            >
-                                <IonItem
-                                    className={`notification-item notification-${notification.type} ${!notification.read ? 'notification-unread' : ''}`}
-                                    lines="none"
-                                    detail={false}
-                                    button
-                                    onClick={() => markAsRead(notification.id)}
+                        <IonList className="alerts-list" lines="none">
+                            {filteredNotifications.map((notification) => (
+                                <IonItemSliding
+                                    key={notification.id}
+                                    ref={(el) => {
+                                        if (el) {
+                                            slidingRefs.current.set(notification.id, el);
+                                        } else {
+                                            slidingRefs.current.delete(notification.id);
+                                        }
+                                    }}
                                 >
-                                    <IonIcon
-                                        aria-hidden="true"
-                                        slot="start"
-                                        icon={getNotificationIcon(notification.type)}
-                                        color={getNotificationColor(notification.type)}
-                                        className="notification-icon"
-                                    />
-                                    <IonLabel>
-                                        <h2 className="notification-title">{notification.title}</h2>
-                                        <p className="notification-message">{notification.message}</p>
-                                        <p className="notification-timestamp">
-                                            {formatTimestamp(notification.timestamp)}
-                                        </p>
-                                    </IonLabel>
-                                    {!notification.read && (
-                                        <IonBadge color={getNotificationColor(notification.type)} slot="end" className="unread-dot">
-                                            •
-                                        </IonBadge>
-                                    )}
-                                </IonItem>
-                                <IonItemOptions side="end" onIonSwipe={() => handleDelete(notification.id)}>
-                                    <IonItemOption color="danger" expandable onClick={() => handleDelete(notification.id)}>
-                                        <IonIcon slot="icon-only" icon={trashOutline} />
-                                    </IonItemOption>
-                                </IonItemOptions>
-                            </IonItemSliding>
-                        ))
+                                    <IonItem className="alert-item" data-read={notification.read} button={false} lines="none" detail={false}>
+                                        <div className="alert-row">
+                                            <button type="button" className="alert-main" onClick={() => markAsRead(notification.id)}>
+                                                <span className="alert-top">
+                                                    <StatusPill status={TYPE_STATUS[notification.type]}>{TYPE_LABEL[notification.type]}</StatusPill>
+                                                    {!notification.read && <span className="alert-unread" aria-label="Unread" />}
+                                                    <span className="alert-time">{formatTimestamp(notification.timestamp)}</span>
+                                                </span>
+                                                <strong className="alert-title">{notification.title}</strong>
+                                                <span className="alert-message">{notification.message}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="alert-delete"
+                                                aria-label={`Delete ${notification.title}`}
+                                                onClick={() => void handleDelete(notification.id)}
+                                            >
+                                                <IonIcon icon={trashOutline} aria-hidden="true" />
+                                            </button>
+                                        </div>
+                                    </IonItem>
+                                    <IonItemOptions side="end" onIonSwipe={() => handleDelete(notification.id)}>
+                                        <IonItemOption color="danger" expandable onClick={() => handleDelete(notification.id)}>
+                                            <IonIcon slot="icon-only" icon={trashOutline} />
+                                        </IonItemOption>
+                                    </IonItemOptions>
+                                </IonItemSliding>
+                            ))}
+                        </IonList>
                     )}
-                </IonList>
+                </div>
             </IonContent>
         </IonMenu>
     );
