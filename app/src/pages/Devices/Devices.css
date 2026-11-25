@@ -1,100 +1,243 @@
-.devices-page ion-content {
-  --background: #0a0a0a;
-}
-
-.devices-page ion-list {
-  border-radius: 18px !important;
-  --ion-item-border-radius: 18px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.devices-page ion-item {
-  --background: transparent;
-  --color: rgba(255, 255, 255, 0.9);
-}
-
-.devices-page ion-input {
-  --background: rgba(255, 255, 255, 0.05);
-  --color: #fff;
-  --placeholder-color: rgba(255, 255, 255, 0.4);
-  border-radius: 12px;
-  --padding-start: 12px;
-  --padding-end: 12px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.devices-page ion-item ion-note[slot="error"] {
-  padding-bottom: 8px;
+.devices-page .device-forms {
+  display: grid;
+  gap: 16px;
 }
 
 .devices-page ion-button {
-  --border-radius: 16px;
-}
-
-.devices-page ion-button[color="success"] {
-  --background: #2dd55b;
-}
-
-.devices-page ion-button[color="danger"] {
-  --background: #ff4757;
-}
-
-.devices-page ion-card {
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.devices-page ion-card-title {
-  color: #fff;
-}
-
-.devices-page ion-card-subtitle {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.devices-page .full-width-btn {
-  width: 100%;
-}
-
-.devices-page .skeleton-container {
-  padding: 8px 16px;
-}
-
-.devices-page ion-modal ion-item-sliding {
   margin: 0;
 }
 
-.devices-page ion-modal ion-item-options {
-  display: flex;
-  align-items: stretch;
+.devices-page .form-stack {
+  display: grid;
+  gap: 14px;
 }
 
-.devices-page ion-modal ion-item-option {
+.devices-page .field {
+  display: grid;
+  gap: 6px;
+}
+
+.devices-page ion-input {
+  --background: var(--bs-surface);
+  --color: var(--bs-text);
+  --placeholder-color: var(--bs-text-3);
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.devices-page .field-error {
+  margin: 0;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-crit);
+}
+
+.devices-page .card-help {
+  margin: 0;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+.devices-page .text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
+  color: var(--bs-brand);
+  font-size: var(--bs-fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.devices-page .section-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-width: 60px;
+  gap: 10px;
+  margin: 28px 0 12px;
 }
 
-.devices-page .api-key-device {
+.devices-page .section-head h2 {
+  margin: 0;
+  font-size: var(--bs-fs-md);
+  font-weight: 600;
+}
+
+.devices-page .section-head .count {
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+.devices-page .device-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.devices-page .device-card {
+  appearance: none;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 16px;
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms var(--bs-ease);
+}
+
+.devices-page .device-card:hover {
+  border-color: var(--bs-border-strong);
+}
+
+.devices-page .device-card[aria-pressed="true"] {
+  border-color: var(--bs-brand);
+}
+
+.devices-page .device-card-top,
+.devices-page .device-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.devices-page .device-name {
+  min-width: 0;
+  font-size: var(--bs-fs-md);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.devices-page .device-mac {
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+  overflow-wrap: anywhere;
+}
+
+.devices-page .device-members {
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+.devices-page .device-detail {
+  margin-top: 16px;
+}
+
+.devices-page .join-code {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bs-border);
+}
+
+.devices-page .join-code > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.devices-page .join-code-value {
+  font-size: var(--bs-fs-xl);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+
+.devices-page .inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.devices-page .inline-actions ion-button {
+  flex: 1 1 140px;
+}
+
+.devices-page .big-number {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+.devices-page .big-number .mono {
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--bs-text);
+}
+
+.devices-page .card-action {
+  margin-top: 14px;
+}
+
+.devices-page .danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 16px;
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  background: var(--bs-surface);
+}
+
+.devices-page .danger-zone h3 {
+  margin: 0 0 4px;
+  font-size: var(--bs-fs-base);
+  font-weight: 600;
+}
+
+.devices-page .danger-zone ion-button {
+  margin: 0;
+}
+
+.device-skeleton {
+  padding: 8px 16px;
+}
+
+.device-key-name {
   margin: 0 0 8px;
   font-weight: 600;
 }
 
-.devices-page .api-key-value {
-  font-family: monospace;
+.device-key-value {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-sm);
+  background: var(--bs-surface-2);
+  color: var(--bs-text);
+  font-family: var(--bs-mono);
+  font-size: var(--bs-fs-sm);
   word-break: break-all;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
 }
 
-.devices-page .api-key-note {
-  font-size: 0.85rem;
-  color: var(--ion-color-medium);
+.device-key-note {
+  margin: 12px 0 0;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-2);
+}
+
+@media (min-width: 768px) {
+  .devices-page .device-forms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .devices-page .device-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .devices-page .device-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

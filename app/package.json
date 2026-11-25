@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:demo": "vite --mode demo"
   },
   "dependencies": {
     "@capacitor/android": "8.0.0",
@@ -21,6 +22,8 @@
     "@capacitor/status-bar": "8.0.0",
     "@clerk/clerk-react": "^5.59.2",
     "@clerk/themes": "^2.4.46",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
     "@types/react-router": "^5.1.20",

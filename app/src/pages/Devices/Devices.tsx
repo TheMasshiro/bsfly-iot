@@ -1,15 +1,16 @@
 import {
-    IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList,
-    IonPage, IonButton, IonBadge, IonAlert, IonText, useIonToast, IonChip,
-    IonRefresher, IonRefresherContent, IonNote, IonModal, IonButtons, IonTitle,
-    IonToolbar, IonItemSliding, IonItemOptions, IonItemOption, IonActionSheet
+    IonActionSheet, IonAlert, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInput,
+    IonItem, IonItemOption, IonItemOptions, IonItemSliding, IonLabel, IonList, IonModal,
+    IonTitle, IonToolbar, useIonToast
 } from "@ionic/react";
-import { hardwareChip, helpCircle, add, logOut, refresh, copy, people, personRemove, swapHorizontal, close, chevronForward, keyOutline } from "ionicons/icons";
+import { close, copy, hardwareChip, keyOutline, logOut, people, personRemove, refresh, swapHorizontal } from "ionicons/icons";
 import { FC, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useDevice } from "../../context/DeviceContext";
-import Toolbar from "../../components/Toolbar/Toolbar";
-import PagePurpose from "../../components/PagePurpose/PagePurpose";
+import Card from "../../components/ui/Card";
+import EmptyState from "../../components/ui/EmptyState";
+import Page from "../../components/ui/Page";
+import StatusPill from "../../components/ui/StatusPill";
 import LoadingSkeleton from "../../components/LoadingSkeleton/LoadingSkeleton";
 import { validateMacAddress, validateDeviceName, validateJoinCode, formatMacAddress } from "../../utils/validation";
 import { api, withToken } from "../../utils/api";
@@ -23,6 +24,7 @@ const Devices: FC = () => {
 
     const [devices, setDevices] = useState<Device[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
 
     const [macAddress, setMacAddress] = useState("");
     const [deviceName, setDeviceName] = useState("");
@@ -71,11 +73,6 @@ const Devices: FC = () => {
         }
     }, [fetchDevices, authLoaded]);
 
-    const handleRefresh = async (event: CustomEvent) => {
-        await Promise.all([fetchDevices(), refreshDevices()]);
-        event.detail.complete();
-    };
-
     const handleMacChange = (value: string) => {
         const formatted = formatMacAddress(value);
         setMacAddress(formatted);
@@ -116,12 +113,12 @@ const Devices: FC = () => {
         setNameError(nameResult.valid ? undefined : nameResult.error);
 
         if (!macResult.valid || !nameResult.valid) {
-            present({ message: "Please fix validation errors", duration: 2000, color: "warning" });
+            present({ message: "Fix the errors above and try again.", duration: 2000, color: "warning" });
             return;
         }
 
         if (!userId) {
-            present({ message: "Please sign in", duration: 2000, color: "warning" });
+            present({ message: "Sign in to continue.", duration: 2000, color: "warning" });
             return;
         }
 
@@ -132,7 +129,7 @@ const Devices: FC = () => {
                 name: deviceName
             }, withToken(token));
 
-            present({ message: "Device registered successfully!", duration: 2000, color: "success" });
+            present({ message: "Device registered.", duration: 2000, color: "success" });
             if (registered?.apiKey) {
                 setNewApiKey(registered.apiKey);
             }
@@ -151,12 +148,12 @@ const Devices: FC = () => {
         setJoinCodeError(codeResult.valid ? undefined : codeResult.error);
 
         if (!codeResult.valid) {
-            present({ message: "Please fix validation errors", duration: 2000, color: "warning" });
+            present({ message: "Fix the errors above and try again.", duration: 2000, color: "warning" });
             return;
         }
 
         if (!userId) {
-            present({ message: "Please sign in", duration: 2000, color: "warning" });
+            present({ message: "Sign in to continue.", duration: 2000, color: "warning" });
             return;
         }
 
@@ -164,7 +161,7 @@ const Devices: FC = () => {
             const token = await getToken();
             await api.post("/api/devices/join", { joinCode }, withToken(token));
 
-            present({ message: "Joined device successfully!", duration: 2000, color: "success" });
+            present({ message: "Joined device.", duration: 2000, color: "success" });
             setJoinCode("");
             setJoinCodeError(undefined);
             fetchDevices();
@@ -198,7 +195,7 @@ const Devices: FC = () => {
             const token = await getToken();
             await api.post(`/api/devices/${device._id}/regenerate-code`, {}, withToken(token));
 
-            present({ message: "Join code regenerated!", duration: 2000, color: "success" });
+            present({ message: "Join code regenerated.", duration: 2000, color: "success" });
             fetchDevices();
         } catch (error: any) {
             present({ message: error.response?.data?.error || error.message, duration: 2000, color: "danger" });
@@ -207,7 +204,7 @@ const Devices: FC = () => {
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        present({ message: "Copied to clipboard!", duration: 1500, color: "success" });
+        present({ message: "Copied to clipboard.", duration: 1500, color: "success" });
     };
 
     const openMembersModal = async (device: Device) => {
@@ -266,7 +263,7 @@ const Devices: FC = () => {
             const { data } = await api.get("/api/devices/" + device._id + "/api-key", withToken(token));
             setMaskedApiKey(data?.apiKey ?? "");
         } catch {
-            present({ message: "Failed to load API key", duration: 2000, color: "danger" });
+            present({ message: "Couldn't load the API key. Try again.", duration: 2000, color: "danger" });
         } finally {
             setApiKeyLoading(false);
         }
@@ -282,7 +279,7 @@ const Devices: FC = () => {
             setApiKeyDevice(null);
             setMaskedApiKey("");
         } catch {
-            present({ message: "Failed to regenerate API key", duration: 2000, color: "danger" });
+            present({ message: "Couldn't regenerate the key. Try again.", duration: 2000, color: "danger" });
         }
     };
 
@@ -293,367 +290,403 @@ const Devices: FC = () => {
         }
     };
 
+    const selected = devices.find((d) => d._id === selectedId) ?? devices[0] ?? null;
+    const selectedOwner = selected?.ownerId === userId;
+    const selectedOnline = selected?.status === "online";
+    const memberCount = (n: number) => `${n} ${n === 1 ? "member" : "members"}`;
+
     return (
-        <IonPage className="devices-page">
-            <IonHeader class="ion-no-border">
-                <Toolbar />
-            </IonHeader>
-
-            <IonContent fullscreen>
-                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                    <IonRefresherContent />
-                </IonRefresher>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">Devices</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-
-                <div className="page-container">
-                <PagePurpose text="Register, join, and manage ESP32 devices, members, and device ownership." />
-
-                <IonList inset>
-                    <IonItem lines="none">
-                        <IonIcon icon={add} slot="start" />
-                        <IonLabel>Register New ESP32</IonLabel>
-                    </IonItem>
-                    <IonItem lines="none" className={nameError ? 'ion-invalid' : ''}>
-                        <IonInput
-                            label="Device Name"
-                            labelPlacement="stacked"
-                            placeholder="My BSF Farm"
-                            value={deviceName}
-                            onIonInput={(e) => handleNameChange(e.detail.value || "")}
-                            className={nameError ? 'ion-invalid ion-touched' : ''}
-                        />
-                        {nameError && <IonNote slot="error">{nameError}</IonNote>}
-                    </IonItem>
-                    <IonItem lines="none" className={macError ? 'ion-invalid' : ''}>
-                        <IonInput
-                            label="MAC Address"
-                            labelPlacement="stacked"
-                            placeholder="AA:BB:CC:DD:EE:FF"
-                            value={macAddress}
-                            onIonInput={(e) => handleMacChange(e.detail.value || "")}
-                            className={macError ? 'ion-invalid ion-touched' : ''}
-                        />
-                        {macError && <IonNote slot="error">{macError}</IonNote>}
-                    </IonItem>
-                    <IonItem lines="none">
-                        <IonButton expand="block" onClick={registerDevice} className="full-width-btn" disabled={!!macError || !!nameError}>
-                            Register Device
-                        </IonButton>
-                    </IonItem>
-                    <IonItem button href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md#how-to-get-esp32-mac-address" target="_blank">
-                        <IonIcon icon={helpCircle} slot="start" />
-                        <IonLabel color="medium">How to get ESP32 MAC Address?</IonLabel>
-                    </IonItem>
-                </IonList>
-
-                <IonList inset>
-                    <IonItem lines="none">
-                        <IonIcon icon={people} slot="start" />
-                        <IonLabel>Join Existing Device</IonLabel>
-                    </IonItem>
-                    <IonItem lines="none" className={joinCodeError ? 'ion-invalid' : ''}>
-                        <IonInput
-                            label="Join Code"
-                            labelPlacement="stacked"
-                            placeholder="Enter 8-character code"
-                            value={joinCode}
-                            onIonInput={(e) => handleJoinCodeChange(e.detail.value || "")}
-                            maxlength={8}
-                            className={joinCodeError ? 'ion-invalid ion-touched' : ''}
-                        />
-                        {joinCodeError && <IonNote slot="error">{joinCodeError}</IonNote>}
-                    </IonItem>
-                    <IonItem lines="none">
-                        <IonButton expand="block" onClick={joinDevice} className="full-width-btn" disabled={!!joinCodeError}>
-                            Join Device
-                        </IonButton>
-                    </IonItem>
-                </IonList>
-
-                <IonList inset>
-                    <IonItem lines="none">
-                        <IonIcon icon={hardwareChip} slot="start" />
-                        <IonLabel>My Devices</IonLabel>
-                        <IonBadge slot="end">{devices.length}</IonBadge>
-                    </IonItem>
-
-                    {loading ? (
-                        <div className="skeleton-container">
-                            <LoadingSkeleton variant="list-item" count={2} />
+        <Page
+            className="devices-page"
+            title="Devices"
+            subtitle="Add controllers, join a device, and manage who can use it."
+            onRefresh={() => Promise.all([fetchDevices(), refreshDevices()])}
+        >
+            <div className="device-forms">
+                <Card title="Add device">
+                    <div className="form-stack">
+                        <div className="field">
+                            <IonInput
+                                label="Device name"
+                                labelPlacement="stacked"
+                                fill="outline"
+                                placeholder="My BSF Farm"
+                                value={deviceName}
+                                onIonInput={(e) => handleNameChange(e.detail.value || "")}
+                                className={nameError ? "ion-invalid ion-touched" : ""}
+                            />
+                            {nameError && <p className="field-error" role="alert">{nameError}</p>}
                         </div>
-                    ) : devices.length === 0 ? (
-                        <IonItem>
-                            <IonLabel color="medium">No devices yet. Register or join one above.</IonLabel>
-                        </IonItem>
-                    ) : (
-                        devices.map((device) => {
-                            const isOwner = device.ownerId === userId;
-                            return (
-                                <div key={device._id}>
-                                    <IonItem lines="none">
-                                        <IonLabel>
-                                            <h2>{device.name}</h2>
-                                            <p>{device.macAddress}</p>
-                                            <p>
-                                                <IonChip color={device.status === "online" ? "success" : "medium"}>
-                                                    {device.status === "online" ? "Online" : "Offline"}
-                                                </IonChip>
-                                                <IonChip color={isOwner ? "primary" : "secondary"}>
-                                                    {isOwner ? "Owner" : "Member"}
-                                                </IonChip>
-                                                <IonChip>
-                                                    <IonIcon icon={people} />
-                                                    <IonLabel>{device.members.length}</IonLabel>
-                                                </IonChip>
-                                            </p>
-                                        </IonLabel>
-                                    </IonItem>
+                        <div className="field">
+                            <IonInput
+                                label="MAC address"
+                                labelPlacement="stacked"
+                                fill="outline"
+                                placeholder="AA:BB:CC:DD:EE:FF"
+                                value={macAddress}
+                                onIonInput={(e) => handleMacChange(e.detail.value || "")}
+                                className={macError ? "ion-invalid ion-touched" : ""}
+                            />
+                            {macError && <p className="field-error" role="alert">{macError}</p>}
+                        </div>
+                        <IonButton expand="block" onClick={registerDevice} disabled={!!macError || !!nameError}>
+                            Register device
+                        </IonButton>
+                        <a
+                            className="text-link"
+                            href="https://github.com/TheMasshiro/bsfly-iot/blob/main/README.md#how-to-get-esp32-mac-address"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            How to find the ESP32 MAC address
+                        </a>
+                    </div>
+                </Card>
 
-                                    {isOwner && (
-                                        <IonItem lines="none">
-                                            <IonLabel>
-                                                <IonText color="medium">Join Code: </IonText>
-                                                <IonText><strong>{device.joinCode}</strong></IonText>
-                                            </IonLabel>
-                                            <IonButton fill="clear" slot="end" onClick={() => copyToClipboard(device.joinCode)}>
-                                                <IonIcon icon={copy} />
-                                            </IonButton>
-                                            <IonButton fill="clear" slot="end" onClick={() => regenerateCode(device)}>
-                                                <IonIcon icon={refresh} />
-                                            </IonButton>
-                                        </IonItem>
-                                    )}
+                <Card title="Join with code">
+                    <div className="form-stack">
+                        <p className="card-help">Ask the device owner for the 8-character join code.</p>
+                        <div className="field">
+                            <IonInput
+                                label="Join code"
+                                labelPlacement="stacked"
+                                fill="outline"
+                                placeholder="Enter 8-character code"
+                                value={joinCode}
+                                maxlength={8}
+                                onIonInput={(e) => handleJoinCodeChange(e.detail.value || "")}
+                                className={joinCodeError ? "ion-invalid ion-touched" : ""}
+                            />
+                            {joinCodeError && <p className="field-error" role="alert">{joinCodeError}</p>}
+                        </div>
+                        <IonButton expand="block" onClick={joinDevice} disabled={!!joinCodeError}>
+                            Join device
+                        </IonButton>
+                    </div>
+                </Card>
+            </div>
 
-                                    {isOwner && (
-                                        <IonItem lines="none" button detail detailIcon={chevronForward} onClick={() => openApiKey(device)}>
-                                            <IonIcon icon={keyOutline} slot="start" />
-                                            <IonLabel>API key</IonLabel>
-                                        </IonItem>
-                                    )}
-
-                                    {isOwner && (
-                                        <IonItem lines="none" button detail detailIcon={chevronForward} onClick={() => openMembersModal(device)}>
-                                            <IonIcon icon={people} slot="start" />
-                                            <IonLabel>Manage Members</IonLabel>
-                                            <IonBadge slot="end">{device.members.length}</IonBadge>
-                                        </IonItem>
-                                    )}
-
-                                    <IonItem lines="none">
-                                        <IonButton
-                                            color="danger"
-                                            fill="clear"
-                                            onClick={() => {
-                                                setDeviceToLeave(device);
-                                                setShowLeaveAlert(true);
-                                            }}
-                                        >
-                                            <IonIcon icon={logOut} slot="start" />
-                                            {isOwner ? "Delete Device" : "Leave Device"}
-                                        </IonButton>
-                                    </IonItem>
-                                </div>
-                            );
-                        })
-                    )}
-                </IonList>
+            <section className="device-list" aria-labelledby="device-list-title">
+                <div className="section-head">
+                    <h2 id="device-list-title">My devices</h2>
+                    <span className="count mono">{devices.length}</span>
                 </div>
 
-                <IonModal isOpen={showMembersModal} onDidDismiss={() => setShowMembersModal(false)}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>Members</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={() => setShowMembersModal(false)}>
-                                    <IonIcon icon={close} />
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
-                    <IonContent>
-                        <IonList>
-                            {membersLoading ? (
-                                <div className="skeleton-container">
-                                    <LoadingSkeleton variant="list-item" count={3} />
+                {loading ? (
+                    <Card>
+                        <LoadingSkeleton variant="list-item" count={2} />
+                    </Card>
+                ) : devices.length === 0 ? (
+                    <Card>
+                        <EmptyState icon={hardwareChip} title="No devices yet">
+                            Register or join one above.
+                        </EmptyState>
+                    </Card>
+                ) : (
+                    <div className="device-grid">
+                        {devices.map((device) => {
+                            const isOwner = device.ownerId === userId;
+                            const online = device.status === "online";
+                            return (
+                                <button
+                                    key={device._id}
+                                    type="button"
+                                    className="device-card"
+                                    aria-pressed={selected?._id === device._id}
+                                    onClick={() => setSelectedId(device._id)}
+                                >
+                                    <span className="device-card-top">
+                                        <span className="device-name">{device.name}</span>
+                                        <StatusPill status="idle" plain>{isOwner ? "Owner" : "Member"}</StatusPill>
+                                    </span>
+                                    <span className="device-mac mono">{device.macAddress}</span>
+                                    <span className="device-card-foot">
+                                        <StatusPill status={online ? "ok" : "idle"}>{online ? "Online" : "Offline"}</StatusPill>
+                                        <span className="device-members">{memberCount(device.members.length)}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
+
+            {selected && (
+                <section className="device-detail card-grid" aria-label={`${selected.name} details`}>
+                    <Card title="Device">
+                        <dl className="bs-kv">
+                            <dt>Status</dt>
+                            <dd>
+                                <StatusPill status={selectedOnline ? "ok" : "idle"}>{selectedOnline ? "Online" : "Offline"}</StatusPill>
+                            </dd>
+                            <dt>Your role</dt>
+                            <dd>{selectedOwner ? "Owner" : "Member"}</dd>
+                            <dt>MAC address</dt>
+                            <dd>{selected.macAddress}</dd>
+                        </dl>
+
+                        {selectedOwner && (
+                            <div className="join-code">
+                                <div>
+                                    <span className="muted">Join code</span>
+                                    <span className="join-code-value mono">{selected.joinCode}</span>
                                 </div>
-                            ) : members.length === 0 ? (
-                                <IonItem>
-                                    <IonLabel color="medium">No members found</IonLabel>
-                                </IonItem>
-                            ) : (
-                                members.map((member) => {
-                                    const isCurrentUser = member.userId === userId;
-                                    const isOwnerMember = member.role === "owner";
-
-                                    return (
-                                        <IonItemSliding
-                                            key={member.userId}
-                                            disabled={isCurrentUser}
-                                            ref={(el) => {
-                                                if (el) {
-                                                    slidingRefs.current.set(member.userId, el);
-                                                } else {
-                                                    slidingRefs.current.delete(member.userId);
-                                                }
-                                            }}
-                                        >
-                                            {!isCurrentUser && !isOwnerMember && (
-                                                <IonItemOptions side="start">
-                                                    <IonItemOption
-                                                        color="primary"
-                                                        onClick={() => {
-                                                            handleCloseSlidingItem(member.userId);
-                                                            setMemberToTransfer(member);
-                                                            setShowTransferSheet(true);
-                                                        }}
-                                                    >
-                                                        <IonIcon slot="icon-only" icon={swapHorizontal} />
-                                                    </IonItemOption>
-                                                </IonItemOptions>
-                                            )}
-                                            <IonItem>
-                                                <IonLabel>
-                                                    <h2>{member.name || "Unknown User"}</h2>
-                                                    <p>{member.email}</p>
-                                                </IonLabel>
-                                                <IonChip slot="end" color={isOwnerMember ? "primary" : "medium"}>
-                                                    {isOwnerMember ? "Owner" : "Member"}
-                                                </IonChip>
-                                            </IonItem>
-                                            {!isCurrentUser && !isOwnerMember && (
-                                                <IonItemOptions side="end">
-                                                    <IonItemOption
-                                                        color="danger"
-                                                        onClick={() => {
-                                                            handleCloseSlidingItem(member.userId);
-                                                            setMemberToRemove(member);
-                                                            setShowRemoveAlert(true);
-                                                        }}
-                                                    >
-                                                        <IonIcon slot="icon-only" icon={personRemove} />
-                                                    </IonItemOption>
-                                                </IonItemOptions>
-                                            )}
-                                        </IonItemSliding>
-                                    );
-                                })
-                            )}
-                        </IonList>
-                    </IonContent>
-                </IonModal>
-
-                <IonModal isOpen={apiKeyDevice !== null} onDidDismiss={() => { setApiKeyDevice(null); setMaskedApiKey(""); }}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>API key</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={() => setApiKeyDevice(null)}>
-                                    <IonIcon icon={close} />
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
-                    <IonContent className="ion-padding">
-                        <p className="api-key-device">{apiKeyDevice?.name}</p>
-                        {apiKeyLoading ? (
-                            <LoadingSkeleton variant="list-item" count={1} />
-                        ) : (
-                            <p className="api-key-value">{maskedApiKey || "No key"}</p>
+                                <div className="inline-actions">
+                                    <IonButton fill="outline" onClick={() => copyToClipboard(selected.joinCode)}>
+                                        <IonIcon icon={copy} slot="start" />
+                                        Copy
+                                    </IonButton>
+                                    <IonButton fill="outline" onClick={() => regenerateCode(selected)}>
+                                        <IonIcon icon={refresh} slot="start" />
+                                        New code
+                                    </IonButton>
+                                </div>
+                            </div>
                         )}
-                        <IonButton expand="block" color="danger" fill="outline" disabled={apiKeyLoading} onClick={() => setShowRegenerateAlert(true)}>
-                            Regenerate key
-                        </IonButton>
-                    </IonContent>
-                </IonModal>
+                    </Card>
 
-                <IonModal isOpen={newApiKey !== null} onDidDismiss={() => setNewApiKey(null)}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>New API key</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={() => setNewApiKey(null)}>
-                                    <IonIcon icon={close} />
+                    {selectedOwner && (
+                        <Card title="Members">
+                            <p className="big-number">
+                                <span className="mono">{selected.members.length}</span>
+                                {selected.members.length === 1 ? "member" : "members"}
+                            </p>
+                            <p className="card-help">Remove members or hand over ownership.</p>
+                            <div className="card-action">
+                                <IonButton expand="block" fill="outline" onClick={() => openMembersModal(selected)}>
+                                    <IonIcon icon={people} slot="start" />
+                                    Manage members
                                 </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
-                    <IonContent className="ion-padding">
-                        <p className="api-key-value">{newApiKey}</p>
-                        <IonButton expand="block" onClick={() => copyToClipboard(newApiKey ?? "")}>
-                            <IonIcon icon={copy} slot="start" />
-                            Copy
+                            </div>
+                        </Card>
+                    )}
+
+                    {selectedOwner && (
+                        <Card title="API key">
+                            <p className="card-help">The ESP32 uses this key to send readings.</p>
+                            <div className="card-action">
+                                <IonButton expand="block" fill="outline" onClick={() => openApiKey(selected)}>
+                                    <IonIcon icon={keyOutline} slot="start" />
+                                    View API key
+                                </IonButton>
+                            </div>
+                        </Card>
+                    )}
+
+                    <section className="danger-zone card-wide">
+                        <div>
+                            <h3>{selectedOwner ? "Delete device" : "Leave device"}</h3>
+                            <p className="card-help">
+                                {selectedOwner ? "Removes the device for all members." : "You can rejoin later with a join code."}
+                            </p>
+                        </div>
+                        <IonButton
+                            color="danger"
+                            fill="outline"
+                            onClick={() => {
+                                setDeviceToLeave(selected);
+                                setShowLeaveAlert(true);
+                            }}
+                        >
+                            <IonIcon icon={logOut} slot="start" />
+                            {selectedOwner ? "Delete device" : "Leave device"}
                         </IonButton>
-                        <p className="api-key-note">Copy this now. It won't be shown again. Paste it into DEVICE_API_KEY in credentials.h.</p>
-                    </IonContent>
-                </IonModal>
+                    </section>
+                </section>
+            )}
 
-                <IonAlert
-                    isOpen={showRegenerateAlert}
-                    onDidDismiss={() => setShowRegenerateAlert(false)}
-                    header="Regenerate API key?"
-                    message="The current key stops working right away. Flash the new key to the ESP32."
-                    buttons={[
-                        { text: "Cancel", role: "cancel" },
-                        { text: "Regenerate", role: "destructive", handler: () => { void regenerateApiKey(); } }
-                    ]}
-                />
+            <IonModal isOpen={showMembersModal} onDidDismiss={() => setShowMembersModal(false)}>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>Members</IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={() => setShowMembersModal(false)} aria-label="Close">
+                                <IonIcon icon={close} />
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent>
+                    <IonList>
+                        {membersLoading ? (
+                            <div className="device-skeleton">
+                                <LoadingSkeleton variant="list-item" count={3} />
+                            </div>
+                        ) : members.length === 0 ? (
+                            <IonItem>
+                                <IonLabel color="medium">No members found</IonLabel>
+                            </IonItem>
+                        ) : (
+                            members.map((member) => {
+                                const isCurrentUser = member.userId === userId;
+                                const isOwnerMember = member.role === "owner";
 
-                <IonAlert
-                    isOpen={showRemoveAlert}
-                    onDidDismiss={() => setShowRemoveAlert(false)}
-                    header="Remove Member?"
-                    message={`Remove ${memberToRemove?.name || "this member"} from the device?`}
-                    buttons={[
-                        { text: "Cancel", role: "cancel" },
-                        {
-                            text: "Remove",
-                            role: "destructive",
-                            handler: removeMember
+                                return (
+                                    <IonItemSliding
+                                        key={member.userId}
+                                        disabled={isCurrentUser}
+                                        ref={(el) => {
+                                            if (el) {
+                                                slidingRefs.current.set(member.userId, el);
+                                            } else {
+                                                slidingRefs.current.delete(member.userId);
+                                            }
+                                        }}
+                                    >
+                                        {!isCurrentUser && !isOwnerMember && (
+                                            <IonItemOptions side="start">
+                                                <IonItemOption
+                                                    color="primary"
+                                                    aria-label="Make owner"
+                                                    onClick={() => {
+                                                        handleCloseSlidingItem(member.userId);
+                                                        setMemberToTransfer(member);
+                                                        setShowTransferSheet(true);
+                                                    }}
+                                                >
+                                                    <IonIcon slot="icon-only" icon={swapHorizontal} />
+                                                </IonItemOption>
+                                            </IonItemOptions>
+                                        )}
+                                        <IonItem>
+                                            <IonLabel>
+                                                <h2>{member.name || "Unknown user"}</h2>
+                                                <p>{member.email}</p>
+                                            </IonLabel>
+                                            <span slot="end">
+                                                <StatusPill status={isOwnerMember ? "ok" : "idle"} plain>
+                                                    {isOwnerMember ? "Owner" : "Member"}
+                                                </StatusPill>
+                                            </span>
+                                        </IonItem>
+                                        {!isCurrentUser && !isOwnerMember && (
+                                            <IonItemOptions side="end">
+                                                <IonItemOption
+                                                    color="danger"
+                                                    aria-label="Remove member"
+                                                    onClick={() => {
+                                                        handleCloseSlidingItem(member.userId);
+                                                        setMemberToRemove(member);
+                                                        setShowRemoveAlert(true);
+                                                    }}
+                                                >
+                                                    <IonIcon slot="icon-only" icon={personRemove} />
+                                                </IonItemOption>
+                                            </IonItemOptions>
+                                        )}
+                                    </IonItemSliding>
+                                );
+                            })
+                        )}
+                    </IonList>
+                </IonContent>
+            </IonModal>
+
+            <IonModal
+                isOpen={apiKeyDevice !== null}
+                onDidDismiss={() => {
+                    setApiKeyDevice(null);
+                    setMaskedApiKey("");
+                }}
+            >
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>API key</IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={() => setApiKeyDevice(null)} aria-label="Close">
+                                <IonIcon icon={close} />
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent className="ion-padding">
+                    <p className="device-key-name">{apiKeyDevice?.name}</p>
+                    {apiKeyLoading ? (
+                        <LoadingSkeleton variant="list-item" count={1} />
+                    ) : (
+                        <p className="device-key-value">{maskedApiKey || "No key"}</p>
+                    )}
+                    <IonButton expand="block" color="danger" fill="outline" disabled={apiKeyLoading} onClick={() => setShowRegenerateAlert(true)}>
+                        Regenerate key
+                    </IonButton>
+                </IonContent>
+            </IonModal>
+
+            <IonModal isOpen={newApiKey !== null} onDidDismiss={() => setNewApiKey(null)}>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>New API key</IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={() => setNewApiKey(null)} aria-label="Close">
+                                <IonIcon icon={close} />
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent className="ion-padding">
+                    <p className="device-key-value">{newApiKey}</p>
+                    <IonButton expand="block" onClick={() => copyToClipboard(newApiKey ?? "")}>
+                        <IonIcon icon={copy} slot="start" />
+                        Copy
+                    </IonButton>
+                    <p className="device-key-note">Copy this now. It won't be shown again. Paste it into DEVICE_API_KEY in credentials.h.</p>
+                </IonContent>
+            </IonModal>
+
+            <IonAlert
+                isOpen={showRegenerateAlert}
+                onDidDismiss={() => setShowRegenerateAlert(false)}
+                header="Regenerate API key?"
+                message="The current key stops working right away. Flash the new key to the ESP32."
+                buttons={[
+                    { text: "Cancel", role: "cancel" },
+                    { text: "Regenerate", role: "destructive", handler: () => { void regenerateApiKey(); } }
+                ]}
+            />
+
+            <IonAlert
+                isOpen={showRemoveAlert}
+                onDidDismiss={() => setShowRemoveAlert(false)}
+                header="Remove member?"
+                message={`Remove ${memberToRemove?.name || "this member"} from the device?`}
+                buttons={[
+                    { text: "Cancel", role: "cancel" },
+                    { text: "Remove", role: "destructive", handler: removeMember }
+                ]}
+            />
+
+            <IonActionSheet
+                isOpen={showTransferSheet}
+                onDidDismiss={() => setShowTransferSheet(false)}
+                header={`Transfer ownership to ${memberToTransfer?.name}?`}
+                subHeader="You will become a regular member."
+                buttons={[
+                    { text: "Transfer ownership", role: "destructive", handler: transferOwnership },
+                    { text: "Cancel", role: "cancel" }
+                ]}
+            />
+
+            <IonAlert
+                isOpen={showLeaveAlert}
+                onDidDismiss={() => setShowLeaveAlert(false)}
+                header={deviceToLeave?.ownerId === userId ? "Delete device?" : "Leave device?"}
+                message={
+                    deviceToLeave?.ownerId === userId
+                        ? "This will remove the device for all members."
+                        : "You can rejoin later with a join code."
+                }
+                buttons={[
+                    { text: "Cancel", role: "cancel" },
+                    {
+                        text: deviceToLeave?.ownerId === userId ? "Delete" : "Leave",
+                        role: "destructive",
+                        handler: () => {
+                            if (deviceToLeave) leaveDevice(deviceToLeave);
                         }
-                    ]}
-                />
-
-                <IonActionSheet
-                    isOpen={showTransferSheet}
-                    onDidDismiss={() => setShowTransferSheet(false)}
-                    header={`Transfer ownership to ${memberToTransfer?.name}?`}
-                    subHeader="You will become a regular member."
-                    buttons={[
-                        {
-                            text: "Transfer Ownership",
-                            role: "destructive",
-                            handler: transferOwnership
-                        },
-                        { text: "Cancel", role: "cancel" }
-                    ]}
-                />
-
-                <IonAlert
-                    isOpen={showLeaveAlert}
-                    onDidDismiss={() => setShowLeaveAlert(false)}
-                    header={deviceToLeave?.ownerId === userId ? "Delete Device?" : "Leave Device?"}
-                    message={
-                        deviceToLeave?.ownerId === userId
-                            ? "This will remove the device for all members."
-                            : "You can rejoin later with a join code."
                     }
-                    buttons={[
-                        { text: "Cancel", role: "cancel" },
-                        {
-                            text: deviceToLeave?.ownerId === userId ? "Delete" : "Leave",
-                            role: "destructive",
-                            handler: () => {
-                                if (deviceToLeave) leaveDevice(deviceToLeave);
-                            }
-                        }
-                    ]}
-                />
-            </IonContent>
-        </IonPage>
+                ]}
+            />
+        </Page>
     );
 };
 

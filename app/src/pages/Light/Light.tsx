@@ -1,23 +1,18 @@
-import { IonCard, IonCardContent,  IonContent,  IonHeader, IonIcon, IonPage, IonRadio, IonRadioGroup, IonRefresher, IonRefresherContent,  IonText, IonTitle, IonToolbar, useIonToast, useIonViewWillEnter } from '@ionic/react';
-import './Light.css';
-import 'react-circular-progressbar/dist/styles.css';
-import { timers } from '../../assets/assets';
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import Toolbar from '../../components/Toolbar/Toolbar';
-import PagePurpose from '../../components/PagePurpose/PagePurpose';
+import { IonButton, IonIcon, useIonToast, useIonViewWillEnter } from '@ionic/react';
+import { powerOutline, sunnyOutline } from 'ionicons/icons';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Countdown from 'react-countdown';
-import { heart, heartOutline } from 'ionicons/icons';
-import { actuatorService } from '../../services/socket/socket';
+import { timers } from '../../assets/assets';
+import Page from '../../components/ui/Page';
+import StatusPill from '../../components/ui/StatusPill';
 import { useDevice } from '../../context/DeviceContext';
+import { actuatorService } from '../../services/socket/socket';
+import './Light.css';
 
-const renderer = ({ hours, minutes, seconds, completed }: any) => {
-    if (completed) {
-        return "0";
-    } else {
-        return hours > 0
-            ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-            : `${minutes}:${String(seconds).padStart(2, '0')}`;
-    }
+const renderer = ({ days, hours, minutes, completed }: any) => {
+    if (completed) return '0:00';
+    const totalHours = days * 24 + hours;
+    return `${totalHours}:${String(minutes).padStart(2, '0')}`;
 };
 
 const normalizeLightState = (state: unknown) => {
@@ -46,7 +41,15 @@ const normalizeLightState = (state: unknown) => {
     return null;
 };
 
-const Light: React.FC = () => {
+const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    return hours > 0 ? `${hours} h` : `${minutes} min`;
+};
+
+const formatClock = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const Light: FC = () => {
     const [time, setTime] = useState<number>(timers[0].seconds);
     const [startTime, setStartTime] = useState<number>(Date.now());
     const [present] = useIonToast();
@@ -66,14 +69,14 @@ const Light: React.FC = () => {
             setTime(0);
             setStartTime(offTime);
             present({
-                message: "Light timer completed - Light Off",
+                message: 'Light timer completed - Light Off',
                 duration: 2000,
                 position: 'top',
                 mode: 'ios',
             });
         } catch {
             present({
-                message: "Failed to finalize light timer",
+                message: 'Failed to finalize light timer',
                 duration: 2000,
                 position: 'top',
                 mode: 'ios',
@@ -121,16 +124,15 @@ const Light: React.FC = () => {
         fetchInitialLightState();
     });
 
-    const handleRefresh = async (event: CustomEvent) => {
+    const handleRefresh = async () => {
         await refreshDevices();
         await fetchInitialLightState();
-        event.detail.complete();
     };
 
     const handleTimeChange = useCallback(async (newTime: number) => {
         if (!deviceId) {
             present({
-                message: "No device selected. Go to Devices to add a device.",
+                message: 'No device selected. Go to Devices to add a device.',
                 duration: 2000,
                 position: 'top',
                 mode: 'ios',
@@ -139,9 +141,9 @@ const Light: React.FC = () => {
             return;
         }
 
-        if (currentDevice?.status === "offline") {
+        if (currentDevice?.status === 'offline') {
             present({
-                message: "Device is offline",
+                message: 'Device is offline',
                 duration: 2000,
                 position: 'top',
                 mode: 'ios',
@@ -169,7 +171,7 @@ const Light: React.FC = () => {
             });
         } catch {
             present({
-                message: "Failed to update light state",
+                message: 'Failed to update light state',
                 duration: 1800,
                 position: 'top',
                 mode: 'ios',
@@ -179,79 +181,83 @@ const Light: React.FC = () => {
         }
     }, [present, deviceId, currentDevice, lightActuatorId, fetchInitialLightState, isLightOn]);
 
+    const offline = currentDevice?.status === 'offline';
+
     return (
-        <IonPage className="timer-page">
-            <IonHeader>
-                <Toolbar />
-            </IonHeader>
-            <IonContent fullscreen>
-                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                    <IonRefresherContent />
-                </IonRefresher>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">Light</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
+        <Page
+            title="Light"
+            subtitle="Light cycle for adult BSF mating"
+            onRefresh={handleRefresh}
+        >
+            <div className="light-layout">
+                <div className="light-main">
+                    <section className="light-state" data-on={isLightOn}>
+                        <div className="light-state-top">
+                            <StatusPill status={isLightOn ? 'ok' : 'idle'}>{isLightOn ? 'On' : 'Off'}</StatusPill>
+                            <IonIcon icon={sunnyOutline} aria-hidden="true" />
+                        </div>
+                        <div className="light-time mono" aria-live="polite">
+                            {time ? (
+                                <Countdown
+                                    key={startTime}
+                                    date={countdownDate}
+                                    renderer={renderer}
+                                    onComplete={handleCountdownComplete}
+                                />
+                            ) : '0:00'}
+                        </div>
+                        <p className="light-time-label">{isLightOn ? 'Time left, hours and minutes' : 'The light is off'}</p>
+                        <IonButton expand="block" size="large" onClick={() => void handleTimeChange(isLightOn ? 0 : timers[1].seconds)}>
+                            {isLightOn ? 'Turn off' : `Start for ${formatDuration(timers[1].seconds)}`}
+                        </IonButton>
+                        {offline && <p className="light-note">The device is offline. Changes will not reach the light until it is back.</p>}
+                        {!deviceId && <p className="light-note">No device selected. Go to Devices to add one.</p>}
+                    </section>
 
-                <PagePurpose text="Set and monitor light cycles used to support adult BSF mating activity." />
-                <div className="page-container">
-                    <div className="stack">
-                        <IonCard className="circular-background-md">
-                                <IonCardContent>
-                                    <div className="circular-progress-container circular-background-md">
-                                        <div className="circular-progress-wrapper">
-                                            <div className={`light-bulb-container ${isLightOn ? 'light-on' : 'light-off'}`}>
-                                                <IonIcon
-                                                    icon={isLightOn ? heart : heartOutline}
-                                                    className="light-bulb-icon"
-                                                />
-                                            </div>
-                                            <IonText className="timer-text">
-                                                {time ? (
-                                                    <Countdown
-                                                        key={startTime}
-                                                        date={countdownDate}
-                                                        renderer={renderer}
-                                                        onComplete={handleCountdownComplete}
-                                                    />
-                                                ) : "Off"}
-                                            </IonText>
-                                            <IonText className="light-status-text">
-                                                {isLightOn ? 'Light On' : 'Light Off'}
-                                            </IonText>
-                                        </div>
-                                    </div>
-                                </IonCardContent>
-                            </IonCard>
-
-                    <IonRadioGroup value={isLightOn ? timers[1].seconds : timers[0].seconds}>
+                    <div className="light-presets" role="group" aria-label="Light timer">
                         {timers.map((timer) => {
-                                const isActiveChoice = (timer.seconds > 0) === isLightOn;
-
-                                return (
-                                <IonCard key={timer.id}
-                                        className={`timer-card ${
-                                            isActiveChoice ? 'timer-card-selected timer-card-active-option' : 'timer-card-primary'
-                                        }`}
-                                        button={!isActiveChoice}
-                                        onClick={!isActiveChoice ? () => handleTimeChange(timer.seconds) : undefined}
-                                        aria-disabled={isActiveChoice}
-                                        title={isActiveChoice ? 'Already active' : `Set light to ${timer.name}`}
-                                    >
-                                        <IonCardContent className="timer-card-content">
-                                            <IonRadio value={timer.seconds} justify='space-between'>
-                                                <span className="timer-value">{timer.name}</span>
-                                            </IonRadio>
-                                        </IonCardContent>
-                                    </IonCard>
-                                );
-                            })}
-                        </IonRadioGroup>
+                            const isActive = (timer.seconds > 0) === isLightOn;
+                            return (
+                                <button
+                                    key={timer.id}
+                                    type="button"
+                                    className="light-preset"
+                                    aria-pressed={isActive}
+                                    aria-disabled={isActive}
+                                    onClick={() => {
+                                        if (!isActive) void handleTimeChange(timer.seconds);
+                                    }}
+                                >
+                                    <IonIcon icon={timer.seconds > 0 ? sunnyOutline : powerOutline} aria-hidden="true" />
+                                    <strong>{timer.seconds > 0 ? `On for ${formatDuration(timer.seconds)}` : 'Off'}</strong>
+                                    <span>{timer.seconds > 0 ? 'Turns off by itself when the time is up' : 'Turns the light off now'}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
-            </IonContent>
-        </IonPage >
+
+                <aside className="light-side">
+                    <section className="bs-card light-card">
+                        <h2>Schedule</h2>
+                        <dl className="bs-kv">
+                            <dt>State</dt>
+                            <dd>{isLightOn ? 'On' : 'Off'}</dd>
+                            <dt>Started</dt>
+                            <dd>{isLightOn ? formatClock(startTime) : '-'}</dd>
+                            <dt>Ends</dt>
+                            <dd>{isLightOn ? formatClock(countdownDate) : '-'}</dd>
+                            <dt>Device</dt>
+                            <dd>{currentDevice?.name ?? '-'}</dd>
+                        </dl>
+                    </section>
+                    <section className="bs-card light-card">
+                        <h2>About this light</h2>
+                        <p>Adult flies use the light to mate. When the time is up, the light turns off on its own.</p>
+                    </section>
+                </aside>
+            </div>
+        </Page>
     );
 };
 

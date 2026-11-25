@@ -1,577 +1,184 @@
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip,  IonContent,  IonHeader, IonIcon, IonPage, IonRefresher, IonRefresherContent,  IonText, IonTitle, IonToolbar, useIonToast } from '@ionic/react';
-import './Dashboard.css';
-import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-import { useLifeCycle } from '../../context/LifeCycleContext';
-import { useDevice } from '../../context/DeviceContext';
-import { useNotification } from '../../context/NotificationContext';
-import { sensorsData, drawer1SubstrateSensors, controlsData, drawerActuatorMap } from '../../assets/assets';
-import { getStatus, lifecycleThresholds, Threshold } from '../../config/thresholds';
-import { calculateQuality } from '../../utils/calculateQuality';
-import Segments from '../../components/Segments/Segments';
-import Toolbar from '../../components/Toolbar/Toolbar';
-import GlobalFabControls from '../../components/GlobalFabControls/GlobalFabControls';
-import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
-import PagePurpose from '../../components/PagePurpose/PagePurpose';
-import { useState, useMemo, useCallback, useEffect, useRef, FC } from 'react';
-import { actuatorService } from '../../services/socket/socket';
-import { api, withToken } from '../../utils/api';
+import { IonButton, IonIcon, useIonToast } from "@ionic/react";
+import { alertCircleOutline, checkmarkCircleOutline, hardwareChipOutline, sunnyOutline, timeOutline } from "ionicons/icons";
+import { FC, useMemo, useState } from "react";
+import { useHistory } from "react-router-dom";
+import Card from "../../components/ui/Card";
+import EmptyState from "../../components/ui/EmptyState";
+import Page from "../../components/ui/Page";
+import Segmented from "../../components/ui/Segmented";
+import StatusPill from "../../components/ui/StatusPill";
+import { useDevice } from "../../context/DeviceContext";
+import { useLifeCycle } from "../../context/LifeCycleContext";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
+import { api, withToken } from "../../utils/api";
+import DrawerPanel from "./DrawerPanel";
+import { issuesFor } from "./insights";
+import { ControlName, DRAWERS, Drawer, useActuators, useDrawerReadings } from "./useFarmData";
+import { useReadingAlerts } from "./useReadingAlerts";
+import "./Dashboard.css";
 
-type SensorSnapshot = {
-    temperature: number | null;
-    humidity: number | null;
-    moisture: number | null;
-    leftSubstrate: number | null;
-    centerSubstrate: number | null;
-    rightSubstrate: number | null;
-    ammonia: number | null;
+const hm = (seconds: number) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h} h ${m} min` : `${m} min`;
 };
-
-const EMPTY_SENSOR_SNAPSHOT: SensorSnapshot = {
-    temperature: null,
-    humidity: null,
-    moisture: null,
-    leftSubstrate: null,
-    centerSubstrate: null,
-    rightSubstrate: null,
-    ammonia: null,
-};
-
-const sensorTypeMap: Record<string, string> = {
-    "temperature": "temperature",
-    "humidity": "humidity",
-    "left substrate": "moisture",
-    "center substrate": "moisture",
-    "right substrate": "moisture",
-    "ammonia": "ammonia",
-};
-
-const normalizeDrawerName = (name: unknown): string | null => {
-    if (typeof name !== 'string') return null;
-    const trimmed = name.trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith('Drawer 2')) return 'Drawer 2';
-    if (trimmed.startsWith('Drawer 1')) return 'Drawer 1';
-    return trimmed;
-};
-
-const getActuatorId = (deviceId: string | undefined, stage: string, actionName: string): string => {
-    const normalizedStage = stage.trim().toLowerCase();
-    const stageIsDrawer2 = normalizedStage === 'drawer 2';
-    const actionMap: Record<string, string> = {
-        "Fan": stageIsDrawer2 ? "fan3" : "fan1",
-        "Heater": "heater",
-        "Humidifier": stageIsDrawer2 ? "humidifier3" : "humidifier1",
-        "Water Pump": "substrate",
-        "Misting Device": "misting",
-    };
-    const actuator = actionMap[actionName] || actionName.toLowerCase();
-    return deviceId ? `${deviceId}:${actuator}` : actuator;
-};
-
-const getActuatorIds = (deviceId: string | undefined, stage: string, actionName: string): string[] => {
-    const stageKey = stage as keyof typeof drawerActuatorMap;
-    const mapping = drawerActuatorMap[stageKey];
-    if (!mapping) return [getActuatorId(deviceId, stage, actionName)];
-    
-    const actionKey = actionName as keyof typeof mapping;
-    const actuators = mapping[actionKey];
-    if (!actuators) return [getActuatorId(deviceId, stage, actionName)];
-    
-    return actuators.map((act: string) => 
-        deviceId ? `${deviceId}:${act}` : act
-    );
-};
-
-export const statusColor = (sensorType: string, value: number, thresholds: Record<string, Threshold | { min: number; max: number; optimal: number[] }>) => {
-    const threshold = sensorType && thresholds[sensorType];
-    if (!threshold) return "medium";
-    return getStatus(value, threshold as Threshold);
-}
 
 const Dashboard: FC = () => {
-    const { stage, setStage } = useLifeCycle()
-    const { currentDevice, refreshDevices, loading: deviceLoading, getToken } = useDevice();
-    const { addNotification } = useNotification();
-    const deviceId = currentDevice?._id;
-    const [sensorLoading, setSensorLoading] = useState(true);
-    const [sensorDataByDrawer, setSensorDataByDrawer] = useState<Record<'Drawer 1' | 'Drawer 2', SensorSnapshot>>({
-        'Drawer 1': { ...EMPTY_SENSOR_SNAPSHOT },
-        'Drawer 2': { ...EMPTY_SENSOR_SNAPSHOT },
-    });
-    const sensorData = sensorDataByDrawer[stage];
-    const thresholds = lifecycleThresholds[stage];
+  const history = useHistory();
+  const [present] = useIonToast();
+  const online = useOnlineStatus();
+  const { stage, setStage } = useLifeCycle();
+  const { currentDevice, setCurrentDevice, getToken, refreshDevices, loading: devicesLoading } = useDevice();
+  const deviceId = currentDevice?._id;
+  const deviceOnline = currentDevice?.status === "online";
+  const mode = currentDevice?.controlMode ?? "auto";
 
-    const status = useCallback((name: string, value: number | string) => {
-        if (value === "--" || typeof value === "string") return "medium";
-        return statusColor(sensorTypeMap[name.toLowerCase()], value, thresholds)
-    }, [thresholds]);
+  const { readings, loading, refresh } = useDrawerReadings(deviceId, getToken);
+  const { states, lightSeconds, toggle } = useActuators(deviceId);
+  const [busy, setBusy] = useState<ControlName | null>(null);
+  const [modeBusy, setModeBusy] = useState(false);
+  useReadingAlerts(readings, deviceOnline);
 
-    const filteredSensors = useMemo(() => {
-        if (stage.toLowerCase() === 'drawer 1') {
-            const tempHumidity = sensorsData.filter(s => 
-                s.name === 'Temperature' || s.name === 'Humidity'
-            ).map(sensor => {
-                if (sensor.name === "Temperature" && sensorData.temperature !== null) {
-                    return { ...sensor, value: sensorData.temperature };
-                }
-                if (sensor.name === "Humidity" && sensorData.humidity !== null) {
-                    return { ...sensor, value: sensorData.humidity };
-                }
-                return sensor;
-            });
-            
-            const substrateSensors = drawer1SubstrateSensors.map(sensor => {
-                if (sensor.type === "leftSubstrate" && sensorData.leftSubstrate !== null) {
-                    return { ...sensor, value: sensorData.leftSubstrate };
-                }
-                if (sensor.type === "centerSubstrate" && sensorData.centerSubstrate !== null) {
-                    return { ...sensor, value: sensorData.centerSubstrate };
-                }
-                if (sensor.type === "rightSubstrate" && sensorData.rightSubstrate !== null) {
-                    return { ...sensor, value: sensorData.rightSubstrate };
-                }
-                return sensor;
-            });
-            
-            const ammoniaSensor = sensorsData.filter(s => s.name === 'Ammonia').map(sensor => {
-                if (sensor.name === "Ammonia" && sensorData.ammonia !== null) {
-                    return { ...sensor, value: sensorData.ammonia };
-                }
-                return sensor;
-            });
-            
-            return [...tempHumidity, ...substrateSensors, ...ammoniaSensor];
-        } else {
-            return sensorsData.filter(s => 
-                s.name === 'Temperature' || s.name === 'Humidity'
-            ).map(sensor => {
-                if (sensor.name === "Temperature" && sensorData.temperature !== null) {
-                    return { ...sensor, value: sensorData.temperature };
-                }
-                if (sensor.name === "Humidity" && sensorData.humidity !== null) {
-                    return { ...sensor, value: sensorData.humidity };
-                }
-                return sensor;
-            });
-        }
-    }, [stage, sensorData]);
+  const issues = useMemo(() => DRAWERS.flatMap((d) => issuesFor(d, readings[d])), [readings]);
+  const critical = issues.filter((i) => i.status === "crit").length;
 
-    const quality = useMemo(() => calculateQuality(filteredSensors, thresholds, stage), [filteredSensors, thresholds, stage]);
+  const lockReason = !currentDevice
+    ? null
+    : !online
+      ? "No internet"
+      : !deviceOnline
+        ? "Device is offline"
+        : mode === "auto"
+          ? "Automatic mode is on. Switch to Manual to use these."
+          : null;
 
-    const qualityColor = useMemo(() =>
-        quality >= 0.8 ? '#42d96b' : quality >= 0.5 ? '#ffca22' : '#cb1a27'
-        , [quality]);
+  const setMode = async (next: "auto" | "manual") => {
+    if (!currentDevice) return;
+    setModeBusy(true);
+    try {
+      const token = await getToken();
+      await api.patch(`/api/devices/${currentDevice._id}/control-mode`, { mode: next }, withToken(token));
+      setCurrentDevice({ ...currentDevice, controlMode: next });
+      void present({ message: next === "auto" ? "Automatic mode on" : "Manual mode on", duration: 1600, position: "top", color: "success" });
+    } catch {
+      void present({ message: "Couldn't change the mode. Try again.", duration: 2200, position: "top", color: "danger" });
+    } finally {
+      setModeBusy(false);
+    }
+  };
 
-    const qualityChipColor = useMemo(() =>
-        quality >= 0.8 ? 'success' : quality >= 0.5 ? 'warning' : 'danger'
-        , [quality]);
+  const onToggle = async (drawer: Drawer, control: ControlName) => {
+    setBusy(control);
+    try {
+      const next = await toggle(drawer, control);
+      void present({ message: `${control} turned ${next ? "on" : "off"}`, duration: 1400, position: "top" });
+    } catch {
+      void present({ message: `Couldn't switch the ${control.toLowerCase()}. Try again.`, duration: 2200, position: "top", color: "danger" });
+    } finally {
+      setBusy(null);
+    }
+  };
 
-    const qualityText = useMemo(() =>
-        quality >= 0.8 ? 'Good Quality' : quality >= 0.5 ? 'Moderate Quality' : 'Poor Quality'
-        , [quality]);
-
-    const getSensorActuatorIndicators = useCallback((sensorName: string): string[] => {
-        const lower = sensorName.toLowerCase();
-
-        if (lower.includes('temperature')) {
-            return ['Fan', 'Heater'];
-        }
-
-        if (lower.includes('humidity')) {
-            return ['Humidifier'];
-        }
-
-        if (lower.includes('center') && lower.includes('substrate') && stage === 'Drawer 1') {
-            return ['Water Pump'];
-        }
-
-        return [];
-    }, [stage]);
-
-    const [present] = useIonToast();
-
-    const [actuatorStates, setActuatorStates] = useState<Record<string, Record<string, boolean>>>(() => {
-        const stages = ['Drawer 1', 'Drawer 2'];
-        const initial: Record<string, Record<string, boolean>> = {};
-        stages.forEach(s => {
-            initial[s] = {};
-            controlsData.forEach(c => {
-                if (c.available) initial[s][c.name] = false;
-            });
-        });
-        return initial;
-    });
-
-    const shownAlertsRef = useRef<Set<string>>(new Set());
-    const hasLoadedOnceRef = useRef(false);
-
-    useEffect(() => {
-        hasLoadedOnceRef.current = false;
-        setSensorLoading(true);
-        setSensorDataByDrawer({
-            'Drawer 1': { ...EMPTY_SENSOR_SNAPSHOT },
-            'Drawer 2': { ...EMPTY_SENSOR_SNAPSHOT },
-        });
-    }, [deviceId]);
-
-    const normalizeSensorData = useCallback((data: any) => {
-        const toNumberOrNull = (value: any) => (typeof value === "number" ? value : null);
-
-        const leftSubstrate = toNumberOrNull(data?.leftSubstrate ?? data?.leftSoil);
-        const centerSubstrate = toNumberOrNull(data?.centerSubstrate ?? data?.centerSoil);
-        const rightSubstrate = toNumberOrNull(data?.rightSubstrate ?? data?.rightSoil);
-
-        const moistureFromApi = toNumberOrNull(data?.moisture);
-        const moistureValues = [leftSubstrate, centerSubstrate, rightSubstrate].filter((v): v is number => v !== null);
-        const computedMoisture = moistureValues.length > 0
-            ? moistureValues.reduce((sum, v) => sum + v, 0) / moistureValues.length
-            : null;
-
-        return {
-            temperature: toNumberOrNull(data?.temperature),
-            humidity: toNumberOrNull(data?.humidity),
-            moisture: moistureFromApi ?? computedMoisture,
-            leftSubstrate: leftSubstrate ?? moistureFromApi,
-            centerSubstrate: centerSubstrate ?? moistureFromApi,
-            rightSubstrate: rightSubstrate ?? moistureFromApi,
-            ammonia: toNumberOrNull(data?.ammonia),
-        };
-    }, []);
-
-    const fetchSensorData = useCallback(async (targetStage: 'Drawer 1' | 'Drawer 2' = stage) => {
-        if (!deviceId) {
-            if (targetStage === stage) {
-                setSensorLoading(false);
-            }
-            return;
-        }
-        try {
-            const token = await getToken();
-            const { data } = await api.get(`/api/sensors/device/${deviceId}?drawer=${encodeURIComponent(targetStage)}`, withToken(token));
-            const normalized = normalizeSensorData(data);
-            setSensorDataByDrawer((prev) => ({
-                ...prev,
-                [targetStage]: normalized,
-            }));
-        } catch {
-            present({
-                message: "Failed to load sensor data",
-                duration: 2000,
-                position: "top",
-                mode: "ios",
-                color: "danger",
-            });
-        } finally {
-            if (targetStage === stage) {
-                hasLoadedOnceRef.current = true;
-                setSensorLoading(false);
-            }
-        }
-    }, [deviceId, stage, present, getToken, normalizeSensorData]);
-
-    useEffect(() => {
-        if (!deviceId) return;
-
-        if (!hasLoadedOnceRef.current) {
-            setSensorLoading(true);
-        }
-        void fetchSensorData(stage);
-
-        const handleSensorUpdate = (data: any) => {
-            const incomingDrawer = normalizeDrawerName(data?.drawerName);
-            const targetStage = (incomingDrawer === 'Drawer 1' || incomingDrawer === 'Drawer 2') ? incomingDrawer : stage;
-            const normalized = normalizeSensorData(data);
-
-            setSensorDataByDrawer((prev) => ({
-                ...prev,
-                [targetStage]: normalized,
-            }));
-
-            if (targetStage === stage) {
-                hasLoadedOnceRef.current = true;
-                setSensorLoading(false);
-            }
-        };
-
-        actuatorService.onSensor(deviceId, handleSensorUpdate);
-
-        return () => {
-            actuatorService.offSensor(deviceId, handleSensorUpdate);
-        };
-    }, [deviceId, stage, fetchSensorData, normalizeSensorData]);
-
-    const handleRefresh = async (event: CustomEvent) => {
-        await Promise.all([fetchSensorData(), refreshDevices()]);
-        event.detail.complete();
-    };
-
-    useEffect(() => {
-        if (currentDevice?.status === "offline") return;
-
-        const drawerNum = stage.toLowerCase().replace('drawer ', '');
-        const drawer = `drawer${drawerNum}` as 'drawer1' | 'drawer2';
-
-        const sensorChecks = [
-            { key: 'temperature', name: 'Temperature', value: sensorData.temperature, unit: '°C' },
-            { key: 'humidity', name: 'Humidity', value: sensorData.humidity, unit: '%' },
-        ];
-        
-        if (stage.toLowerCase() === 'drawer 1') {
-            sensorChecks.push(
-                { key: 'moisture', name: 'Left Substrate', value: sensorData.leftSubstrate, unit: '%' },
-                { key: 'moisture', name: 'Center Substrate', value: sensorData.centerSubstrate, unit: '%' },
-                { key: 'moisture', name: 'Right Substrate', value: sensorData.rightSubstrate, unit: '%' },
-                { key: 'ammonia', name: 'Ammonia', value: sensorData.ammonia, unit: 'ppm' }
-            );
-        }
-
-        sensorChecks.forEach(({ key, name, value, unit }) => {
-            if (value === null || value === undefined || typeof value !== "number") return;
-
-            const threshold = thresholds[key as keyof typeof thresholds];
-            if (!threshold) return;
-
-            const [optimalMin, optimalMax] = threshold.optimal;
-            const isDanger = value < threshold.min || value > threshold.max;
-            const isWarning = !isDanger && (value < optimalMin || value > optimalMax);
-            const isNormal = value >= optimalMin && value <= optimalMax;
-
-            const dangerLowKey = `${stage}-${name}-danger-low`;
-            const dangerHighKey = `${stage}-${name}-danger-high`;
-            const warningLowKey = `${stage}-${name}-warning-low`;
-            const warningHighKey = `${stage}-${name}-warning-high`;
-
-            if (value < threshold.min && !shownAlertsRef.current.has(dangerLowKey)) {
-                shownAlertsRef.current.add(dangerLowKey);
-                addNotification({
-                    type: 'danger',
-                    title: `${name} Critical`,
-                    message: `${name} is critically low: ${value}${unit} (min: ${threshold.min}${unit})`,
-                    drawer,
-                });
-                present({
-                    message: `${name} is critically low: ${value}${unit}`,
-                    duration: 3000,
-                    position: "top",
-                    mode: "ios",
-                    color: "danger",
-                });
-            } else if (value > threshold.max && !shownAlertsRef.current.has(dangerHighKey)) {
-                shownAlertsRef.current.add(dangerHighKey);
-                addNotification({
-                    type: 'danger',
-                    title: `${name} Critical`,
-                    message: `${name} is critically high: ${value}${unit} (max: ${threshold.max}${unit})`,
-                    drawer,
-                });
-                present({
-                    message: `${name} is critically high: ${value}${unit}`,
-                    duration: 3000,
-                    position: "top",
-                    mode: "ios",
-                    color: "danger",
-                });
-            } else if (isWarning && value < optimalMin && !shownAlertsRef.current.has(warningLowKey)) {
-                shownAlertsRef.current.add(warningLowKey);
-                addNotification({
-                    type: 'warning',
-                    title: `${name} Warning`,
-                    message: `${name} is below optimal: ${value}${unit} (optimal: ${optimalMin}-${optimalMax}${unit})`,
-                    drawer,
-                });
-                present({
-                    message: `${name} below optimal: ${value}${unit}`,
-                    duration: 2500,
-                    position: "top",
-                    mode: "ios",
-                    color: "warning",
-                });
-            } else if (isWarning && value > optimalMax && !shownAlertsRef.current.has(warningHighKey)) {
-                shownAlertsRef.current.add(warningHighKey);
-                addNotification({
-                    type: 'warning',
-                    title: `${name} Warning`,
-                    message: `${name} is above optimal: ${value}${unit} (optimal: ${optimalMin}-${optimalMax}${unit})`,
-                    drawer,
-                });
-                present({
-                    message: `${name} above optimal: ${value}${unit}`,
-                    duration: 2500,
-                    position: "top",
-                    mode: "ios",
-                    color: "warning",
-                });
-            }
-
-            if (isNormal) {
-                shownAlertsRef.current.delete(dangerLowKey);
-                shownAlertsRef.current.delete(dangerHighKey);
-                shownAlertsRef.current.delete(warningLowKey);
-                shownAlertsRef.current.delete(warningHighKey);
-            } else if (!isDanger) {
-                shownAlertsRef.current.delete(dangerLowKey);
-                shownAlertsRef.current.delete(dangerHighKey);
-            }
-        });
-    }, [sensorData, thresholds, stage, present, addNotification, currentDevice?.status]);
-
-    useEffect(() => {
-        if (!deviceId) return;
-
-        const loadStates = async () => {
-            const allStates = await actuatorService.getAllStates();
-
-            setActuatorStates(prev => {
-                const updated = { ...prev };
-                Object.entries(allStates).forEach(([actuatorId, state]) => {
-                    const parts = actuatorId.split(':');
-                    if (parts.length < 2 || parts[0] !== deviceId) return;
-
-                    const actuatorSuffix = parts.slice(1).join(':');
-                    (Object.keys(drawerActuatorMap) as Array<keyof typeof drawerActuatorMap>).forEach((drawerName) => {
-                        const mapping = drawerActuatorMap[drawerName];
-                        const actionName = Object.keys(mapping).find((name) => {
-                            const mapped = mapping[name as keyof typeof mapping] as readonly string[];
-                            return mapped.includes(actuatorSuffix);
-                        });
-
-                        if (actionName && updated[drawerName]) {
-                            updated[drawerName][actionName] = Boolean(state);
-                        }
-                    });
-                });
-                return updated;
-            });
-        };
-        loadStates();
-
-        const stages = ['Drawer 1', 'Drawer 2'];
-        const listeners: Array<{ id: string; cb: (state: any) => void }> = [];
-        const seenListenerIds = new Set<string>();
-
-        stages.forEach(s => {
-            controlsData.forEach(c => {
-                if (c.available) {
-                    const actuatorIds = getActuatorIds(deviceId, s, c.name);
-                    const cb = (state: boolean) => {
-                        setActuatorStates(prev => ({
-                            ...prev,
-                            [s]: { ...prev[s], [c.name]: state }
-                        }));
-                    };
-
-                    actuatorIds.forEach((actuatorId) => {
-                        if (seenListenerIds.has(`${actuatorId}:${c.name}:${s}`)) return;
-                        seenListenerIds.add(`${actuatorId}:${c.name}:${s}`);
-                        actuatorService.on(actuatorId, cb);
-                        listeners.push({ id: actuatorId, cb });
-                    });
-                }
-            });
-        });
-
-        return () => {
-            listeners.forEach(({ id, cb }) => actuatorService.off(id, cb));
-        };
-    }, [deviceId]);
-
+  if (!devicesLoading && !currentDevice) {
     return (
-        <IonPage className="dashboard-page">
-            <IonHeader>
-                <Toolbar />
-            </IonHeader>
-
-            <IonContent fullscreen>
-                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-                    <IonRefresherContent />
-                </IonRefresher>
-                <IonHeader collapse="condense">
-                    <IonToolbar>
-                        <IonTitle size="large">Dashboard</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-
-                <PagePurpose text="Monitor live sensor readings per drawer and quickly trigger environmental controls." />
-
-                <div className="page-container">
-                    <div className="card-grid">
-                        <IonCard className="card-wide quality-card">
-                            <IonCardHeader>
-                                <IonCardTitle>Current {stage}</IonCardTitle>
-                            </IonCardHeader>
-                            <IonCardContent className="quality-content">
-                                <div className="quality-meter">
-                                    <CircularProgressbar
-                                        className="circular-progress"
-                                        value={quality}
-                                        maxValue={1}
-                                        text={Math.round(quality * 100) + "%"}
-                                        styles={buildStyles({
-                                            pathColor: qualityColor,
-                                            textColor: qualityColor,
-                                            trailColor: "#f6f8fc",
-                                            pathTransitionDuration: 0.9,
-                                        })}
-                                    />
-                                </div>
-                                <IonText className="quality-label">Environment quality</IonText>
-                                <IonChip color={qualityChipColor}>{qualityText}</IonChip>
-                            </IonCardContent>
-                        </IonCard>
-                        {(deviceLoading || sensorLoading) ? ([0, 1, 2, 3].map((i) => (<div className="card-cell" key={i}><LoadingSkeleton variant="card" /></div>))) : filteredSensors.map((sensor) => {
-                            const indicatorControls = getSensorActuatorIndicators(sensor.name);
-
-                            return (
-                                <IonCard key={sensor.name}
-                                        className={`sensor-card sensor-card-${status(sensor.name, sensor.value)}`}
-                                        aria-label={`${sensor.name}: ${sensor.value} ${sensor.unit}`}
-                                    >
-                                        <IonCardContent className="sensor-card-content">
-                                            <div className="sensor-main">
-                                                <div className="sensor-info">
-                                                    <IonIcon size="large" icon={sensor.icon} aria-hidden="true"></IonIcon>
-                                                    <p className="sensor-name">{sensor.name}</p>
-                                                </div>
-                                                <div className="sensor-data">
-                                                    <span className="sensor-value">{typeof sensor.value === 'number' && sensorTypeMap[sensor.name.toLowerCase()] === 'moisture' ? Math.round(sensor.value).toString() : typeof sensor.value === 'number' ? sensor.value.toFixed(2) : sensor.value}</span>
-                                                    <span className="sensor-unit">{sensor.unit}</span>
-                                                </div>
-                                            </div>
-
-                                            {indicatorControls.length > 0 && (
-                                                <div className="sensor-actuator-indicators">
-                                                    {indicatorControls.map((controlName) => {
-                                                        const isOn = Boolean(actuatorStates[stage]?.[controlName]);
-
-                                                        return (
-                                                            <span
-                                                                key={`${sensor.name}-${controlName}`}
-                                                                className={`sensor-indicator-chip ${isOn ? 'on' : 'off'}`}
-                                                            >
-                                                                {controlName}: {isOn ? 'ON' : 'OFF'}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </IonCardContent>
-
-                                    </IonCard>
-                            );
-                        })}
-                    </div>
-
-                <Segments
-                    stage={stage}
-                    setStage={setStage}
-                />
-                </div>
-
-                <GlobalFabControls />
-            </IonContent>
-        </IonPage >
+      <Page title="Home">
+        <Card>
+          <EmptyState
+            icon={hardwareChipOutline}
+            title="No device yet"
+            action={<IonButton onClick={() => history.push("/devices")}>Add a device</IonButton>}
+          >
+            Add your ESP32 controller to start seeing drawer readings here.
+          </EmptyState>
+        </Card>
+      </Page>
     );
+  }
+
+  return (
+    <Page
+      title="Home"
+      subtitle={currentDevice ? `${currentDevice.name} · ${deviceOnline ? "live" : "offline"}` : undefined}
+      onRefresh={() => Promise.all([refresh(), refreshDevices()])}
+      actions={
+        <div className="mode-switch">
+          <span>Control</span>
+          <Segmented<"auto" | "manual">
+            label="Control mode"
+            value={mode}
+            disabled={modeBusy || !currentDevice || !online}
+            onChange={(v) => void setMode(v)}
+            options={[
+              { value: "auto", label: "Automatic" },
+              { value: "manual", label: "Manual" },
+            ]}
+          />
+        </div>
+      }
+    >
+      <div className="home-top">
+        <div className="status-hero" data-status={loading ? "idle" : critical ? "crit" : issues.length ? "warn" : "ok"} role="status">
+          <IonIcon icon={issues.length ? alertCircleOutline : checkmarkCircleOutline} aria-hidden="true" />
+          <div>
+            <h2>
+              {loading
+                ? "Checking the drawers…"
+                : issues.length === 0
+                  ? "Everything looks good"
+                  : `${issues.length} ${issues.length === 1 ? "thing needs" : "things need"} attention`}
+            </h2>
+            {!loading && issues.length === 0 && <p>All readings are inside the target ranges.</p>}
+            {issues.length > 0 && (
+              <ul>
+                {issues.slice(0, 4).map((i) => (
+                  <li key={i.drawer + i.text}>
+                    <StatusPill status={i.status} plain>{i.drawer}</StatusPill>
+                    <span>{i.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <button type="button" className="light-card" onClick={() => history.push("/light")}>
+          <IonIcon icon={sunnyOutline} aria-hidden="true" />
+          <span className="title">Light</span>
+          <span className="value">{lightSeconds && lightSeconds > 0 ? "On" : "Off"}</span>
+          <span className="sub">
+            <IonIcon icon={timeOutline} aria-hidden="true" />
+            {lightSeconds && lightSeconds > 0 ? `${hm(lightSeconds)} left` : "Tap to set a timer"}
+          </span>
+        </button>
+      </div>
+
+      <div className="drawer-switch">
+        <Segmented<Drawer>
+          block
+          label="Drawer"
+          value={stage}
+          onChange={setStage}
+          options={DRAWERS.map((d) => ({ value: d, label: d }))}
+        />
+      </div>
+
+      <div className="drawers">
+        {DRAWERS.map((d) => (
+          <DrawerPanel
+            key={d}
+            drawer={d}
+            snapshot={readings[d]}
+            controls={states[d]}
+            canControl={lockReason === null}
+            lockReason={lockReason}
+            busy={busy}
+            onToggle={(c) => void onToggle(d, c)}
+            hidden={d !== stage ? true : undefined}
+          />
+        ))}
+      </div>
+    </Page>
+  );
 };
 
 export default Dashboard;

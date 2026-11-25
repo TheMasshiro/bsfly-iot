@@ -9,6 +9,7 @@ import {
     IonTitle,
     useIonActionSheet,
 } from '@ionic/react';
+import './Terms.css';
 
 interface TermsProps {
     isOpen: boolean;
@@ -69,7 +70,7 @@ const Terms: FC<TermsProps> = ({ isOpen, onClose }) => {
                 </IonToolbar>
             </IonHeader>
 
-            <IonContent className="ion-padding">
+            <IonContent className="ion-padding terms-body">
                 <h2>1. Agreement to Terms</h2>
                 <p>
                     These Terms and Conditions govern your use of the BSFLy IoT application and related services. By installing, accessing, or using the App, you agree to be bound by these Terms.

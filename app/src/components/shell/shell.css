@@ -1,0 +1,343 @@
+.bs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bs-header .spacer {
+  flex: 1;
+}
+
+.bs-device-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  max-width: min(70vw, 360px);
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--bs-border);
+  border-radius: 999px;
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.bs-device-chip:hover {
+  border-color: var(--bs-border-strong);
+}
+
+.bs-device-chip .name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bs-device-chip .state {
+  color: var(--bs-text-3);
+  font-size: var(--bs-fs-xs);
+  white-space: nowrap;
+}
+
+.bs-device-chip ion-icon {
+  color: var(--bs-text-3);
+  flex: none;
+}
+
+.bs-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bs-idle);
+}
+
+.bs-dot.online {
+  background: var(--bs-ok);
+  box-shadow: 0 0 0 3px var(--bs-ok-soft);
+}
+
+.bs-dot.offline {
+  background: var(--bs-crit);
+  box-shadow: 0 0 0 3px var(--bs-crit-soft);
+}
+
+.bs-icon-btn {
+  appearance: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--bs-border);
+  border-radius: 50%;
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  cursor: pointer;
+}
+
+.bs-icon-btn ion-icon {
+  font-size: 20px;
+}
+
+.bs-icon-btn .badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--bs-crit);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.bs-offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bs-warn-soft);
+  color: var(--bs-warn);
+  font-size: var(--bs-fs-sm);
+  font-weight: 600;
+}
+
+.bs-bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--bs-surface);
+  border-top: 1px solid var(--bs-border);
+  padding-bottom: var(--ion-safe-area-bottom, 0px);
+}
+
+.bs-bottom-nav button {
+  appearance: none;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 8px 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--bs-text-3);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bs-bottom-nav button ion-icon {
+  font-size: 24px;
+}
+
+.bs-bottom-nav button[aria-current="page"] {
+  color: var(--bs-brand);
+}
+
+.bs-bottom-nav button[aria-current="page"] ion-icon {
+  background: var(--bs-brand-soft);
+  border-radius: 999px;
+  padding: 2px 14px;
+}
+
+@media (min-width: 768px) {
+  .bs-bottom-nav-wrap {
+    display: none;
+  }
+}
+
+.bs-sidebar {
+  --background: var(--bs-surface);
+}
+
+.bs-sidebar ion-content {
+  --background: var(--bs-surface);
+}
+
+.bs-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 16px 12px calc(16px + var(--ion-safe-area-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.bs-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 20px;
+}
+
+.bs-brand-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bs-brand);
+  color: var(--bs-brand-ink);
+  font-family: var(--bs-mono);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.bs-brand-text strong {
+  display: block;
+  font-size: var(--bs-fs-base);
+  font-weight: 600;
+}
+
+.bs-brand-text span {
+  display: block;
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-3);
+}
+
+.bs-side-group {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.bs-side-label {
+  padding: 8px 12px 6px;
+  font-size: var(--bs-fs-xs);
+  font-weight: 600;
+  color: var(--bs-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bs-side-link {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bs-r-sm);
+  background: transparent;
+  color: var(--bs-text-2);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bs-side-link ion-icon {
+  flex: none;
+  font-size: 20px;
+}
+
+.bs-side-link:hover {
+  background: var(--bs-surface-2);
+  color: var(--bs-text);
+}
+
+.bs-side-link[aria-current="page"] {
+  background: var(--bs-brand-soft);
+  color: var(--bs-brand);
+  font-weight: 600;
+}
+
+.bs-side-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bs-border);
+}
+
+.bs-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  min-width: 0;
+}
+
+.bs-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bs-brand-soft);
+  color: var(--bs-brand);
+  font-weight: 600;
+  font-size: var(--bs-fs-sm);
+  overflow: hidden;
+}
+
+.bs-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bs-user-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.bs-user-text strong,
+.bs-user-text span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bs-user-text strong {
+  font-size: var(--bs-fs-sm);
+  font-weight: 600;
+}
+
+.bs-user-text span {
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-3);
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .bs-side {
+    padding: 16px 10px;
+    align-items: center;
+  }
+
+  .bs-brand {
+    padding: 4px 0 20px;
+  }
+
+  .bs-brand-text,
+  .bs-side-label,
+  .bs-side-link span,
+  .bs-user-text,
+  .bs-theme {
+    display: none;
+  }
+
+  .bs-side-link {
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+  }
+
+  .bs-side-foot {
+    border-top: 0;
+    justify-items: center;
+  }
+}

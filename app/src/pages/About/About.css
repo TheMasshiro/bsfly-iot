@@ -1,97 +1,166 @@
-.about-page ion-content {
-  --background: #0a0a0a;
-}
-
-.about-page .hero-card {
-  border-radius: 18px;
-  background: rgba(45, 213, 91, 0.1);
-  border: 1px solid rgba(45, 213, 91, 0.35);
-}
-
-.about-page .hero-card ion-card-title h1,
-.about-page .hero-card ion-card-subtitle,
-.about-page .hero-card ion-text p {
-  color: #fff !important;
-}
-
-.about-page ion-card {
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.about-logo {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-}
-
-.about-logo-icon {
-  font-size: 40px;
-  color: #fff;
-}
-
-.about-page ion-accordion-group {
-  border-radius: 18px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.about-page ion-accordion {
-  background: transparent;
-}
-
-.about-page ion-accordion ion-item[slot="header"] {
-  --background: transparent;
-  --color: rgba(255, 255, 255, 0.9);
-}
-
-.about-page ion-accordion ion-list {
-  background: transparent;
-  padding: 0;
-}
-
-.about-page ion-accordion ion-list ion-item {
-  --background: transparent;
-  --color: rgba(255, 255, 255, 0.7);
-}
-
-.about-page .hero-card h1 {
+.about-page .about-name {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--bs-fs-lg);
+  font-weight: 600;
 }
 
-.about-page .hero-card .version-text {
-  margin-top: 12px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+.about-page .about-version {
+  margin: 4px 0 14px;
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-3);
 }
 
-.about-page .hero-card .description-text {
+.about-page .about-text {
+  max-width: 62ch;
   margin: 0;
+  color: var(--bs-text-2);
   line-height: 1.6;
 }
 
-.about-page .footer-text {
-  padding-bottom: 32px;
+.about-page .about-block + .about-block {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bs-border);
 }
 
-.about-page .footer-text p {
-  font-size: 12px;
+.about-page .about-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: var(--bs-fs-sm);
+  font-weight: 500;
+  color: var(--bs-text-2);
+}
+
+.about-page .about-label ion-icon {
+  font-size: 16px;
+  color: var(--bs-text-3);
+}
+
+.about-page .about-person {
+  margin: 0;
+  font-weight: 600;
+}
+
+.about-page .about-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 4px 0 0;
+  font-size: var(--bs-fs-sm);
+}
+
+.about-page .about-contact a,
+.about-page .about-link-row strong {
+  color: var(--bs-brand);
+}
+
+.about-page .about-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.about-page .about-names {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-page .about-names li {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--bs-text-2);
+}
+
+.about-page .about-stack {
+  display: grid;
+  gap: 16px;
   margin: 0;
 }
 
-@media (max-width: 576px) {
-  .about-page ion-card h1 {
-    font-size: 1.5rem;
+.about-page .about-stack dt {
+  font-size: var(--bs-fs-sm);
+  color: var(--bs-text-3);
+}
+
+.about-page .about-stack dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.about-page .about-links {
+  display: grid;
+  margin: 0 -16px -16px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--bs-border);
+}
+
+.about-page .about-links li + li {
+  border-top: 1px solid var(--bs-border);
+}
+
+.about-page .about-link-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px;
+  color: var(--bs-text);
+  text-decoration: none;
+}
+
+.about-page .about-link-row:hover {
+  background: var(--bs-surface-2);
+}
+
+.about-page .about-link-row > ion-icon:first-child {
+  font-size: 20px;
+  color: var(--bs-text-2);
+}
+
+.about-page .about-link-row > ion-icon:last-child {
+  font-size: 18px;
+  color: var(--bs-text-3);
+}
+
+.about-page .about-link-row strong {
+  display: block;
+  font-weight: 500;
+}
+
+.about-page .about-link-row small {
+  display: block;
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-3);
+}
+
+.about-page .about-footer {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-3);
+}
+
+@media (min-width: 820px) {
+  .about-page .about-links-card {
+    grid-column: 1 / -1;
+  }
+
+  .about-page .about-links {
+    margin: 0 -16px -16px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .about-page .about-links-card {
+    grid-column: auto;
   }
 }

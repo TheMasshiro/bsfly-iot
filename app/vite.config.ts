@@ -1,8 +1,15 @@
 import legacy from '@vitejs/plugin-legacy'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+const demoAlias = [
+  { find: /^@clerk\/clerk-react$/, replacement: fileURLToPath(new URL('./src/demo/clerk.tsx', import.meta.url)) },
+  { find: /^mqtt$/, replacement: fileURLToPath(new URL('./src/demo/mqtt.ts', import.meta.url)) },
+]
+
+export default defineConfig(({ mode }) => ({
+  resolve: { alias: mode === 'demo' ? demoAlias : [] },
   plugins: [
     react(),
     legacy()
@@ -45,4 +52,4 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
   }
-})
+}))

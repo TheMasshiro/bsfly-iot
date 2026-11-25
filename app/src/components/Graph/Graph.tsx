@@ -1,12 +1,14 @@
 import { FC, useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chart from 'chart.js/auto';
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonChip, IonText, IonSpinner, useIonToast } from '@ionic/react';
+import { IonSpinner, useIonToast } from '@ionic/react';
 import { useDevice } from '../../context/DeviceContext';
 import { useLifeCycle } from '../../context/LifeCycleContext';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { offlineService } from '../../services/offline/OfflineService';
 import { api, withToken } from '../../utils/api';
+import StatusPill from '../ui/StatusPill';
+import { Status } from '../ui/status';
 import './Graph.css';
 
 interface GraphProps {
@@ -33,13 +35,13 @@ const SENSOR_KEY_MAP: Record<string, string> = {
 };
 
 const DISPLAY_TITLE_MAP: Record<string, string> = {
-    temperature: 'TEMPERATURE',
-    humidity: 'HUMIDITY',
-    moisture: 'SUBSTRATE MOISTURE',
-    leftsubstrate: 'LEFT SUBSTRATE',
-    centersubstrate: 'CENTER SUBSTRATE',
-    rightsubstrate: 'RIGHT SUBSTRATE',
-    ammonia: 'AMMONIA',
+    temperature: 'Temperature',
+    humidity: 'Humidity',
+    moisture: 'Substrate moisture',
+    leftsubstrate: 'Left substrate',
+    centersubstrate: 'Center substrate',
+    rightsubstrate: 'Right substrate',
+    ammonia: 'Ammonia',
 };
 
 const formatGraphValue = (sensorType: string, value: number): string => {
@@ -48,7 +50,7 @@ const formatGraphValue = (sensorType: string, value: number): string => {
         return Math.round(value).toString();
     }
 
-    return value.toFixed(2);
+    return value.toFixed(1);
 };
 
 const isSubstrateKey = (sensorType: string): boolean => {
@@ -57,6 +59,34 @@ const isSubstrateKey = (sensorType: string): boolean => {
 };
 
 Chart.register(annotationPlugin);
+
+const readChartTokens = () => {
+    const styles = getComputedStyle(document.documentElement);
+    const token = (name: string) => styles.getPropertyValue(name).trim();
+    return {
+        font: token('--bs-font'),
+        brand: token('--bs-brand'),
+        brandFill: `rgba(${token('--bs-brand-rgb')}, 0.14)`,
+        crit: token('--bs-crit'),
+        warn: token('--bs-warn'),
+        muted: token('--bs-text-3'),
+        critSoft: token('--bs-crit-soft'),
+        warnSoft: token('--bs-warn-soft'),
+        grid: token('--bs-border'),
+        surface: token('--bs-surface'),
+        text: token('--bs-text'),
+    };
+};
+
+const useThemeVersion = () => {
+    const [version, setVersion] = useState(0);
+    useEffect(() => {
+        const observer = new MutationObserver(() => setVersion((v) => v + 1));
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+    return version;
+};
 
 const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimit, unit }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,6 +101,7 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
     const [present] = useIonToast();
     const lastErrorRef = useRef<number>(0);
     const hasLoadedOnceRef = useRef(false);
+    const themeVersion = useThemeVersion();
 
     const sensorKey = useMemo(() => {
         const normalized = sensorType.toLowerCase().replace(/\s+/g, '');
@@ -195,20 +226,22 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
         return () => clearInterval(interval);
     }, [currentDeviceId, isDeviceOffline, isAppOnline, fetchData, getCacheKey]);
 
-    const { colorClass, chipColor, statusText } = useMemo(() => {
-        const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
-        if (latestValue >= upperLimit) return { colorClass: 'graph-value--critical', chipColor: 'danger', statusText: 'Critical' };
-        if (latestValue >= warningLimit) return { colorClass: 'graph-value--warning', chipColor: 'warning', statusText: 'Warning' };
-        if (latestValue <= lowerLimit) return { colorClass: 'graph-value--low', chipColor: 'primary', statusText: 'Low' };
-        return { colorClass: 'graph-value--optimal', chipColor: 'success', statusText: 'Optimal' };
-    }, [chartData, upperLimit, warningLimit, lowerLimit]);
 
-    const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
+    const reading = useMemo(() => {
+        const latestValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
+        if (latestValue >= upperLimit) return { latestValue, status: 'crit' as Status, label: 'Too high' };
+        if (latestValue >= warningLimit) return { latestValue, status: 'warn' as Status, label: 'Getting high' };
+        if (latestValue <= lowerLimit) return { latestValue, status: 'idle' as Status, label: 'Too low' };
+        return { latestValue, status: 'ok' as Status, label: 'In range' };
+    }, [chartData, upperLimit, warningLimit, lowerLimit]);
 
     useEffect(() => {
         if (!canvasRef.current) return;
-        
+
         chartRef.current?.destroy();
+
+        const t = readChartTokens();
+        Chart.defaults.font.family = t.font;
 
         chartRef.current = new Chart(canvasRef.current, {
             type: 'line',
@@ -217,117 +250,165 @@ const Graph: FC<GraphProps> = ({ sensorType, upperLimit, lowerLimit, warningLimi
                 datasets: [{
                     label: `${sensorType} ${unit}`,
                     data: chartData.map((row) => row.value),
-                    backgroundColor: 'rgba(40, 187, 80, 0.35)',
-                    borderColor: 'rgba(40, 187, 80, 1)',
+                    borderColor: t.brand,
+                    backgroundColor: t.brandFill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
                     pointBackgroundColor: chartData.map((row) => {
-                        if (row.value >= upperLimit) return 'rgba(255, 99, 132, 1)';
-                        if (row.value >= warningLimit) return 'rgba(255, 205, 86, 1)';
-                        if (row.value <= lowerLimit) return 'rgba(54, 162, 235, 1)';
-                        return 'rgba(40, 187, 80, 1)';
+                        if (row.value >= upperLimit) return t.crit;
+                        if (row.value >= warningLimit) return t.warn;
+                        if (row.value <= lowerLimit) return t.muted;
+                        return t.brand;
                     }),
-                    pointBorderColor: '#fff',
+                    pointBorderColor: t.surface,
                     pointBorderWidth: 1,
                     pointRadius: 3,
-                    pointHoverRadius: 6
-                }]
+                    pointHoverRadius: 6,
+                }],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: { color: t.grid },
+                        border: { color: t.grid },
+                        ticks: { color: t.muted, maxRotation: 0, autoSkipPadding: 12 },
+                    },
+                    y: {
+                        grid: { color: t.grid },
+                        border: { display: false },
+                        ticks: { color: t.muted },
+                    },
+                },
                 plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: t.surface,
+                        titleColor: t.text,
+                        bodyColor: t.text,
+                        borderColor: t.grid,
+                        borderWidth: 1,
+                        displayColors: false,
+                    },
                     annotation: {
                         annotations: {
+                            critBand: {
+                                type: 'box',
+                                yMin: upperLimit,
+                                yMax: upperLimit + Math.max(upperLimit - warningLimit, 1),
+                                backgroundColor: t.critSoft,
+                                borderWidth: 0,
+                                adjustScaleRange: false,
+                                drawTime: 'beforeDatasetsDraw',
+                            },
+                            warnBand: {
+                                type: 'box',
+                                yMin: warningLimit,
+                                yMax: upperLimit,
+                                backgroundColor: t.warnSoft,
+                                borderWidth: 0,
+                                adjustScaleRange: false,
+                                drawTime: 'beforeDatasetsDraw',
+                            },
                             upperLimit: {
                                 type: 'line',
                                 yMin: upperLimit,
                                 yMax: upperLimit,
-                                borderColor: 'rgb(255, 99, 132)',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
+                                borderColor: t.crit,
+                                borderWidth: 1,
+                                borderDash: [4, 4],
                             },
                             warningLimit: {
                                 type: 'line',
                                 yMin: warningLimit,
                                 yMax: warningLimit,
-                                borderColor: 'rgb(255, 205, 86)',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
+                                borderColor: t.warn,
+                                borderWidth: 1,
+                                borderDash: [4, 4],
                             },
                             lowerLimit: {
                                 type: 'line',
                                 yMin: lowerLimit,
                                 yMax: lowerLimit,
-                                borderColor: 'rgb(54, 162, 235)',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                            }
-                        }
+                                borderColor: t.muted,
+                                borderWidth: 1,
+                                borderDash: [4, 4],
+                            },
+                        },
                     },
-                    legend: { display: false }
-                }
-            }
+                },
+            },
         });
 
         return () => { chartRef.current?.destroy(); };
-    }, [chartData, sensorType, upperLimit, lowerLimit, warningLimit, unit]);
+    }, [chartData, sensorType, upperLimit, lowerLimit, warningLimit, unit, themeVersion]);
 
     const displayKey = sensorType.toLowerCase().replace(/\s+/g, '');
-    const displayTitle = DISPLAY_TITLE_MAP[displayKey] ?? sensorType.toUpperCase();
+    const displayTitle = DISPLAY_TITLE_MAP[displayKey] ?? sensorType;
+    const limits = [
+        { tone: 'crit', label: 'Upper', value: upperLimit },
+        { tone: 'warn', label: 'Warning', value: warningLimit },
+        { tone: 'muted', label: 'Lower', value: lowerLimit },
+    ];
 
     if (loading) {
         return (
-            <IonCard mode="ios">
-                <IonCardHeader>
-                    <IonCardSubtitle>{displayTitle}</IonCardSubtitle>
-                </IonCardHeader>
-                <IonCardContent>
-                    <div className="graph-loading">
-                        <IonSpinner name="crescent" />
-                    </div>
-                </IonCardContent>
-            </IonCard>
+            <section className="bs-card chart-card">
+                <div className="chart-head">
+                    <h2>{displayTitle}</h2>
+                </div>
+                <div className="chart-state">
+                    <IonSpinner name="crescent" />
+                </div>
+            </section>
         );
     }
 
     if (chartData.length === 0) {
         return (
-            <IonCard mode="ios">
-                <IonCardHeader>
-                    <IonCardSubtitle>{displayTitle}</IonCardSubtitle>
-                </IonCardHeader>
-                <IonCardContent>
-                    <div className="graph-empty">
-                        <IonText color="medium">No data available</IonText>
-                    </div>
-                </IonCardContent>
-            </IonCard>
+            <section className="bs-card chart-card">
+                <div className="chart-head">
+                    <h2>{displayTitle}</h2>
+                </div>
+                <div className="chart-state">
+                    <p>No readings yet for this drawer.</p>
+                </div>
+            </section>
         );
     }
 
     return (
-        <IonCard mode="ios">
-            <IonCardHeader>
-                <IonCardSubtitle className="graph-header">
-                    <span>{displayTitle}</span>
-                    <div className="graph-value-container">
-                        <IonText className={`graph-value ${colorClass}`}>
-                            {typeof latestValue === 'number' ? formatGraphValue(sensorType, latestValue) : latestValue}{unit}
-                        </IonText>
-                        <IonChip color={chipColor} className="graph-status-chip">
-                            {statusText}
-                        </IonChip>
-                    </div>
-                </IonCardSubtitle>
-            </IonCardHeader>
-            <IonCardContent>
-                <div className="graph-container">
-                    <canvas ref={canvasRef} role="img" aria-label={`${sensorType} data chart`} />
+        <section className="bs-card chart-card">
+            <div className="chart-head">
+                <div>
+                    <h2>{displayTitle}</h2>
+                    <p>Latest hour</p>
                 </div>
-            </IonCardContent>
-        </IonCard>
+                <div className="chart-now" data-status={reading.status}>
+                    <span className="chart-value mono">
+                        {formatGraphValue(sensorType, reading.latestValue)}
+                        <small>{unit}</small>
+                    </span>
+                    <StatusPill status={reading.status}>{reading.label}</StatusPill>
+                </div>
+            </div>
+            <div className="chart-container">
+                <canvas ref={canvasRef} role="img" aria-label={`${sensorType} data chart`} />
+            </div>
+            <dl className="chart-limits">
+                {limits.map((limit) => (
+                    <div key={limit.label} data-tone={limit.tone}>
+                        <dt>
+                            <i aria-hidden="true" />
+                            {limit.label}
+                        </dt>
+                        <dd className="mono">{limit.value}{unit}</dd>
+                    </div>
+                ))}
+            </dl>
+        </section>
     );
 };
 
