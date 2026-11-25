@@ -1,147 +1,101 @@
 # BSFLY IoT
 
-IoT-Based Environmental Control System for Black Soldier Fly Larvae Farming.
-
-This repository contains three connected parts:
-
-- A mobile/web frontend built with Ionic React, Capacitor, and Vite.
-- A Node.js backend built with Express, MongoDB, MQTT, and Clerk authentication.
-- ESP32 firmware that collects sensor data, controls actuators, and syncs with the backend.
-
-## System Architecture
+IoT environmental control for **Black Soldier Fly** larvae farming: an ESP32 watches each drawer and drives the fans, heater, humidifiers and light, and you monitor and control it from your phone.
 
 ```mermaid
 flowchart LR
-	subgraph Edge[ESP32 Layer]
-		FW[ESP32 firmware\nSensors, actuators, SD buffering, MQTT, HTTPS]
-	end
-
-	subgraph API[Backend Layer]
-		SRV[Express API\nAuth, devices, sensors, reports, webhooks]
-		DB[(MongoDB)]
-		MQ[(MQTT broker / client integration)]
-		AUTH[Clerk]
-	end
-
-	subgraph APP[Client Layer]
-		WEB[Ionic React app\nDashboard, devices, analytics, alerts]
-	end
-
-	FW <--> MQ
-	FW <--> SRV
-	WEB <--> SRV
-	SRV <--> DB
-	SRV <--> AUTH
+  ESP[ESP32<br/>firmware/] <-->|MQTT| B[(Broker)]
+  B <-->|MQTT| API[API<br/>server/]
+  ESP -->|HTTPS| API
+  API --> DB[(PostgreSQL)]
+  APP[App<br/>app/] -->|REST| API
+  B -->|live data| APP
 ```
 
-## Repository Structure
+## What's inside
 
-- `bsfly-iot/` - Ionic React frontend application.
-- `server/` - Express backend and API routes.
-- `esp32/` - Arduino/ESP32 firmware for environmental control.
-- `README.md` - Project overview and setup guide.
+| Folder | What | Stack |
+|---|---|---|
+| [`firmware/`](firmware/README.md) | Sensors, relays, LCDs, SD buffer, OTA | ESP32, PlatformIO, `lib/bsfly` |
+| [`server/`](docs/architecture.md) | REST API, MQTT bridge, reports | Node 20+, Express 5, Drizzle, Postgres |
+| `app/` | Dashboard, controls, analytics, backup | Ionic 8, React 19, Capacitor (Android) |
+| [`docs/`](docs) | Architecture, database, deployment | Mermaid diagrams |
 
-## Frontend
+## How it works
 
-The frontend lives in `bsfly-iot/` and uses:
-
-- Ionic React for the UI shell and navigation.
-- Capacitor for Android/mobile packaging.
-- Clerk for authentication gating.
-- Lazy-loaded feature pages such as dashboard, analytics, devices, light control, backup, and about.
-
-Main entry points:
-
-- `bsfly-iot/src/main.tsx`
-- `bsfly-iot/src/App.tsx`
-
-### Frontend Architecture
-
-The app is organized around a small set of global providers and route-level pages:
-
-- `LifeCycleProvider` manages app lifecycle behavior.
-- `DeviceProvider` holds device and hardware state.
-- `NotificationProvider` manages notification state and delivery.
-- Routes switch between signed-in and signed-out experiences.
-- Shared UI lives under `bsfly-iot/src/components/`.
-
-## Backend
-
-The backend lives in `server/` and exposes the API that powers the dashboard and device integrations.
-
-Main entry point:
-
-- `server/server.js`
-
-### Backend Architecture
-
-The server is structured as an Express app with layered responsibilities:
-
-- `controllers/` exposes route handlers for users, devices, sensors, actuators, reports, and webhooks.
-- `middleware/` handles auth, rate limiting, and validation.
-- `database/` manages MongoDB connectivity.
-- `models/` contains persistence models.
-- `mqttClient.js` initializes MQTT connectivity and scheduler behavior.
-- `webhooks/` contains Clerk webhook handling.
-
-The backend flow is:
-
-1. Accept authenticated HTTP requests from the Ionic app.
-2. Receive device telemetry and control updates from the ESP32 layer.
-3. Persist and query operational data in MongoDB.
-4. Relay or reconcile real-time events through MQTT and webhooks.
-
-## ESP32 Firmware
-
-The firmware lives in `esp32/` and is responsible for local control even when the network is unavailable.
-
-Main entry point:
-
-- `esp32/main.ino`
-
-### Firmware Responsibilities
-
-- Read temperature, humidity, moisture, and ammonia sensors.
-- Drive actuators such as fans, heater, humidifiers, pump, and enclosure light.
-- Buffer data to SD card when offline.
-- Publish telemetry through MQTT and send heartbeat/HTTPS requests.
-- Continue autonomous control when the backend is temporarily unreachable.
-
-## Tech Stack
-
-- Frontend: Ionic React, React 19, TypeScript, Vite, Capacitor.
-- Backend: Node.js, Express, MongoDB, MQTT, Clerk, dotenv.
-- Firmware: Arduino C++ for ESP32.
-- Testing: Vitest, Cypress, Node test runner.
-
-## Getting Started
-
-### Frontend
-
-```bash
-cd bsfly-iot
-npm install
-npm run dev
+```mermaid
+flowchart TD
+  S[Sensors every 5 s] --> C{AUTO mode?}
+  C -->|yes| R[ESP32 switches relays itself]
+  C -->|no| W[Waits for commands from the app]
+  S --> P[Publish to MQTT]
+  P --> D[(Stored by the API)]
+  P --> L[Live on the dashboard]
+  S -.->|offline| SD[(microSD)] -.->|back online| D
 ```
 
-### Backend
+## Quick start (local)
 
+**1. Server**
 ```bash
 cd server
+cp .env.example .env        # fill in Clerk + MQTT
+docker compose up -d        # local Postgres
 npm install
-npm run dev
+npm run db:migrate
+npm run dev                 # http://localhost:5000
 ```
 
-### ESP32 Firmware
+**2. App**
+```bash
+cd app
+cp .env.example .env        # VITE_BACKEND_URL=http://localhost:5000
+npm install
+npm run dev                 # http://localhost:5173
+```
 
-1. Open `esp32/main.ino` in the Arduino IDE or PlatformIO.
-2. Create `esp32/credentials.h` from `esp32/credentials.h.example`.
-3. Configure Wi-Fi, MQTT, API, and device credentials.
-4. Flash the firmware to the ESP32 board.
+**3. Firmware**
+```bash
+cd firmware
+cp include/credentials.h.example include/credentials.h
+pio run -t upload
+```
+On first boot, connect to the `setupBSF` Wi-Fi hotspot and pick your network.
 
-## Notes
+## Add your device
 
-- The frontend uses signed-in and signed-out route guards.
-- The backend allows local development origins such as `localhost:5173` and `localhost:8100`.
-- The ESP32 firmware is designed to keep the incubator operating during network outages.
+```mermaid
+sequenceDiagram
+  participant You
+  participant App
+  participant ESP32
+  You->>App: Devices, then Add (MAC + name)
+  App-->>You: API key (shown once)
+  You->>ESP32: Paste into DEVICE_API_KEY, flash
+  ESP32->>App: Heartbeat, device shows Online
+  You->>App: Share join code with teammates
+```
 
+### How to get ESP32 MAC address
+
+- **Serial monitor:** `pio device monitor`. The device prints `Device ID: AA:BB:CC:DD:EE:FF` after it joins Wi-Fi.
+- **Browser on the same network:** open `http://<device-ip>/status` and read `deviceId`.
+
+## Docs
+
+- [Architecture](docs/architecture.md): data flow, MQTT topics, who can call what
+- [Database](docs/database.md): schema diagram, setup, migrating from MongoDB
+- [Deployment](docs/deployment.md): free hosting with Neon, Render, Vercel, EMQX and Clerk
+- [Firmware](firmware/README.md): wiring, build, OTA
+
+## Tests
+
+```bash
+cd server && npm test        # API tests on in-memory Postgres
+cd app && npx vitest run
+cd firmware && pio run       # compile check
+```
+
+## License
+
+[MIT](LICENSE)
