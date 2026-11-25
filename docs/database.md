@@ -91,7 +91,7 @@ npm run db:migrate
 npm run dev
 ```
 
-Changed the schema? Run `npm run db:generate`, commit the new file in `drizzle/`, then `npm run db:migrate`. You can browse the data with `npm run db:studio`.
+After you edit the schema, run `npm run db:generate`, commit the new file in `drizzle/`, then run `npm run db:migrate`. `npm run db:studio` opens a browser view of the data.
 
 ## Moving old MongoDB data
 
@@ -99,7 +99,7 @@ Changed the schema? Run `npm run db:generate`, commit the new file in `drizzle/`
 MONGODB_URI="mongodb+srv://…" npm run migrate:mongo
 ```
 
-The script only reads from Mongo, and it's safe to run twice. Device IDs are kept. Old API keys still hash to the same value, but the firmware never sent one, so **regenerate each device's key in the app and re-flash**.
+The script only reads from MongoDB, and you can run it twice without creating duplicates. It keeps the old device IDs and stores the old API keys as hashes. The old firmware never sent a key, though, so you still need to regenerate each device's key in the app and re-flash the device.
 
 ## Storage budget
 

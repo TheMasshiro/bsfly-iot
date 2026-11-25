@@ -151,7 +151,7 @@ const About: FC = () => {
                                 <IonItem lines="none">
                                     <IonLabel>
                                         <h3>Hardware</h3>
-                                        <p>ESP32, DHT11, MQ-135, Substrate Moisture Sensors</p>
+                                        <p>ESP32, DHT11/DHT22, MQ-137, substrate moisture sensors</p>
                                     </IonLabel>
                                 </IonItem>
                             </IonList>

@@ -595,7 +595,7 @@ const Devices: FC = () => {
                     isOpen={showRegenerateAlert}
                     onDidDismiss={() => setShowRegenerateAlert(false)}
                     header="Regenerate API key?"
-                    message="The current key stops working until the ESP32 is updated."
+                    message="The current key stops working right away. Flash the new key to the ESP32."
                     buttons={[
                         { text: "Cancel", role: "cancel" },
                         { text: "Regenerate", role: "destructive", handler: () => { void regenerateApiKey(); } }

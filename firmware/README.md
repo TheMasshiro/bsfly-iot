@@ -33,7 +33,7 @@ pio device monitor
 
 ## Local web portal
 
-- `/hardware`, `/status`, `/sdcard/data`, `/sdcard/sync`: open
+- `/hardware`, `/status`, `/sdcard/data`, `/sdcard/sync`: no login
 - `http://<device-ip>/update`: ElegantOTA firmware upload, basic auth with OTA_USERNAME / OTA_PASSWORD
 - `/reboot`, `/sdcard/clear`, `/calibrate/*`: basic auth with DEVICE_ADMIN_USER / DEVICE_ADMIN_PASSWORD
 

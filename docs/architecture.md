@@ -1,6 +1,6 @@
 # Architecture
 
-## Big picture
+## System overview
 
 ```mermaid
 flowchart LR
@@ -31,7 +31,7 @@ flowchart LR
 
 The app never publishes to MQTT. Every command goes through the API, which checks membership and AUTO/MANUAL mode first.
 
-## A command, end to end
+## How a command reaches the device
 
 ```mermaid
 sequenceDiagram
@@ -66,7 +66,7 @@ sequenceDiagram
 | Clerk | Svix signature | `POST /api/webhooks/clerk` |
 | Anyone | none | `GET /api/time`, `GET /health` |
 
-A device is **online** when its last heartbeat or MQTT message is newer than 20 s. No background sweep needed.
+The API counts a device as online if its last heartbeat or MQTT message arrived in the past 20 s. It works this out when it reads the device, so no background job has to mark devices offline.
 
 ## Repo layout
 

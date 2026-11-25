@@ -1251,7 +1251,7 @@ const Backup: FC = () => {
                     isOpen={showAuthAlert}
                     onDidDismiss={() => setShowAuthAlert(false)}
                     header="Device admin login"
-                    message="Needed to clear device SD data. Kept in this session only."
+                    message="Required to clear the SD card. Forgotten when you leave this page."
                     inputs={[
                         { name: "username", type: "text", placeholder: "Username" },
                         { name: "password", type: "password", placeholder: "Password" }

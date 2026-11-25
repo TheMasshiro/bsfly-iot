@@ -23,28 +23,28 @@ flowchart LR
 Free tiers change. Check each provider's pricing page before relying on these limits.
 
 ## 1. Database: Neon
-1. Create a project, then copy the **pooled** connection string.
+1. Create a project, then copy the pooled connection string.
 2. Run `DATABASE_URL=… npm run db:migrate` from `server/`.
 
 ## 2. MQTT: EMQX Serverless
-Create two users. Under **Access Control → Authorization**, give each user its rules:
+Create two users, then set their rules under Access Control > Authorization:
 
 | User | Used by | Allow |
 |---|---|---|
 | `bsfly-server` | API + ESP32 | publish + subscribe `devices/#` |
-| `bsfly-web` | browser | **subscribe only** `devices/+/sensors`, `devices/+/actuators/#` |
+| `bsfly-web` | browser | subscribe only: `devices/+/sensors`, `devices/+/actuators/#` |
 
 The browser user ships in the public JS bundle, which is why it can't publish. Download the broker's CA certificate and paste it into `MQTT_ROOT_CA` in the firmware.
 
 ## 3. API: Render
-1. **New Web Service**, set the root directory to `server`.
+1. Create a New Web Service with the root directory set to `server`.
 2. Build command: `npm ci`. Start command: `npm run db:migrate && npm start`.
 3. Environment: copy every variable from `server/.env.example`. Keep `TZ=Asia/Manila` so the 19:00 light schedule runs on local time.
 4. On cron-job.org, set `https://<service>.onrender.com/health` to run every 10 min.
 
 That uses about 744 of Render's 750 free hours a month, so run only one free service.
 
-**Want it always on with no tricks?** Oracle Cloud Always Free (Ampere VM): install Node 20+, clone the repo, then `npm ci && npm run db:migrate` and run `npm start` under systemd or `pm2`. Put Caddy in front for HTTPS.
+If you want an API that never sleeps, use an Oracle Cloud Always Free Ampere VM instead. Install Node 20+, clone the repo, run `npm ci && npm run db:migrate`, and keep `npm start` running with systemd or `pm2`. Put Caddy in front of it for HTTPS.
 
 ## 4. Web app: Vercel
 1. Import the repo and set the root directory to `app`. The framework is Vite.
@@ -53,7 +53,7 @@ That uses about 744 of Render's 750 free hours a month, so run only one free ser
 
 ## 5. Clerk
 1. Copy the publishable key to the app, and the secret key to the server.
-2. **Webhooks → Add endpoint**: `https://<api>/api/webhooks/clerk`, events `user.created`, `user.updated` and `user.deleted`. Put the signing secret in `CLERK_WEBHOOK_SECRET`.
+2. In Webhooks, add the endpoint `https://<api>/api/webhooks/clerk` with the events `user.created`, `user.updated` and `user.deleted`. Put its signing secret in `CLERK_WEBHOOK_SECRET`.
 
 ## 6. Android
 ```bash

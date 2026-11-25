@@ -1,6 +1,6 @@
 # BSFLY IoT
 
-IoT environmental control for **Black Soldier Fly** larvae farming: an ESP32 watches each drawer and drives the fans, heater, humidifiers and light, and you monitor and control it from your phone.
+IoT environmental control for Black Soldier Fly larvae farming. An ESP32 reads the sensors in each drawer and switches the fans, heater, humidifiers and light. You watch and control it from your phone.
 
 ```mermaid
 flowchart LR
@@ -36,7 +36,7 @@ flowchart TD
 
 ## Quick start (local)
 
-**1. Server**
+### 1. Server
 ```bash
 cd server
 cp .env.example .env        # fill in Clerk + MQTT
@@ -46,7 +46,7 @@ npm run db:migrate
 npm run dev                 # http://localhost:5000
 ```
 
-**2. App**
+### 2. App
 ```bash
 cd app
 cp .env.example .env        # VITE_BACKEND_URL=http://localhost:5000
@@ -54,7 +54,7 @@ npm install
 npm run dev                 # http://localhost:5173
 ```
 
-**3. Firmware**
+### 3. Firmware
 ```bash
 cd firmware
 cp include/credentials.h.example include/credentials.h
@@ -78,8 +78,9 @@ sequenceDiagram
 
 ### How to get ESP32 MAC address
 
-- **Serial monitor:** `pio device monitor`. The device prints `Device ID: AA:BB:CC:DD:EE:FF` after it joins Wi-Fi.
-- **Browser on the same network:** open `http://<device-ip>/status` and read `deviceId`.
+Run `pio device monitor`. Once the device joins Wi-Fi it prints `Device ID: AA:BB:CC:DD:EE:FF`.
+
+You can also open `http://<device-ip>/status` from a browser on the same network and read `deviceId`.
 
 ## Docs
 
