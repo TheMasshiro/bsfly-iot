@@ -1,0 +1,115 @@
+:root {
+  --bsf-page-max: 1200px;
+  --bsf-fab-clearance: 96px;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+ion-content {
+  --background: #0a0a0a;
+}
+
+ion-content::part(scroll) {
+  overflow-x: hidden;
+}
+
+ion-item {
+  --min-height: 44px;
+}
+
+ion-button {
+  min-height: 44px;
+}
+
+ion-segment-button {
+  min-height: 44px;
+}
+
+ion-menu {
+  --width: min(84vw, 300px);
+}
+
+ion-split-pane {
+  --side-width: 260px;
+  --side-min-width: 240px;
+  --side-max-width: 280px;
+}
+
+.page-container {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 12px calc(var(--bsf-fab-clearance) + var(--ion-safe-area-bottom, 0px));
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.card-grid > ion-card,
+.card-grid > .card-cell,
+.stack > ion-card {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.card-grid > .card-wide {
+  grid-column: 1 / -1;
+}
+
+.stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chart-frame {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 992px) {
+  .page-container {
+    max-width: var(--bsf-page-max);
+    padding: 16px 24px calc(48px + var(--ion-safe-area-bottom, 0px));
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .card-grid > .card-wide {
+    grid-column: span 2;
+  }
+
+  .menu-toggle {
+    display: none;
+  }
+}

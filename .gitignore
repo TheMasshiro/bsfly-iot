@@ -28,3 +28,9 @@ yarn-error.log*
 # Optional eslint cache
 .eslintcache
 data.js
+
+# ESP32 firmware secrets and PlatformIO build output
+firmware/include/credentials.h
+firmware/credentials.h
+firmware/.pio/
+!.env.example
