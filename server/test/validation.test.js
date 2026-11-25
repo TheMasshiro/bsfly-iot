@@ -7,7 +7,7 @@ import {
   isValidJoinCode,
   isValidSensorValue,
   validateBody,
-} from "../middleware/validation.js";
+} from "../src/middleware/validation.js";
 
 test("sanitizeString trims and escapes html", () => {
   assert.equal(sanitizeString("  <script>alert(1)</script>  "),
