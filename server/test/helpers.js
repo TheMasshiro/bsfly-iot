@@ -37,5 +37,5 @@ export async function startTestServer() {
     await client.close();
   };
 
-  return { db, call, stop };
+  return { db, call, stop, base };
 }

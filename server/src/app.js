@@ -9,13 +9,23 @@ import webhookRoutes from "./routes/webhooks.js";
 import { clerkIdentity } from "./middleware/auth.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 
-const DEFAULT_ORIGINS = ["http://localhost:5173", "http://localhost:8100", "capacitor://localhost", "https://localhost"];
+const DEFAULT_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:8100",
+  "capacitor://localhost",
+  "https://localhost",
+  "https://bsfly-iot.vercel.app",
+];
+const VERCEL_PREVIEW = /^https:\/\/bsfly-iot-[a-z0-9-]+-john-christian-vicentes-projects\.vercel\.app$/;
 
 function corsOptions() {
   const configured = (process.env.ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
   const allowed = new Set(configured.length ? configured : DEFAULT_ORIGINS);
   return {
-    origin: (origin, cb) => (!origin || allowed.has(origin) ? cb(null, true) : cb(new Error("CORS origin denied"))),
+    origin: (origin, cb) =>
+      !origin || allowed.has(origin) || VERCEL_PREVIEW.test(origin)
+        ? cb(null, true)
+        : cb(new Error("CORS origin denied")),
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
     credentials: true,
