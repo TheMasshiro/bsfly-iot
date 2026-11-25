@@ -1,5 +1,5 @@
 import { IonButton, IonIcon, useIonToast } from "@ionic/react";
-import { alertCircleOutline, checkmarkCircleOutline, hardwareChipOutline, sunnyOutline, timeOutline } from "ionicons/icons";
+import { alertCircleOutline, checkmarkCircleOutline, cloudOfflineOutline, hardwareChipOutline, pulseOutline, sunnyOutline, timeOutline } from "ionicons/icons";
 import { FC, useMemo, useState } from "react";
 import { useHistory } from "react-router-dom";
 import Card from "../../components/ui/Card";
@@ -28,7 +28,7 @@ const Dashboard: FC = () => {
   const [present] = useIonToast();
   const online = useOnlineStatus();
   const { stage, setStage } = useLifeCycle();
-  const { currentDevice, setCurrentDevice, getToken, refreshDevices, loading: devicesLoading } = useDevice();
+  const { currentDevice, setCurrentDevice, getToken, refreshDevices, loading: devicesLoading, failed: devicesFailed } = useDevice();
   const deviceId = currentDevice?._id;
   const deviceOnline = currentDevice?.status === "online";
   const mode = currentDevice?.controlMode ?? "auto";
@@ -40,6 +40,7 @@ const Dashboard: FC = () => {
   useReadingAlerts(readings, deviceOnline);
 
   const issues = useMemo(() => DRAWERS.flatMap((d) => issuesFor(d, readings[d])), [readings]);
+  const hasReadings = DRAWERS.some((d) => readings[d].updatedAt !== null && (readings[d].temperature !== null || readings[d].humidity !== null));
   const critical = issues.filter((i) => i.status === "crit").length;
 
   const lockReason = !currentDevice
@@ -79,6 +80,22 @@ const Dashboard: FC = () => {
     }
   };
 
+  if (!devicesLoading && !currentDevice && devicesFailed) {
+    return (
+      <Page title="Home" onRefresh={refreshDevices}>
+        <Card>
+          <EmptyState
+            icon={cloudOfflineOutline}
+            title="Can't reach the server"
+            action={<IonButton fill="outline" onClick={() => void refreshDevices()}>Try again</IonButton>}
+          >
+            Your devices and readings will show here once the connection is back.
+          </EmptyState>
+        </Card>
+      </Page>
+    );
+  }
+
   if (!devicesLoading && !currentDevice) {
     return (
       <Page title="Home">
@@ -117,17 +134,20 @@ const Dashboard: FC = () => {
       }
     >
       <div className="home-top">
-        <div className="status-hero" data-status={loading ? "idle" : critical ? "crit" : issues.length ? "warn" : "ok"} role="status">
-          <IonIcon icon={issues.length ? alertCircleOutline : checkmarkCircleOutline} aria-hidden="true" />
+        <div className="status-hero" data-status={loading || !hasReadings ? "idle" : critical ? "crit" : issues.length ? "warn" : "ok"} role="status">
+          <IonIcon icon={!hasReadings ? pulseOutline : issues.length ? alertCircleOutline : checkmarkCircleOutline} aria-hidden="true" />
           <div>
             <h2>
               {loading
                 ? "Checking the drawers…"
-                : issues.length === 0
-                  ? "Everything looks good"
-                  : `${issues.length} ${issues.length === 1 ? "thing needs" : "things need"} attention`}
+                : !hasReadings
+                  ? "No readings yet"
+                  : issues.length === 0
+                    ? "Everything looks good"
+                    : `${issues.length} ${issues.length === 1 ? "thing needs" : "things need"} attention`}
             </h2>
-            {!loading && issues.length === 0 && <p>All readings are inside the target ranges.</p>}
+            {!loading && !hasReadings && <p>{deviceOnline ? "Waiting for the first readings from the drawers." : "The device is offline. Check its power and Wi-Fi."}</p>}
+            {!loading && hasReadings && issues.length === 0 && <p>All readings are inside the target ranges.</p>}
             {issues.length > 0 && (
               <ul>
                 {issues.slice(0, 4).map((i) => (

@@ -1,11 +1,12 @@
 import { SignInButton } from "@clerk/clerk-react";
 import { CheckboxCustomEvent, IonButton, IonCheckbox, IonContent, IonIcon, IonPage } from "@ionic/react";
-import { bugOutline, cloudOutline, leafOutline, notificationsOutline, powerOutline, pulseOutline, thermometerOutline, waterOutline } from "ionicons/icons";
+import { cloudOutline, leafOutline, notificationsOutline, powerOutline, pulseOutline, thermometerOutline, waterOutline } from "ionicons/icons";
 import { FC, useRef, useState } from "react";
 import Card from "../../components/ui/Card";
 import Metric from "../../components/ui/Metric";
 import StatusPill from "../../components/ui/StatusPill";
 import Terms from "../../components/Terms/Terms";
+import BrandMark from "../../components/shell/BrandMark";
 import "./Welcome.css";
 
 const features = [
@@ -31,10 +32,8 @@ const Welcome: FC = () => {
                 <div className="welcome-shell">
                     <section className="welcome-intro">
                         <div className="welcome-brand">
-                            <span className="welcome-mark">
-                                <IonIcon icon={bugOutline} aria-hidden="true" />
-                            </span>
-                            <span>BSFly</span>
+                            <BrandMark size={40} />
+                            <span>BSFLY</span>
                         </div>
                         <h1>Watch your larvae drawers from your phone.</h1>
                         <ul className="welcome-features">

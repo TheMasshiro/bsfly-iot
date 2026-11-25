@@ -29,20 +29,6 @@
   font-weight: 600;
 }
 
-.welcome-page .welcome-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--bs-brand);
-  color: var(--bs-brand-ink);
-}
-
-.welcome-page .welcome-mark ion-icon {
-  font-size: 20px;
-}
-
 .welcome-page .welcome-intro h1 {
   margin: 0;
   font-size: var(--bs-fs-xl);

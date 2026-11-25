@@ -29,7 +29,9 @@ function connect() {
   setTimeout(() => {
     client.connected = true;
     emit("connect");
+    const scenario = sessionStorage.getItem("demo-scenario") ?? "";
     const tick = () => {
+      if (scenario === "empty" || scenario === "nodata" || scenario === "error") return;
       for (const drawer of ["Drawer 1", "Drawer 2"]) {
         emit("message", `devices/${DEMO_MAC}/sensors`, new TextEncoder().encode(JSON.stringify(reading(drawer))));
       }

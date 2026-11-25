@@ -35,6 +35,8 @@ const toDrawer = (name: unknown): Drawer | null =>
 function normalize(data: any): Snapshot {
   const moisture = num(data?.moisture);
   const ts = data?.timestamp ? new Date(data.timestamp).getTime() : Date.now();
+  const empty = ["temperature", "humidity", "leftSubstrate", "centerSubstrate", "rightSubstrate", "ammonia", "moisture"].every((k) => num(data?.[k], true) === null);
+  if (empty) return { ...EMPTY };
   return {
     temperature: num(data?.temperature, true),
     humidity: num(data?.humidity),
@@ -72,7 +74,7 @@ export function useDrawerReadings(deviceId: string | undefined, getToken: () => 
 
   useEffect(() => {
     setReadings({ "Drawer 1": EMPTY, "Drawer 2": EMPTY });
-    setLoading(true);
+    setLoading(Boolean(deviceId));
     if (!deviceId) return;
     void refresh();
 

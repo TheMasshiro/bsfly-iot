@@ -26,6 +26,7 @@ import './theme/variables.css';
 import './theme/layout.css';
 import './components/ui/ui.css';
 import './components/shell/shell.css';
+import './theme/compact.css';
 import LiveSync from './components/shell/LiveSync';
 import { ThemeProvider } from './theme/theme';
 import { LifeCycleProvider } from './context/LifeCycleContext';

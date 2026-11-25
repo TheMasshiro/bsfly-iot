@@ -2,6 +2,7 @@ import { IonIcon, IonToolbar } from "@ionic/react";
 import { menuController } from "@ionic/core/components";
 import { chevronDownOutline, cloudOfflineOutline, notificationsOutline } from "ionicons/icons";
 import { FC } from "react";
+import { useHistory } from "react-router-dom";
 import { useDevice } from "../../context/DeviceContext";
 import { useNotification } from "../../context/NotificationContext";
 import { useOnlineStatus } from "../../hooks/useOnlineStatus";
@@ -11,6 +12,8 @@ const AppHeader: FC = () => {
   const { currentDevice, devices } = useDevice();
   const { unreadCount } = useNotification();
   const online = useOnlineStatus();
+  const history = useHistory();
+  const openDevices = () => (devices.length > 1 ? menuController.open("device-menu") : history.push("/devices"));
   const deviceOnline = currentDevice?.status === "online";
 
   const state = !currentDevice
@@ -26,8 +29,8 @@ const AppHeader: FC = () => {
           <button
             type="button"
             className="bs-device-chip"
-            onClick={() => (devices.length > 1 ? menuController.open("device-menu") : undefined)}
-            aria-label={currentDevice ? `Device ${currentDevice.name}, ${state}. Change device` : "No device"}
+            onClick={() => void openDevices()}
+            aria-label={currentDevice ? `Device ${currentDevice.name}, ${state}. ${devices.length > 1 ? "Change device" : "Open devices"}` : "No device. Add a device"}
           >
             <span className={`bs-dot ${currentDevice ? (deviceOnline ? "online" : "offline") : ""}`} />
             <span className="name">{currentDevice?.name ?? "No device"}</span>
