@@ -28,11 +28,29 @@ const routes: Array<[string, RegExp, Handler]> = [
   }],
 ];
 
+const params = new URLSearchParams(window.location.search);
+if (params.has("scenario")) sessionStorage.setItem("demo-scenario", params.get("scenario") ?? "");
+const scenario = sessionStorage.getItem("demo-scenario") ?? "";
+if (scenario === "empty") devices.splice(0, devices.length);
+if (scenario === "nodata") Object.keys(actuators).forEach((k) => delete actuators[k]);
+
+const blank = (pathname: string) => {
+  if (/\/hourly$/.test(pathname)) return Array.from({ length: 24 }, (_, i) => ({ hour: new Date(Date.now() - (23 - i) * 3.6e6).toISOString(), temperature: null, humidity: null, moisture: null, leftSubstrate: null, centerSubstrate: null, rightSubstrate: null, ammonia: null }));
+  if (/\/history$/.test(pathname)) return [];
+  return { temperature: null, humidity: null, moisture: null, leftSubstrate: null, centerSubstrate: null, rightSubstrate: null, ammonia: null };
+};
+
 const adapter: AxiosAdapter = async (config: InternalAxiosRequestConfig) => {
   const url = new URL((config.baseURL ?? "") + (config.url ?? ""), "http://demo.local");
   const method = (config.method ?? "get").toLowerCase();
   const body = typeof config.data === "string" ? JSON.parse(config.data || "null") : config.data;
   await new Promise((r) => setTimeout(r, 120));
+  if (scenario === "error" && url.pathname.startsWith("/api/")) {
+    return Promise.reject(Object.assign(new Error("Request failed with status code 500"), { isAxiosError: true, config, response: { status: 500, data: { error: "Internal server error" }, config, headers: {}, statusText: "Error" } }));
+  }
+  if (scenario === "nodata" && url.pathname.startsWith("/api/sensors/")) {
+    return { data: blank(url.pathname), status: 200, statusText: "OK", headers: {}, config } as AxiosResponse;
+  }
   for (const [verb, pattern, handler] of routes) {
     const m = url.pathname.match(pattern);
     if (verb === method && m) {

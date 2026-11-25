@@ -4,6 +4,7 @@ import { logOutOutline } from "ionicons/icons";
 import { FC } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import Segmented from "../ui/Segmented";
+import BrandMark from "../shell/BrandMark";
 import { NavItem, primaryNav, secondaryNav } from "../shell/nav";
 import { ThemePref, useTheme } from "../../theme/theme";
 
@@ -29,7 +30,7 @@ const Menu: FC = () => {
       <IonContent>
         <div className="bs-side">
           <div className="bs-brand">
-            <div className="bs-brand-mark" aria-hidden="true">BS</div>
+            <BrandMark />
             <div className="bs-brand-text">
               <strong>BSFLY</strong>
               <span>Larvae farm monitor</span>

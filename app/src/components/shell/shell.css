@@ -177,18 +177,9 @@
   padding: 4px 8px 20px;
 }
 
-.bs-brand-mark {
-  display: grid;
-  place-items: center;
+.bs-mark {
+  display: block;
   flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--bs-brand);
-  color: var(--bs-brand-ink);
-  font-family: var(--bs-mono);
-  font-weight: 500;
-  font-size: 15px;
 }
 
 .bs-brand-text strong {

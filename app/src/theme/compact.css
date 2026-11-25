@@ -1,0 +1,170 @@
+@media (max-width: 767px) {
+  html,
+  body {
+    font-size: 14px;
+  }
+
+  ion-toolbar {
+    --min-height: 52px;
+  }
+
+  .page-container {
+    padding: 12px 16px calc(20px + var(--ion-safe-area-bottom, 0px));
+  }
+
+  .bs-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .bs-page-head h1 {
+    font-size: 24px;
+  }
+
+  .bs-page-actions {
+    width: 100%;
+  }
+
+  .mode-switch {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mode-switch .bs-segmented {
+    flex: 1;
+    max-width: 260px;
+  }
+
+  .bs-device-chip {
+    min-height: 40px;
+    gap: 8px;
+    padding: 0 10px 0 8px;
+  }
+
+  .bs-device-chip .name {
+    font-size: 14px;
+  }
+
+  .bs-icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bs-card-head {
+    padding: 12px 14px 0;
+  }
+
+  .bs-card-body {
+    padding: 12px 14px 14px;
+  }
+
+  .bs-metric {
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .bs-metric-value {
+    font-size: 24px;
+  }
+
+  .bs-metric-top {
+    font-size: 12px;
+  }
+
+  .bs-pill {
+    height: 20px;
+    padding: 0 7px;
+    font-size: 11px;
+  }
+
+  .bs-segmented button {
+    min-height: 34px;
+    padding: 0 12px;
+  }
+
+  .bs-bottom-nav button {
+    min-height: 54px;
+    padding: 6px 0 4px;
+  }
+
+  .bs-bottom-nav button ion-icon {
+    font-size: 22px;
+  }
+
+  .status-hero {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .status-hero > ion-icon {
+    font-size: 24px;
+  }
+
+  .status-hero h2 {
+    font-size: 17px;
+  }
+
+  .light-card {
+    padding: 12px 14px;
+  }
+
+  .light-card > ion-icon {
+    font-size: 24px;
+  }
+
+  .light-card .value {
+    font-size: 17px;
+  }
+
+  .drawer-switch {
+    margin-bottom: 8px;
+    padding: 6px 16px;
+  }
+
+  .drawer-head h2 {
+    font-size: 18px;
+  }
+
+  .drawer-score .mono {
+    font-size: 17px;
+  }
+
+  .drawer-metrics {
+    gap: 8px;
+  }
+
+  .substrate-tile {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .substrate-col .value {
+    font-size: 22px;
+  }
+
+  .drawer-controls {
+    padding: 12px 14px 14px;
+  }
+
+  .control-grid {
+    gap: 8px;
+  }
+
+  .control-tile {
+    min-height: 72px;
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .control-tile ion-icon {
+    font-size: 22px;
+  }
+
+  .drawer-metrics .bs-metric-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

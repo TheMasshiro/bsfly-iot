@@ -58,7 +58,7 @@ const DrawerPanel: FC<DrawerPanelProps> = ({ drawer, snapshot, controls, canCont
           <p>{snapshot.updatedAt ? `Updated ${formatRelativeTime(new Date(snapshot.updatedAt))}` : "No readings yet"}</p>
         </div>
         <div className="drawer-score" data-status={scoreStatus(score)}>
-          <span className="mono">{score === null ? "—" : `${score}%`}</span>
+          {score !== null && <span className="mono">{score}%</span>}
           <StatusPill status={scoreStatus(score)}>{scoreWord(score)}</StatusPill>
         </div>
       </header>

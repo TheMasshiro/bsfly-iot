@@ -15,6 +15,7 @@ interface DeviceContextProps {
     setCurrentDevice: (device: Device | null) => void;
     refreshDevices: () => Promise<void>;
     loading: boolean;
+    failed: boolean;
     getToken: () => Promise<string | null>;
 }
 
@@ -60,6 +61,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [devices, setDevices] = useState<Device[]>([]);
     const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
     const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState(false);
     const fetchedRef = useRef(false);
     const userIdRef = useRef<string | null>(null);
 
@@ -115,7 +117,9 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
             offlineService.set(`${CACHE_KEY_DEVICES}_${user.id}`, deviceList);
 
             setCurrentDevice((prev) => selectCurrentDevice(prev, deviceList));
+            setFailed(false);
         } catch {
+            setFailed(true);
             const cached = offlineService.get<Device[]>(`${CACHE_KEY_DEVICES}_${user.id}`);
             if (cached) {
                 setDevices(cached);
@@ -149,6 +153,7 @@ export const DeviceProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 setCurrentDevice,
                 refreshDevices,
                 loading,
+                failed,
                 getToken
             }}
         >

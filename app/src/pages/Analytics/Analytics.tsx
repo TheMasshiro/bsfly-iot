@@ -36,7 +36,7 @@ const EMPTY_SENSOR_VALUES: SensorValues = {
 };
 
 const formatAnalyticsValue = (sensor: string, value: number | null): string => {
-    if (value === null) return '-';
+    if (value === null) return '—';
     if (sensor === 'Left Substrate' || sensor === 'Center Substrate' || sensor === 'Right Substrate' || sensor === 'Moisture') {
         return Math.round(value).toString();
     }
@@ -292,7 +292,7 @@ const Analytics: FC = () => {
                 : sensorValues.rightSubstrate;
             const tile = { status: statusOf(reading, threshold), label: statusText(reading, threshold) };
 
-            return { ...graph, latestValue, status, tile };
+            return { ...graph, latestValue, reading, status, tile };
         });
     }, [sensorGraphs, sensorValues, thresholds]);
 
@@ -337,7 +337,7 @@ const Analytics: FC = () => {
                                     {sensor.sensor}
                                 </span>
                                 <span className="metric-tile-value mono">
-                                    {formatAnalyticsValue(sensor.sensor, typeof sensor.latestValue === 'number' ? sensor.latestValue : null)}
+                                    {formatAnalyticsValue(sensor.sensor, sensor.reading)}
                                     <small>{sensor.unit}</small>
                                 </span>
                                 <StatusPill status={tile.status}>{tile.label}</StatusPill>
