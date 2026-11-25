@@ -19,10 +19,15 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
-import '@ionic/react/css/palettes/dark.always.css';
+import '@ionic/react/css/palettes/dark.class.css';
 
+import './theme/fonts';
 import './theme/variables.css';
 import './theme/layout.css';
+import './components/ui/ui.css';
+import './components/shell/shell.css';
+import LiveSync from './components/shell/LiveSync';
+import { ThemeProvider } from './theme/theme';
 import { LifeCycleProvider } from './context/LifeCycleContext';
 import { DeviceProvider } from './context/DeviceContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -39,10 +44,10 @@ const Menu = lazy(() => import('./components/Menu/Menu'));
 const DeviceMenu = lazy(() => import('./components/DeviceMenu/DeviceMenu'));
 const Notifications = lazy(() => import('./components/Notification/Notifications'));
 
-setupIonicReact();
+setupIonicReact({ mode: 'md' });
 
 const PageLoader = () => (
-    <div style={{ padding: '20px' }}>
+    <div className="page-container">
         <LoadingSkeleton variant="card" count={2} />
     </div>
 );
@@ -54,13 +59,15 @@ const App: React.FC = () => {
 
     return (
         <IonApp>
+            <ThemeProvider>
             <ErrorBoundary>
             <LifeCycleProvider>
                 <DeviceProvider>
                     <NotificationProvider>
                         <IonReactRouter>
                         <SignedIn>
-                            <IonSplitPane contentId="main" when="lg">
+                            <LiveSync />
+                            <IonSplitPane contentId="main" when="(min-width: 768px)">
                                 <Suspense fallback={null}><Menu /></Suspense>
                                 <IonRouterOutlet id="main">
                                     <Route path="/" exact={true}>
@@ -109,6 +116,7 @@ const App: React.FC = () => {
                 </DeviceProvider>
             </LifeCycleProvider>
             </ErrorBoundary>
+            </ThemeProvider>
         </IonApp>
     );
 };

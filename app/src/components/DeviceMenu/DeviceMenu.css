@@ -1,79 +1,66 @@
-ion-menu[menuId="device-menu"] ion-content {
-    --background: var(--ion-item-background, var(--ion-background-color, #fff));
+.bs-device-menu {
+  --width: min(88vw, 340px);
 }
 
-ion-menu[menuId="device-menu"].md ion-content {
-    --padding-start: 8px;
-    --padding-end: 8px;
-    --padding-top: 20px;
-    --padding-bottom: 20px;
+.bs-device-menu ion-content {
+  --background: var(--bs-surface);
 }
 
-ion-menu[menuId="device-menu"].md ion-list {
-    padding: 20px 0;
+.bs-device-menu-body {
+  padding: calc(20px + var(--ion-safe-area-top, 0px)) 16px 24px;
 }
 
-ion-menu[menuId="device-menu"].md ion-list-header {
-    font-size: 22px;
-    font-weight: 600;
-    min-height: 20px;
-    padding-left: 10px;
-    margin-bottom: 16px;
+.bs-device-menu-body h2 {
+  margin: 0 0 12px;
+  font-size: var(--bs-fs-md);
+  font-weight: 600;
 }
 
-ion-menu[menuId="device-menu"].md ion-item {
-    --padding-start: 10px;
-    --padding-end: 10px;
-    border-radius: 12px;
+.bs-device-list {
+  display: grid;
+  gap: 8px;
 }
 
-ion-menu[menuId="device-menu"].md ion-item.selected {
-    --background: rgba(var(--ion-color-primary-rgb), 0.14);
+.bs-device-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-r-md);
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-ion-menu[menuId="device-menu"].md ion-item.selected ion-icon {
-    color: var(--ion-color-primary);
+.bs-device-option[aria-pressed="true"] {
+  border-color: var(--bs-brand);
+  background: var(--bs-brand-soft);
 }
 
-ion-menu[menuId="device-menu"].md ion-item ion-icon {
-    color: #616e7e;
+.bs-device-option .text {
+  flex: 1;
+  min-width: 0;
 }
 
-ion-menu[menuId="device-menu"].md ion-item ion-label {
-    font-weight: 500;
+.bs-device-option strong {
+  display: block;
+  font-weight: 600;
 }
 
-ion-menu[menuId="device-menu"].ios ion-content {
-    --padding-bottom: 20px;
+.bs-device-option .text span {
+  display: block;
+  font-size: var(--bs-fs-xs);
+  color: var(--bs-text-3);
+  font-family: var(--bs-mono);
 }
 
-ion-menu[menuId="device-menu"].ios ion-list {
-    padding: 20px 0 0 0;
-}
-
-ion-menu[menuId="device-menu"].ios ion-list-header {
-    font-size: 20px;
-    font-weight: 600;
-    padding-left: 16px;
-    padding-right: 16px;
-    margin-bottom: 8px;
-}
-
-ion-menu[menuId="device-menu"].ios ion-item {
-    --padding-start: 16px;
-    --padding-end: 16px;
-    --min-height: 50px;
-}
-
-ion-menu[menuId="device-menu"].ios ion-item ion-icon {
-    font-size: 24px;
-    color: #73849a;
-}
-
-ion-menu[menuId="device-menu"].ios ion-item.selected ion-icon {
-    color: var(--ion-color-primary);
-}
-
-ion-menu[menuId="device-menu"] ion-item.selected {
-    --color: var(--ion-color-primary);
+.bs-device-option ion-icon {
+  color: var(--bs-brand);
+  font-size: 20px;
 }

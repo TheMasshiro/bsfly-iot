@@ -3,89 +3,34 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { ClerkProvider } from '@clerk/clerk-react'
 import { dark } from '@clerk/themes'
+import { applyTheme } from './theme/theme'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const isDark = applyTheme() === 'dark'
 
 const clerkAppearance = {
-    baseTheme: dark,
+    baseTheme: isDark ? dark : undefined,
     variables: {
-        colorPrimary: '#2dd55b',
-        colorBackground: '#0a0a0a',
-        colorInputBackground: '#1a1a1a',
-        colorInputText: '#ffffff',
-        colorText: '#ffffff',
-        colorTextSecondary: '#a0a0a0',
-        colorDanger: '#ff4757',
-        colorSuccess: '#2dd55b',
-        colorWarning: '#ffc409',
-        borderRadius: '16px',
+        colorPrimary: isDark ? '#7cc487' : '#2e6b3a',
+        colorBackground: isDark ? '#161b18' : '#ffffff',
+        colorText: isDark ? '#e6ebe6' : '#1b1f1a',
+        colorTextSecondary: isDark ? '#a2aca4' : '#565c53',
+        colorDanger: isDark ? '#f07167' : '#b3261e',
+        fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
+        borderRadius: '10px',
     },
     elements: {
-        rootBox: {
-            boxShadow: 'none',
-        },
-        card: {
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #2a2a2a',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-            borderRadius: '18px',
-        },
-        headerTitle: {
-            color: '#ffffff',
-        },
-        headerSubtitle: {
-            color: '#a0a0a0',
-        },
-        socialButtonsBlockButton: {
-            backgroundColor: '#1a1a1a',
-            border: '1px solid #2a2a2a',
-            borderRadius: '12px',
-        },
-        socialButtonsBlockButtonText: {
-            color: '#ffffff',
-        },
-        formButtonPrimary: {
-            backgroundColor: '#2dd55b',
-            borderRadius: '16px',
-        },
-        formFieldInput: {
-            backgroundColor: '#1a1a1a',
-            border: '1px solid #2a2a2a',
-            borderRadius: '12px',
-            color: '#ffffff',
-        },
-        formFieldLabel: {
-            color: '#a0a0a0',
-        },
-        footerActionLink: {
-            color: '#2dd55b',
-        },
-        dividerLine: {
-            backgroundColor: '#2a2a2a',
-        },
-        dividerText: {
-            color: '#666666',
-        },
-        identityPreviewEditButtonIcon: {
-            color: '#2dd55b',
-        },
-        formFieldInputShowPasswordButton: {
-            color: '#a0a0a0',
-        },
-        otpCodeFieldInput: {
-            backgroundColor: '#1a1a1a',
-            border: '1px solid #2a2a2a',
-            borderRadius: '12px',
-        },
+        card: { boxShadow: 'none', border: isDark ? '1px solid #252d29' : '1px solid #e3e1d8' },
     },
 }
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
-root.render(
+const boot = import.meta.env.MODE === 'demo' ? import('./demo/install') : Promise.resolve();
+boot.then(() => root.render(
     <React.StrictMode>
         <ClerkProvider publishableKey={PUBLISHABLE_KEY} appearance={clerkAppearance}>
             <App />
         </ClerkProvider>
     </React.StrictMode>
-);
+));
