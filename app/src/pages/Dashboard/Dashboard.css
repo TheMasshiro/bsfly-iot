@@ -136,6 +136,10 @@
   min-width: 0;
 }
 
+.drawer-panel[hidden] {
+  display: none;
+}
+
 .drawer-head {
   display: flex;
   align-items: center;
